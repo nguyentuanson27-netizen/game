@@ -53,8 +53,8 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Description:** Resolve D5 before assets or content depend on unstated art/audio/localization choices.
 **Dependencies:** T01.
 **Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
-**Acceptance:** Propose prototype visual/audio limits, placeholders and language/localization scope for G0; preserve fictional identity and portrait readability without requiring final branding/art.
-**Verification:** Review one event-card layout and growth-feedback example against SPEC sections 7, 24-25 and PRODUCT_GUARDRAILS; record constraints for G0, not an unrun device result.
+**Acceptance:** Propose a minimal prototype art contract for G0: asset groups needed by the slice, source-of-truth/workflow, placeholder-vs-production boundary, language/localization and fictional identity, plus only the naming/export/aspect-ratio/format constraints required by the chosen runtime and current UI. Explicitly state whether T07-T24 may use placeholders; do not require final branding/art.
+**Verification:** Review one event-card layout and one growth-feedback example against SPEC sections 7, 24-25 and PRODUCT_GUARDRAILS; verify the contract is sufficient to brief a separate art-package follow-up without designing the full art direction here.
 
 ### T06 - Approve minimum decisions and detail the first slice
 **Status:** [ ] Not started; G0 not approved.
@@ -65,6 +65,13 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** Check all seven AC mappings, tool/device availability and dependencies; owner approval of the package clears G0. T07 must execute the chosen setup commands. Do not demand a final file map for T21-T30.
 
 **Gate G0:** Obtain owner approval of D1-D6 and first-slice details before any code/production content task. This PR is not that approval.
+
+### A1 - Approved prototype art package (external follow-up)
+**Status:** [ ] Blocked by G0 / D5 approval.
+**Description:** A dedicated follow-up art-direction/asset-package PR creates and approves the golden references plus actual asset bundle required by T25. This plan names the dependency but does not hardcode a GitHub PR number.
+**Dependencies:** G0, T05.
+**Acceptance:** Package covers the D5 asset groups consumed by T25 and follows its source-of-truth/workflow plus required naming/export/aspect-ratio/format constraints; placeholder and production assets are clearly distinguished.
+**Verification:** Review the package against D5, portrait/mobile constraints and PRODUCT_GUARDRAILS. A1 may progress in parallel with T07-T24 and does not block them when D5 allows placeholders; T25 cannot start until A1 is approved.
 
 ## Small proof and first playable loop
 
@@ -233,9 +240,9 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 ### T25 - Company and network growth feedback
 **Status:** [ ] Blocked by G0, G1 and dependencies.
 **Description:** Connect existing committed state to the small mobile navigation and visible company/city changes.
-**Dependencies:** T21, T05.
-**Files likely touched:** Home/Company/Network presentation; approved asset bundle; UI checks; evidence/task record. **Scope:** M (3-5 files).
-**Acceptance:** Five core visible metrics remain readable without pinning all to the header; relationship and growth feedback reflect committed history; visuals follow approved scope and never become a city-builder system.
+**Dependencies:** T21, T05, A1.
+**Files likely touched:** Home/Company/Network presentation; assets/golden references from A1; UI checks; evidence/task record. **Scope:** M (3-5 files).
+**Acceptance:** Use the approved A1 package for visual-growth work; five core visible metrics remain readable without pinning all to the header; relationship and growth feedback reflect committed history; visuals follow approved scope and never become a city-builder system.
 **Verification:** DEVICE early/later snapshot comparison, portrait/text-accessibility checks and FOCUSED UI-state tests; confirm no hidden-stat arithmetic or morality labels leak through presentation.
 
 ### T26 - Cumulative content and pacing audit
