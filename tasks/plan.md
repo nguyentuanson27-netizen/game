@@ -2,13 +2,13 @@
 
 ## Status and source of truth
 
-**Proposed plan for review, not implementation approval.** This change adds planning documents only. All implementation tasks remain unstarted; decision work T01-T06 must clear G0 before T07 or later can begin.
+**Proposed plan for review, not implementation approval.** This change adds planning documents only. All tasks remain unstarted. T01-T06 must clear G0 before code or production content work begins. Task IDs are retained for review history; follow the displayed order and dependencies, not numeric order.
 
 Source: PR #1, reviewed head `ddb36247d6d8c5a68fe568d06bceb59f389ba77a`, merged into `main` as `9382310fe6632b3758499b565b2d2c7b07f3d596`. The plan is based on the merged snapshot, including AC-01 through AC-07, not the earlier unamended spec.
 
 Read [SPEC](../docs/SPEC.md), [DECISIONS](../docs/DECISIONS.md), [CONTENT_GUIDE](../docs/CONTENT_GUIDE.md), [PRODUCT_GUARDRAILS](../docs/PRODUCT_GUARDRAILS.md), and [AGENTS](../AGENTS.md). The task checklist is [todo.md](todo.md).
 
-SPEC section 31 requires implementation choices to be decided before implementation planning. They are still open. Accordingly, this document provides a decision-stage plan and a **conditional, stack-neutral delivery sequence**, not a ready-to-execute technical design. G0 must approve those choices and replace provisional file roles/verification labels with actual paths and commands before coding. This plan does not override the spec or silently resolve its gaps.
+SPEC section 31 requires implementation choices to be decided before implementation planning. They are still open. Accordingly, this document provides a decision-stage plan and a **conditional, stack-neutral delivery sequence**, not a ready-to-execute technical design. G0 approves the minimum prototype choices and details for the first runnable slice. Later file paths and checks are specified just before their slice starts; material product or technical choices are never silently deferred into code. This plan does not override the spec or silently resolve its gaps.
 
 ## 1. Outcome and scope
 
@@ -30,113 +30,90 @@ The slice's total content budget remains 50-70 authored event nodes, 8-10 chains
 
 Out of this delivery plan: the full 5-7-hour campaign, all five company stages, complete late-game departments/M&A/fixer systems, public store launch, and all prototype non-goals in SPEC section 30. Later-stage ideas remain product direction, not deleted requirements. No runtime LLM, multiplayer, realtime city builder, procedural crime mechanics or live-service retention work is introduced. Accounts, payments, uploads and network analytics are not added by this plan.
 
-## 2. Decisions before implementation: G0
+## 2. Minimum decisions before code: G0
 
-No engine, platform order, save format, schema, numeric economy, art direction or command is selected here. T01-T06 prepare explicit decisions for owner review. Record rationale, alternatives, consequences and approval in DECISIONS and relevant SPEC sections; a proposed `docs/IMPLEMENTATION.md` may hold implementation details. That new path is a planning proposal, not an existing file or a new source of product authority.
+Prepare D1-D6 as one concise decision package, not six separate approval rounds. Use DECISIONS and relevant SPEC sections for approved choices, rationale and consequences; add implementation notes only when existing documents cannot hold the needed detail. Use one shared evidence record per slice; append each task's revision/check result before marking it done instead of rewriting every document.
 
-| Decision | Source or gap | Required output before dependent work |
-|---|---|---|
-| D1: runtime and delivery | SPEC section 31; DECISIONS open choices | Engine/framework and exact versions, development toolchain, prototype target OS/device coverage and delivery route, distinction from final store/release order. Verify chosen APIs against official docs at decision time. No web/native or Android/iOS assumption. |
-| D2: state and content | SPEC sections 5, 8-12, 21; CONTENT_GUIDE | Formats/tooling for Event, Event Chain, NPC, World State and Memory/Precedent; identifiers, condition/effect validation, callback windows/order, checkpoint-relevant state and content/test locations. A machine-readable schema is not already specified. |
-| D3: persistence and privacy | SPEC sections 3 and 31; AGENTS security | Local format/storage/versioning and interruption recovery that satisfy the locked behavior; explicit handling decision for corrupt/unsupported saves, which the source does not fully define. Decide whether analytics exists and its privacy requirements before collecting anything. No cloud service or SDK assumed. |
-| D4: prototype rules | SPEC sections 5, 8-9, 13-15, 23, 26 | Initial state, units/ranges, economy/policy settlement rules, weekly event-budget selection, expansion/progression conditions, and behavior at week 12 or early failure. These details are not specified; do not invent bankruptcy thresholds, financing, or an ending. Specify only what the slice needs. |
-| D5: presentation constraints | SPEC sections 24-25 and 31; DECISIONS | Prototype visual/audio production limits, permitted placeholder assets, content language/localization scope and identity constraints. Final names/art and commercial decisions remain open unless explicitly decided. |
-| D6: verification and activation | SPEC section 29 and 31; AGENTS workflow | Test approach and CI scope, exact command/path map for the chosen stack, target-device procedure, playtest participant selection and interpretation criteria. Sources do not set a participant count or pass percentage. Bind every conditional task to concrete files and checks; split any task exceeding five tracked files or one focused session. |
+| Decision | Minimum owner-approved output |
+|---|---|
+| D1: runtime/delivery | Engine/framework and exact versions, toolchain, prototype OS/device coverage and delivery route. Keep final store/release order distinct; verify version-sensitive choices against official docs. |
+| D2: state/content | Minimal formats/tooling for the five SPEC concepts, identifiers, condition/effect and option rules, callback windows/order and checkpoint state. Walk a small converging example; do not design a generic rules language. |
+| D3: persistence/privacy | Local format/storage/versioning and recovery meeting SPEC section 3; decide corrupt/unsupported-save handling and analytics/privacy boundaries before collection. No cloud or migration framework is assumed. |
+| D4: prototype rules | Initial values/units, both services' settlement, weekly event budget, progression and early-failure/week-12 behavior. These are source gaps requiring explicit decisions, not values supplied by this plan. |
+| D5: presentation | Prototype asset/audio limits, placeholders, language/localization and fictional identity. Do not require final art or commercial branding. |
+| D6: verification | Test/CI scope, device procedure, bounded content-coverage approach and player-observation method. Bind actual paths and commands for the first runnable slice only; no invented participant count/pass rate. |
 
-G0 requires recorded owner approval of D1-D6 and the activated task sequence. If approved tooling, CI or telemetry requires additional implementation tasks, add and review those focused tasks before activation; this conditional sequence does not imply that such integration work already exists. A remaining material ambiguity blocks the dependent task; it is not permission to choose a default. Merging this planning PR alone does not satisfy G0. No external technology research is represented as already performed.
+G0 needs owner approval of this package and the first slice's task details. It does not require the final file layout or exact test commands for T21-T30. Before each later slice, inspect the code that now exists, fill its paths/checks, and split oversized or independent work; no new approval ceremony is needed unless a material decision changes. Approved tooling/CI integration must have explicit tasks before it is needed. A material unresolved dependency still blocks its task. Merging this planning PR does not approve G0 or authorize code, merge or deployment.
 
-## 3. Dependency graph and delivery slices
+## 3. Delivery order and dependencies
 
-The sequence below is proposed work organization. Task dependencies in todo.md are the detailed graph; checkpoint gates are additional dependencies.
+Draft the proof chain first and reuse it as fixtures throughout implementation. Do not build a general validator before there is real content to validate. The numbered IDs are stable references, not execution order; [todo.md](todo.md) is the detailed graph.
 
 ```text
-T01 -> T02 -> T03
-          -> T04
-T01 -> T05
+T01 -> T02 -> T03; T02 -> T04; T01 -> T05
 T01..T05 -> T06 -> G0
-G0 -> T07 -> T08 -> T09 -> T10 -> T11 -> T12
-T12 -> T13 -> T14 -> T15 -> T16 -> T17 -> T18
-T18 -> T19 -> T20 -> G1
-G1 -> T21 -> T22 -> T23 -> T24
-        \-> T25 -----------------> T26
+G0 -> T18 + T07 -> T08 -> T09 -> T10 -> T11 -> T12
+T12 + T18 -> T15 -> T19 -> T20 -> G1
+T12 -> T13 -> T14
+T15 -> T16 -> T17
+G1 + T14 + T17 -> T21 -> T22 -> T23 -> T24
+T21 -> T25
 T24 + T25 + T17 -> T26 -> T27 + T28 -> T29 -> G2 -> T30
 ```
 
-T27 and T28 may run independently after T26; T29 waits for both. Every other extra dependency is stated in todo.md.
-
-| Slice | Tasks | Demonstrable result and exit checkpoint |
+| Slice | Task order | Result/checkpoint |
 |---|---|---|
-| S0: decisions | T01-T06 | Reviewed implementation choices and executable task map. C01 after T03; G0 after T06. No game code. |
-| S1: first durable decision | T07-T09 | Minimal runnable portrait path: load an authored event, resume it unchanged, choose and observe persisted effects. C02 after T09. |
-| S2: complete week | T10-T12 | Confirmation, current-state option eligibility, once-only settlement, short report and durable advancement. C03 after T12. |
-| S3: reliability and due callback | T13-T15 | Recoverable save failures, real interruption evidence and a due callback returning in play. C04 after T15. |
-| S4: valid consequence space | T16-T18 | Changed context, fallback coverage and cross-chain validation; one authored converging proof chain. C05 after T18. |
-| S5: prove the hook | T19-T20 | Two playable histories reach the same crisis with different options; focused player observation. G1 before scaling content. |
-| S6: first nine weeks | T21-T23 | Incremental onboarding, district/competitor pressure, cash/safety pressure and rider callback. C06 after T23. |
-| S7: complete slice | T24-T26 | Weeks 10-12, agency offer, visible growth and audited cumulative content/decision budgets. C07 after T26. |
-| S8: verify and hand off | T27-T30 | AC evidence, target-mobile checks, representative playtest and documented go/no-go for the next phase. G2 after T29; owner review at T30. |
+| Decisions | T01-T03; T04-T06 | Compatibility check C01, then one G0 approval of the minimum package. |
+| Small proof inputs | T18, T07 | Draft chain and runnable portrait shell; C02. These two tasks can run independently after G0. |
+| First durable choice | T08-T09 | Use draft content; save/resume and basic failure blocking from the first checkpoint; C03. |
+| Complete week | T10-T12 | Current-state options, confirmation, once-only settlement/report/advancement; C04. |
+| Early gameplay observation | T15, T19-T20 | Play an actual callback and two histories with different options; G1. No dependency on T13-T14 or T16-T17. |
+| Broader recovery checks | T13-T14 | Extend fault/interruption coverage on the real target; C05. |
+| Combined-content checks | T16-T17 | Changed-context/fallback and cross-chain checks for the actual content set; C06 before expansion. |
+| Content growth | T21-T23; T24-T26 | First nine weeks at C07, full 12-week candidate at C08. Reuse proof content inside the existing budget. |
+| Final verification | T27-T29; T30 | Full AC/device/player evidence at G2, then prototype handoff. |
 
-Each implementation task starts with the relevant behavioral test, observes the intended failure, implements narrowly and reruns focused checks. Content tasks validate data and playable reachability; playtest/report tasks record observations instead of fabricating automated coverage. At each checkpoint, review correctness, security, architecture, simplicity and relevant performance; preserve evidence and stop on failed prerequisites. Checkpoints occur after two or three tasks, with T30 as the final handoff.
+Checkpoints are brief reviews after two or three tasks, not additional deliverables or automatic human-approval rounds. Run focused checks for each change and relevant full/static/build checks at each checkpoint; record applicability rather than requiring meaningless commands. T27/T28 may run independently on the same revision; T25 may run alongside T22-T24. Shared state, persistence and scheduling edits need coordination rather than concurrent conflicting writes.
 
-**G1:** before expansion toward the full content budget, verify a playable earlier-decision callback and the same-crisis/different-options proof, plus reliable resume. Record player observations about recognizing consequences and wanting another week. If the central hook is not demonstrated, refine that small chain first; do not compensate with more content. The sample and interpretation method come from D6, not an invented numeric threshold here.
+**G1 is an early, limited gameplay decision.** The small proof must have safe checkpoint behavior, valid content for its reachable states, an actual remembered consequence, history-dependent options and observations about understanding/curiosity. It is not proof of the full campaign, growth experience, duration, or the complete interruption/content matrix. Known data-loss, invalid-choice or broken-continuation paths block observation; a smaller content set is not permission to ship unsafe behavior. T13-T14 and T16-T17 remain required before T21-T26 expand content. If the hook fails, revise that chain instead of adding volume.
 
-**G2:** do not declare the 12-week slice complete until AC-01 through AC-07, content reachability/capacity, target-device continuity and the SPEC section 29 player observations have evidence. Timing and fun are playtest findings, not inferred from event counts. Record unmet criteria as blockers or proposed spec changes, never silently lower the gate.
+**G2 is unchanged:** all AC-01 through AC-07, cumulative content coverage, target-device continuity and SPEC section 29 player outcomes need evidence before declaring the 12-week slice complete. Two demonstration histories alone do not prove all reachable paths. Unmet requirements remain blockers or require an explicit spec change.
 
-## 4. Responsibilities, not a chosen architecture
+## 4. Keep the implementation small
 
-Use the five content concepts already named in SPEC section 21. The following responsibility boundaries are planning aids; D1-D3 choose the simplest implementation and actual file layout.
+Use the five SPEC content concepts and the simplest data-testable resolution/persistence/presentation boundaries. They do not require five subsystems or a framework. No server API, event-sourcing framework, generic rules DSL, DI framework, database, telemetry SDK or new dependency is mandated. Implement only hidden state used by actual slice content; do not cut either starting service or stakeholder conflicts.
 
-| Responsibility | Contract to preserve |
-|---|---|
-| Authored content and validation | Conditions, choices, effects, NPC references, meaningful memory and callback/fallback coverage are data-testable rather than scattered through UI branches. |
-| Decision/week resolution | Read current committed state; apply a choice once; separate immediate effects from recurring settlement; never turn hidden state into a global morality score. |
-| Persistence boundary | Store coherent week/phase, active event, effects, history and pending/resolved consequences; block progress on failure. Treat loaded data as untrusted. |
-| Mobile presentation | Brief, choice card, immediate feedback, report and Next Week; Home/Company/Network remain the initial navigation target. Show only player-knowable feedback and visible growth. |
-| Verification evidence | Exercise real state and persistence where practical; use controlled fixtures/fault injection for edge cases. Record target environment and limitations without adding a production telemetry service by default. |
+Treat roughly five touched files as a review signal, not a quota. Keep one coherent behavior per task and split independent concerns or work too large for one focused session. A necessary scaffold/config/lockfile group can exceed the guideline with an explicit scope explanation and a runnable verification; do not pack unrelated code into fewer files or split a coherent scaffold into broken intermediate states.
 
-No event-sourcing framework, database, server API, generic rules DSL, DI framework or new dependency is mandated. Only implement hidden state and later-stage concepts needed by authored slice content. Both starting services and stakeholder tensions still need representation; reduced scope must not turn into a delivery-only game or a disconnected card quiz.
+Content validation grows with content: basic IDs/references/options/windows first, explicit bad-case fixtures next, then combined scheduling and reachable-state checks for the accepted pack. For a small finite proof, a documented enumeration plus executable traces can suffice if it covers the required behavior. Use the real selection rules; no generic solver/editor is a prerequisite. If the state space is too large to justify coverage, simplify interacting content or surface the gap rather than call samples exhaustive. Run cumulative validation before accepting each larger batch, not only at the final audit.
 
-Parallel work is safe only after the relevant contracts stabilize: content drafting and presentation assets can proceed against approved D2/D5; T25 can proceed alongside T22-T24; T27 and T28 can validate the same frozen candidate independently. Changes to shared state, checkpoint format, scheduler and week settlement stay sequential. Parallel authoring still waits for G1 before scaling and shares one content-budget ledger.
+Loaded save/content is untrusted; validate at the boundary and never execute it as code. Preserve the last complete checkpoint, block progression on failed saves, and check retry/idempotency when each new write boundary is added. T13/T14 deepen this coverage, not introduce basic safety late. Review dependencies before installation; do not log secrets or personal data or add accounts/payments/network analytics without explicit scope and security review.
 
 ## 5. Acceptance-to-task traceability
 
-Canonical acceptance wording remains in [SPEC required behavior checks](../docs/SPEC.md#required-behavior-checks). The following is a coverage map, not a replacement or evidence that tests pass. T27 reruns all seven against the full content set.
+The [canonical AC wording](../docs/SPEC.md#required-behavior-checks) stays in SPEC; this table is not evidence of passing tests. T27 reruns all seven on the final content set.
 
-| Requirement | Primary tasks | Required evidence |
-|---|---|---|
-| AC-01: within-week state | T09-T11 | Prior choice changes later options; 2-4 valid alternatives remain; settlement does not reapply it. |
-| AC-02: callback contention | T15, T17 | Earliest week, deadline/tie order, retained overflow and rejected infeasible schedules. |
-| AC-03: changed context/coverage | T16-T17 | Valid variant/report closure by deadline; fallback respects conditions and cooldowns. |
-| AC-04: offline resume | T08-T09, T11-T14 | Close/reopen unanswered event, committed choice, settled report and advancement; no reroll, duplication or skipped week. |
-| AC-05: failed/interrupted save | T13-T14 | Before/after checkpoint interruption, including before feedback; complete old/new state, visible failure and blocked progression. |
-| AC-06: history-dependent options | T18-T19, T24 | Two documented histories reach the same playable crisis by week 12; actual selectable-option difference from history, 2-4 valid choices each. |
-| AC-07: confirmation | T10, T14 | Normal tap has no dialog; cancel is state-neutral; confirm commits once and survives resume. |
-| SPEC sections 4, 8-10, 13-15, 17 | T04, T11, T21-T25 | Both services, readable five core metrics, differentiated stakeholder effects and visible district/company progression. |
-| SPEC sections 21-23; CONTENT_GUIDE | T18-T26 | Branch-and-converge, required payoffs within slice, cumulative nodes/chains/NPCs/competitors and per-history decision counts. |
-| SPEC sections 7, 24-25, 28-29 | T05, T20, T25, T28-T29 | Mobile readability, risk warnings, visible growth, fictionalization and recorded new-player observations. |
-
-Verification labels in todo.md are **not shell commands**: `FOCUSED`, `FULL`, `STATIC`, `BUILD`, `CONTENT`, `DEVICE`. D6 binds each to an exact repository command or a concrete manual procedure, including environment and applicability; T07 executes and confirms the initial setup. Unsupported checks stay explicitly pending. Never substitute remembered package-manager commands.
-
-## 6. Risks and stop conditions
-
-| Risk | Mitigation or stop condition |
+| Requirement | Tasks and evidence |
 |---|---|
-| Open decisions become accidental architecture | G0 blocks code; version-sensitive choices require official documentation at decision time. No guessed paths or commands survive activation. |
-| Save acknowledgment differs from durable state | T08-T14 prove actual checkpoint/feedback boundaries early. Data loss, duplicate settlement or a silently reset campaign stops subsequent work. |
-| Individually valid chains oversubscribe weeks | T17 checks combined reachable states under the real scheduler and budgets; retain pending callbacks and reject infeasible content rather than waive deadlines. Random sampling alone is not proof of all reachable-state coverage. |
-| Validation state space becomes too large | D2/D6 define a tractable model and coverage argument for the bounded slice; split or simplify content while preserving contracts, or surface missing proof. Do not claim exhaustive validation from two demo histories. |
-| Locked options leave an event unusable | Validate every presented reachable variant; use authored alternatives, never revive an ineligible option to meet the count. |
-| Authoring hides an uninteresting core loop | G1 precedes volume. Count proof/fallback nodes inside the budget; do not treat additional drama as the fix. |
-| Numeric economy or stopping rules are absent | D4 records explicit owner decisions before settlement/progression/content depends on them. The plan does not choose values or failure semantics. |
-| Final polish or late-game systems overtake the slice | Use only approved production limits; stop at the agreed week-12 boundary. Further campaign work gets a new plan. |
-| Untrusted data or telemetry weakens safety | Review loaded save/content validation and dependency provenance. No executing content as code; no secret/PII logging. Network/auth/payment/analytics additions require a separate explicit security review. |
+| AC-01: within-week state | T09-T11: prior choice changes later options; 2-4 valid choices remain; settlement never repeats immediate effects. |
+| AC-02: callback contention | T15, T17: earliest week, deadlines/tie order, retained overflow, rejected infeasible schedules. |
+| AC-03: changed context/coverage | T16-T17: valid variant/report closure by deadline; fallback respects conditions/cooldowns. T19 checks coverage of the small proof before observation. |
+| AC-04: offline resume | T08-T12, T14, T19: same unanswered event, committed choice, settled report and advancement; no reroll/duplication/skipped week. |
+| AC-05: failed/interrupted save | T08-T09, T11-T12: basic failure blocking and retry at each boundary; T13-T14: expanded failure/interruption matrix, complete old/new state including before feedback. |
+| AC-06: history-dependent options | T18 drafts expectations; T19 proves actual selectable differences by week 12 with 2-4 valid options in both histories; T24 retains that proof in the full slice. |
+| AC-07: confirmation | T10, T14: ordinary tap has no dialog, cancel changes nothing, confirm commits once and survives resume. |
+| SPEC sections 4, 7-10, 13-15, 17, 24-25 | T04-T05, T11, T21-T25, T28: both services, five readable metrics, stakeholder tensions, risk warnings and visible company/city growth. |
+| SPEC sections 21-23; CONTENT_GUIDE | T18-T19, T17, T21-T26: branch-and-converge, feasible payoffs, cumulative node/chain/NPC/competitor budgets and per-history decisions. |
+| SPEC sections 28-29 | T05, T20, T28-T29: fictionalization, new-player understanding/curiosity, accessibility and measured pacing; G1 observations are limited, not full-slice validation. |
 
-## 7. Completion and handoff
+`FOCUSED`, `FULL`, `STATIC`, `BUILD`, `CONTENT`, `DEVICE` in todo.md are labels, not shell commands. D6 binds the first slice; later bindings use the actual repository before that slice begins. T07 verifies setup. Use behavioral tests before implementation; content/report tasks use appropriate validation or observations. Missing/unavailable checks stay not run, never passed.
 
-For this planning PR: only tasks/plan.md and tasks/todo.md are added; source product documents stay unchanged. Verify cross-references, ordered/acyclic dependencies, task size and acceptance/verification fields, AC coverage, open-decision gates and clean diff. Check remote file hashes and PR base/head after writing. Self-review is not independent human approval.
+## 6. Stop conditions and handoff
 
-For later implementation: every checked task needs its acceptance evidence plus the project's standing Definition of Done (correctness, quality, integration, documentation and relevant security/ship readiness). Apply [AGENTS](../AGENTS.md) to repository work; the SON Project shared Definition of Done is supplied in project knowledge, not assumed to be a repository file. Record checks as passed, failed, not applicable with reason, or not run; missing runtime evidence is not a pass.
+Stop dependent work for lost/duplicated state, ineligible choices, missed required deadlines, insufficient content coverage, or unapproved material decisions. Preserve a minimal reproduction, fix it and rerun affected checks. Do not compensate for an uninteresting chain with more content, or for poor measured performance with speculative caching/concurrency. Further campaign or commercial release work needs a separate plan.
 
-Keep each change small and revertible. If a checkpoint fails, preserve the failing artifact/save and halt expansion; after a regression fix, rerun the affected checks. Rolling back app code must not silently discard or reinterpret saves: use the compatibility decision from D3 and document any remaining limitation.
+For this PR, change only tasks/plan.md and tasks/todo.md; check dependencies, references, AC coverage, diff and remote hashes. No game/runtime result is implied. Keep all implementation tasks unstarted.
 
-T30 delivers the tested revision, runnable instructions, acceptance/playtest evidence, known limitations and a next-phase recommendation for owner review. It is a prototype handoff, not permission for store publication or commercial release. No merge or deployment is authorized by this plan.
+For implementation handoff, apply [AGENTS](../AGENTS.md) and the standing SON Definition of Done. The repository-readable minimum is: acceptance and edge/error cases verified; relevant tests/build/static/runtime checks evidenced; no unrelated scope or secrets; surrounding integration and save compatibility reviewed; decisions/run instructions current; relevant security and rollback constraints recorded; required owner approvals present. Production observability/deployment checks are not applicable to this docs-only PR or an unpublished offline prototype unless that scope changes. Record passed, failed, not applicable with reason, and not run distinctly; this summary does not waive the full standing checklist.
+
+T30 supplies the tested revision, reproducible run/check instructions, AC/playtest evidence, remaining limitations and save/rollback implications. Self-review is not independent review. No merge, store publication or deployment is authorized by the plan.

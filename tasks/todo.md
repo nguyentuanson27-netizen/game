@@ -2,95 +2,107 @@
 
 ## Execution rules
 
-Read [plan.md](plan.md) and its G0/G1/G2 gates first. Source baseline: PR #1 merged at `9382310fe6632b3758499b565b2d2c7b07f3d596` with the amended SPEC and AC-01 through AC-07. Every checkbox below is initially open; this document does not claim work or approval has occurred.
+Read [plan.md](plan.md). Source: PR #1 merged at `9382310fe6632b3758499b565b2d2c7b07f3d596`, including AC-01 through AC-07. All tasks remain unstarted; editing this plan completes none of them. IDs are retained for existing review references: follow the displayed order/dependencies, not numeric order.
 
-T01-T06 are decision/documentation tasks. T07-T30 are conditional and blocked until G0. Owner review is required to activate them. The assigned implementer/reviewer is not specified by the source; assign them at activation, not by inventing named owners here.
+T01-T06 prepare one decision package for G0, not six independent approval rounds. All code/content tasks require G0. Only the upcoming slice needs actual paths and commands; later tasks retain acceptance/dependency requirements and are detailed before they start. Update decision docs only when decisions change. Keep one evidence record per slice, but attach each task's revision, check results and limitations before checking that task off.
 
-`FOCUSED`, `FULL`, `STATIC`, `BUILD`, `CONTENT`, `DEVICE` are verification labels, not executable commands. T06 binds them to actual commands/procedures and target environments; T07 verifies that setup. Each code task runs its relevant focused check and checkpoint-wide checks. Observe RED before GREEN for changed behavior; data/report tasks use appropriate validation/observation instead.
+`FOCUSED`, `FULL`, `STATIC`, `BUILD`, `CONTENT`, `DEVICE` are labels, not commands. T06 binds the first runnable slice, T07 executes setup, and each later slice binds its checks against the current repository. Changed behavior needs a failing behavioral test before the fix/implementation where practical; data/report tasks need appropriate validation/observation. Run relevant full/static/build checks at checkpoints. Missing runtime evidence is not a pass.
 
-File roles below are provisional, not claims of an existing architecture. T06 supplies actual paths. Sizes count all tracked changes, including tests and task-status updates: S = 1-2 files, M = 3-5. Split a task before starting if it needs more than five tracked files or one focused session; do not expand it silently. When done, record revision, evidence and unresolved limitations beside the task before checking it.
+File lists are provisional roles until their slice is prepared. S means about 1-2 files, M about 3-5; include tests/config/evidence in review scope. Split independent concerns or work too large for one focused session. Necessary scaffold/config/lockfile files can stay together with a documented exception and runnable verification. Do not game file counts by creating giant files or broken intermediate steps.
 
-## Decision stage
+Every new persistence boundary inherits failure blocking, preservation of the prior complete checkpoint and safe retry from its first implementation. Later matrix tasks deepen verification, not postpone these requirements. Known safety or content-integrity failures block dependent work and player observation.
+
+## Decision package
 
 ### T01 - Runtime and prototype delivery decision
-**Status:** [ ] Not started; owner decision required.
+**Status:** [ ] Not started; part of the shared G0 decision package.
 **Description:** Resolve D1 without assuming an engine, mobile OS order or distribution route.
 **Dependencies:** None.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
-**Acceptance:** Record chosen versions/toolchain and prototype device/delivery scope, alternatives and rationale; distinguish final commercial release choices still open; obtain explicit owner approval.
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
+**Acceptance:** Record chosen versions/toolchain and prototype device/delivery scope, alternatives and rationale; distinguish final commercial choices still open; submit with the shared G0 package.
 **Verification:** Review against SPEC section 31 and locked mobile/offline constraints; cite official documentation for selected version-sensitive claims. No install/build is claimed at this decision stage.
 
 ### T02 - State and content contract decision
-**Status:** [ ] Not started; owner decision required.
+**Status:** [ ] Not started; part of the shared G0 decision package.
 **Description:** Resolve D2 using the five existing content concepts and authoring rules.
 **Dependencies:** T01.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
-**Acceptance:** Define minimal state/content format and identifiers; capture condition/effect, option availability, callback-window/order and fallback validation semantics; record owner-approved tooling and content organization without introducing an unbounded branching model.
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
+**Acceptance:** Define minimal state/content format and identifiers, condition/effect and option rules, callback windows/order and fallback semantics using a small converging example. Submit tooling/content organization with G0; no generic rules engine.
 **Verification:** Walk one authored event and one converging chain through the proposed format against CONTENT_GUIDE; document unsupported details instead of guessing them.
 
 ### T03 - Save and privacy decision
-**Status:** [ ] Not started; owner decision required.
+**Status:** [ ] Not started; part of the shared G0 decision package.
 **Description:** Resolve D3 while preserving the already locked session-continuity behavior.
 **Dependencies:** T01, T02.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
 **Acceptance:** Decide local checkpoint format/storage/versioning and interrupted-write recovery; explicitly decide corrupt/unsupported-save handling without silently resetting; record analytics yes/no and privacy boundaries before any collection.
-**Verification:** Review AC-04/AC-05 scenarios against the design, official storage documentation and a boundary/threat checklist; record owner approval and remaining compatibility limitations.
+**Verification:** Review AC-04/AC-05 against the design, official storage documentation and relevant trust boundaries; record compatibility limitations for the shared G0 review.
 
-**Checkpoint C01:** Review T01-T03 together for compatible runtime, content and storage decisions. No game implementation starts here.
+**Checkpoint C01:** Check runtime/content/storage compatibility internally; include conclusions in the single G0 package. No extra approval round.
 
 ### T04 - Prototype simulation rules decision
-**Status:** [ ] Not started; owner decision required.
+**Status:** [ ] Not started; part of the shared G0 decision package.
 **Description:** Resolve D4: the source names economy/progression systems but does not supply their executable rules.
 **Dependencies:** T02.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
-**Acceptance:** Approve initial state/units/ranges and once-per-week settlement rules for both services; approve event-budget and expansion/progression conditions; explicitly decide early-failure and week-12 endpoint behavior without inventing a full campaign ending.
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
+**Acceptance:** Propose explicit initial state/units, settlement for both services, weekly event-budget/progression rules and early-failure/week-12 behavior for G0. Specify only the slice; do not invent a full campaign ending.
 **Verification:** Review a sample week and two contrasting policy histories on paper; ensure the agreed rules preserve 2-4 weekly decisions and the slice targets. Paper review is not gameplay validation.
 
 ### T05 - Prototype presentation constraints
-**Status:** [ ] Not started; owner decision required.
+**Status:** [ ] Not started; part of the shared G0 decision package.
 **Description:** Resolve D5 before assets or content depend on unstated art/audio/localization choices.
 **Dependencies:** T01.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
-**Acceptance:** Approve prototype visual/audio limits and placeholder policy; approve language/localization scope; preserve fictional identity and portrait readability without declaring final brand/art decisions made.
-**Verification:** Review one proposed event-card content layout and growth-feedback example against SPEC sections 7, 24-25 and PRODUCT_GUARDRAILS; record limitations and approval, not an unrun device result.
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; shared tasks/todo.md record. **Scope:** M (about 3 files; batch documentation updates).
+**Acceptance:** Propose prototype visual/audio limits, placeholders and language/localization scope for G0; preserve fictional identity and portrait readability without requiring final branding/art.
+**Verification:** Review one event-card layout and growth-feedback example against SPEC sections 7, 24-25 and PRODUCT_GUARDRAILS; record constraints for G0, not an unrun device result.
 
-### T06 - Verification map and plan activation
+### T06 - Approve minimum decisions and detail the first slice
 **Status:** [ ] Not started; G0 not approved.
-**Description:** Resolve D6 and turn the conditional sequence into an executable task map.
+**Description:** Complete D6 and submit D1-D6 together for one G0 review; activate only the next slice in detail.
 **Dependencies:** T01, T02, T03, T04, T05.
-**Files likely touched:** docs/DECISIONS.md; docs/SPEC.md; proposed docs/IMPLEMENTATION.md; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
-**Acceptance:** Map verification labels to exact commands or concrete manual procedures and actual file paths; approve test/reachability strategy, participant selection and playtest interpretation; assign implementer/reviewer and split oversized tasks before recording G0 approval.
-**Verification:** Check all AC-01 through AC-07 mappings, device/tool availability and task dependencies; owner reviews D1-D6 and the activated plan. Commands are selected here and must be executed/confirmed during T07.
+**Files likely touched:** docs/DECISIONS.md; relevant docs/SPEC.md sections; tasks/todo.md; tasks/plan.md only if dependencies change. **Scope:** M (3-5 files).
+**Acceptance:** Approve the test/CI and bounded content-coverage strategy, device and player-observation method; assign implementer/reviewer; bind actual paths/checks for T18 and the first runnable slice T07-T09. Leave later task details provisional until their slice starts, without deferring material D1-D6 decisions.
+**Verification:** Check all seven AC mappings, tool/device availability and dependencies; owner approval of the package clears G0. T07 must execute the chosen setup commands. Do not demand a final file map for T21-T30.
 
-**Gate G0:** STOP before T07 until D1-D6 and activation are approved. This planning PR is not that approval.
+**Gate G0:** Obtain owner approval of D1-D6 and first-slice details before any code/production content task. This PR is not that approval.
 
-## Conditional implementation stage
+## Small proof and first playable loop
+
+### T18 - Draft the converging proof chain early
+**Status:** [ ] Blocked by G0 and dependencies.
+**Description:** Draft the small story used as fixtures by the first playable loop, rather than waiting for a cross-chain validator.
+**Dependencies:** T06, T04, T05.
+**Files likely touched:** One proof-chain draft/content unit; minimal NPC/precedent data; expected-history fixture; shared content ledger/task record. **Scope:** M (3-5 files).
+**Acceptance:** Describe two histories converging on the same crisis by week 12, with a history-dependent selectable-option difference and 2-4 valid options each. Include conditions, callback windows and any needed alternatives/fallbacks; count retained proof/variant/fallback nodes once inside the existing content budget.
+**Verification:** Walk the draft against CONTENT_GUIDE and D2/D4/D5 on paper; no runtime pass is implied. T08-T12/T15 use it as fixtures; T19 validates the playable proof, and T17 later checks combined content. T17 is not a drafting prerequisite.
 
 ### T07 - Minimal runnable scaffold
 **Status:** [ ] Blocked by G0.
 **Description:** Establish only the approved runtime/tooling and a launchable portrait shell for the first decision slice.
 **Dependencies:** T06.
-**Files likely touched:** Chosen runtime entry; dependency/build configuration and lockfile if applicable; smoke test; setup instructions/task record within the five-file limit. **Scope:** M (3-5 files).
+**Files likely touched:** Chosen runtime entry; dependency/build configuration and lockfile if applicable; smoke test; setup instructions/task record. **Scope:** M target; coherent generated scaffold may need a documented exception.
 **Acceptance:** Pinned approved toolchain launches the shell on the chosen prototype target; actual setup/test/build commands are documented and executable; no unapproved services or dependencies are added.
-**Verification:** Run initial FOCUSED, STATIC and BUILD; perform DEVICE launch smoke check. Review dependency provenance/install behavior before installation. Split generated tracked scaffolding before execution if it exceeds the file limit.
+**Verification:** Run initial FOCUSED, STATIC and BUILD; perform DEVICE launch smoke check. Review dependencies/install behavior before installation. Keep necessary generated/config/lock files together when that preserves a runnable scaffold; explain a larger diff instead of mechanically splitting it.
+
+**Checkpoint C02:** Draft and scaffold are ready for the first event; paper content review and actual launch evidence remain distinct.
 
 ### T08 - Resume an unanswered event
 **Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Load one valid authored event through the minimal local checkpoint boundary and show it in the shell.
-**Dependencies:** T07, T02, T03.
+**Description:** Load an event from T18 through the minimal local checkpoint boundary, validating data before use.
+**Dependencies:** T07, T18, T03.
 **Files likely touched:** Event loader/presenter; local checkpoint adapter; one event fixture; persistence test; task record. **Scope:** M (3-5 files).
-**Acceptance:** Validate the fixture before use; save selected event and phase before presentation; offline close/reopen restores that unanswered event and its 2-4 valid options without reroll.
-**Verification:** FOCUSED plus DEVICE close/reopen for the unanswered-event part of AC-04; reject malformed fixture/save input according to D2/D3 rather than executing it as code.
+**Acceptance:** Save the selected event/phase before presentation; offline reopen restores the same 2-4 valid options. Failed saves show no success and block progression while preserving the prior complete checkpoint; retry cannot replace it with partial state.
+**Verification:** FOCUSED and DEVICE unanswered-event resume for AC-04; inject a basic failed/interrupted checkpoint for AC-05 and test retry. Reject malformed fixture/save data per D2/D3, never execute it as code. Broader boundary coverage remains T13-T14.
 
 ### T09 - Commit one choice coherently
 **Status:** [ ] Blocked by G0 and dependencies.
 **Description:** Complete the first vertical path from tap through persistent effects to immediate feedback.
 **Dependencies:** T08, T04.
 **Files likely touched:** Choice resolution; checkpoint integration; feedback presenter; behavior tests; task record. **Scope:** M (3-5 files).
-**Acceptance:** Persist choice, immediate visible/hidden state, relationships/policies/precedents and pending consequences together; acknowledge only after a successful checkpoint; repeated activation commits that action once.
-**Verification:** FOCUSED and integration checks for AC-01/AC-04 portions; compare resumed state after a committed choice with expected effects and verify no premature success feedback.
+**Acceptance:** Persist the choice, immediate visible/hidden effects, relationships/policies/precedents and pending consequences together before feedback. Failed writes block progression and retain the previous checkpoint; repeated activation/retry commits the action once.
+**Verification:** FOCUSED AC-01/AC-04 portions plus basic AC-05 at the choice write: fail, retry and reopen; compare the complete expected state and scheduled consequences, with no premature success feedback or duplicate effects.
 
-**Checkpoint C02:** T07-T09 demonstrate the first durable choice on the chosen runtime. Run relevant FULL, STATIC and BUILD before extending the loop.
+**Checkpoint C03:** Verify one durable choice, unanswered/answered resume and basic failed-write/retry behavior before extending the loop.
 
 ### T10 - Current-state options and confirmation
 **Status:** [ ] Blocked by G0 and dependencies.
@@ -106,7 +118,7 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Dependencies:** T10, T04.
 **Files likely touched:** Week resolution; economy rules/config; checkpoint integration; settlement tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Use current state after 2-4 sequential events and D4 rules for both services; save settlement once without reapplying immediate choice effects; events unlocked by settlement enter the following week.
-**Verification:** FOCUSED settlement tests for AC-01/AC-04, including repeated settlement activation and boundary-unlocked eligibility; compare expected versus resumed settled state.
+**Verification:** FOCUSED AC-01/AC-04 and basic AC-05 at settlement: repeat/fail/retry the write and reopen; compare complete state, no duplicated effects, and next-week eligibility unlocked only by settlement.
 
 ### T12 - Report and durable advancement
 **Status:** [ ] Blocked by G0 and dependencies.
@@ -114,17 +126,45 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Dependencies:** T11.
 **Files likely touched:** Report/brief presentation; week advancement; checkpoint integration; transition tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Show only player-knowable report feedback; checkpoint advancement without re-settling or skipping a week; use the approved endpoint/early-failure behavior rather than adding an endless loop.
-**Verification:** FOCUSED AC-04 plus DEVICE reopening a settled report and the next week's brief; repeated Next Week activation cannot advance twice.
+**Verification:** FOCUSED AC-04 plus basic AC-05 at advancement: fail/retry, repeat Next Week and reopen with DEVICE. Progress stays blocked on a failed write, the prior complete checkpoint survives, and neither settlement nor advancement repeats.
 
-**Checkpoint C03:** T10-T12 complete a week. Verify AC-01/AC-07 and the week-boundary portion of AC-04; run relevant FULL, STATIC and BUILD.
+**Checkpoint C04:** Verify a complete week, current-state choices, confirmation, once-only settlement/advancement and failure blocking at each new write.
 
-### T13 - Recoverable save failure
+## Early observation, then broader hardening
+
+### T15 - Deliver required callbacks
 **Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Make failure visible and keep progression blocked until a coherent save/recovery succeeds.
+**Description:** Bring the drafted consequence back into the existing loop using only the scheduling rules its content and explicit test cases require.
+**Dependencies:** T12, T18.
+**Files likely touched:** Event selection; pending callback state; contention fixtures; scheduler tests; task record. **Scope:** M (3-5 files).
+**Acceptance:** Required eligible callbacks precede ordinary events within their earliest/latest window and authored tie order; overflow retains its deadline and pending state until committed resolution; slot reservation respects the weekly budget.
+**Verification:** FOCUSED AC-02 with early, equal-deadline, competing and infeasible small schedules; DEVICE callback/resume walkthrough including failed resolution-save/retry. Retain the original deadline and apply callback resolution once. Do not build a general scheduler framework.
+
+### T19 - Play both histories to different options
+**Status:** [ ] Blocked by G0 and dependencies.
+**Description:** Integrate the draft into a small valid playable proof and exercise two histories through real choices, checkpoints and the shared crisis.
+**Dependencies:** T15, T10, T18.
+**Files likely touched:** History integration tests; minimal content/resolution fixes if needed; evidence/task record. **Scope:** M (3-5 files).
+**Acceptance:** Real choices produce a history-dependent option difference by week 12, 2-4 valid choices and consistent resume. Before player observation, validate the proof pack's reachable choices, callback windows and fallback coverage; fix gaps or simplify content. Drafting and two demonstration paths alone are not content acceptance.
+**Verification:** FOCUSED AC-06 and DEVICE both histories, with basic save failure/retry and committed-boundary reopen evidence. Enumerate the small finite pack and replay relevant transitions under the actual selection rules; document coverage/limits, not an exhaustive claim from two paths. Required changed-context handling must work for any reachable proof case; no known unsafe path goes to T20.
+
+### T20 - Review the core hook before scaling
+**Status:** [ ] Blocked by G0 and dependencies.
+**Description:** Observe the small safe proof as soon as it is playable, without waiting for the broader interruption matrix or cross-chain tooling.
+**Dependencies:** T19.
+**Files likely touched:** Focused playtest/verification record; tasks/todo.md. **Scope:** S (1-2 files).
+**Acceptance:** Record consequence recognition and curiosity plus T19 proof/resume evidence. G1 covers the core mechanism only, not full growth/pacing/fun or all ACs. A failed hook returns to the small chain; content expansion also waits for T14 and T17.
+**Verification:** Use the D6 observation method and record participant statements separately from interpretation; owner reviews G1. List untested broader cases explicitly. Known safety/content failures block the session rather than being waived for speed.
+
+**Gate G1:** Review the small proof and observations now. This is not full-slice approval: T14 and T17 still block content expansion. No general validator is required to draft or observe the validated small pack.
+
+### T13 - Expand save-failure coverage
+**Status:** [ ] Blocked by G0 and dependencies.
+**Description:** Extend the safety already tested in T08-T12 to a systematic matrix; do not defer basic failure blocking to this task.
 **Dependencies:** T12, T03.
 **Files likely touched:** Checkpoint failure handling; error/retry presentation; fault fixtures; recovery tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Failed saves never show success or permit another decision/week advance; the previous complete checkpoint remains recoverable with no silent reset; retry/resume cannot duplicate effects or scheduled consequences.
-**Verification:** FOCUSED AC-05 fault injection at active-event, choice, settlement and advancement saves; exercise D3 corrupt/unsupported-data behavior and verify errors contain no secret/PII payloads.
+**Verification:** FOCUSED AC-05 across active-event, choice, settlement and advancement saves; add missing cases, D3 corrupt/unsupported-save behavior and retry/resume regressions. Reuse existing tests; errors must contain no secret/PII payloads.
 
 ### T14 - Interruption matrix on the target
 **Status:** [ ] Blocked by G0 and dependencies.
@@ -134,15 +174,7 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Acceptance:** Before/after-write interruption restores a complete old/new checkpoint, including closure before feedback; offline app restart preserves every AC-04 boundary and AC-07 result; time away does not advance weeks.
 **Verification:** Run AC-04/AC-05/AC-07 via FOCUSED integration and DEVICE force-close/restart procedures; record environment, exact injection boundaries and coverage limits. Failed scenarios create focused fix tasks before continuation.
 
-### T15 - Deliver required callbacks
-**Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Bring a due authored consequence back into the existing playable loop.
-**Dependencies:** T14, T02.
-**Files likely touched:** Event selection; pending callback state; contention fixtures; scheduler tests; task record. **Scope:** M (3-5 files).
-**Acceptance:** Required eligible callbacks precede ordinary events within their earliest/latest window and authored tie order; overflow retains its deadline and pending state until committed resolution; slot reservation respects the weekly budget.
-**Verification:** FOCUSED AC-02 with early, equal-deadline and competing callbacks; a DEVICE walkthrough shows a required callback and verifies resume does not lose it.
-
-**Checkpoint C04:** T13-T15 prove recovery and a playable due callback. Run relevant FULL/STATIC/BUILD; do not waive persistence failures to proceed with content.
+**Checkpoint C05:** Broader recovery/interruption checks pass on the recorded target; preserve regressions and stop dependent work on failure.
 
 ### T16 - Changed-context and fallback coverage
 **Status:** [ ] Blocked by G0 and dependencies.
@@ -154,46 +186,20 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 
 ### T17 - Cross-chain content validation
 **Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Reject invalid content sets before accepting authored chains into the playable slice.
-**Dependencies:** T16.
-**Files likely touched:** Content validator; reachable-state test runner; invalid/valid fixtures; verification/task record. **Scope:** M (3-5 files).
-**Acceptance:** Detect bad references/options/windows and infeasible combined deadlines; verify reachable fallback/option coverage under the actual selection rules; produce reproducible failures with a documented coverage argument rather than claiming random samples prove all histories.
-**Verification:** CONTENT and FOCUSED AC-02/AC-03 with deliberately oversubscribed schedules, cooldown gaps and valid converging controls; investigate state-space limitations instead of weakening requirements.
+**Description:** Extend existing content checks to combined chains in the actual pack; a reusable general solver or editor is not a prerequisite.
+**Dependencies:** T16, T18.
+**Files likely touched:** Existing content checks; bounded fixtures/history cases; coverage/evidence record. **Scope:** M (3-5 files); split independent work if needed.
+**Acceptance:** Reject bad references/options/windows and infeasible combined deadlines; justify reachable fallback/option coverage using actual selection rules. Start with explicit cases and bounded enumeration; simplify interacting content or surface missing coverage when it becomes intractable, never silently waive the spec.
+**Verification:** CONTENT and FOCUSED AC-02/AC-03: oversubscribed windows, cooldown gaps and valid converging controls; failures identify a reproducible history. Extend only for actual content risks; rerun cumulative checks with every later batch. Random samples alone do not prove all histories.
 
-### T18 - Author the converging proof chain
-**Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Author one small chain that can demonstrate both remembered consequences and evolving decision space.
-**Dependencies:** T17, T04, T05.
-**Files likely touched:** One chain content unit; NPC/precedent data; two history fixtures; content ledger/task record. **Scope:** M (3-5 files).
-**Acceptance:** Two documented histories converge on the same crisis by week 12; earlier relationship/precedent explains at least one selectable-option difference with 2-4 valid options each; this chain counts inside the slice budget and obeys fictionalization/mobile writing rules.
-**Verification:** CONTENT plus manual CONTENT_GUIDE review; document expected history-to-option mapping without labeling the still-unrun gameplay proof as passed.
+**Checkpoint C06:** Combined content and fallback coverage are checked. T21 waits for T20/G1, T14 and T17; early feedback does not waive hardening before expansion.
 
-**Checkpoint C05:** T16-T18 establish valid content and the proof chain. Run relevant FULL/STATIC/BUILD/CONTENT; report-only closure is not a substitute for the required playable payoff.
-
-### T19 - Play both histories to different options
-**Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Exercise the proof chain through real decisions, checkpoints and the shared crisis.
-**Dependencies:** T18, T10.
-**Files likely touched:** History integration tests; minimal content/resolution fixes if needed; evidence/task record. **Scope:** M (3-5 files).
-**Acceptance:** Real earlier choices produce the expected differing selectable options by week 12; both histories remain playable and preserve the difference across resume; dialogue-only differences do not satisfy the proof.
-**Verification:** FOCUSED AC-06 plus DEVICE playthrough of both histories; record earlier actions, crisis identity and available options. Split any material fix into a focused task rather than expanding this one.
-
-### T20 - Review the core hook before scaling
-**Status:** [ ] Blocked by G0 and dependencies.
-**Description:** Apply the D6 focused observation method to the small playable proof, not the whole content budget.
-**Dependencies:** T19, T14.
-**Files likely touched:** Focused playtest/verification record; tasks/todo.md. **Scope:** S (1-2 files).
-**Acceptance:** Record whether players recognize an earlier choice causing the later problem and express interest in another week; include reliable resume and AC-06 evidence in G1 review; stop content expansion when the hook is not demonstrated.
-**Verification:** Observe play using the approved protocol and distinguish participant statements from interpretation; owner reviews G1 evidence and records approval or small-chain revision tasks.
-
-**Gate G1:** T19-T20 must demonstrate the central hook before T21-T26 expand content. More events cannot substitute for failed proof.
-
-## Conditional content expansion stage
+## Conditional content expansion
 
 ### T21 - Weeks 1-3 onboarding
 **Status:** [ ] Blocked by G0, G1 and dependencies.
 **Description:** Integrate onboarding, riders, merchants and the first recurring rider into the working loop.
-**Dependencies:** T20.
+**Dependencies:** T20, T14, T17.
 **Files likely touched:** Bounded content batch; NPC/state data; history fixture; content ledger; task record. **Scope:** M (3-5 files).
 **Acceptance:** Both bicycle services and customer/rider/merchant tension are represented; early decisions seed meaningful history without excessive permanent flags; the batch follows mobile writing, option and callback rules within cumulative budgets.
 **Verification:** CONTENT and FOCUSED playthrough of weeks 1-3, with DEVICE readability check; use D6 observations later to validate the under-one-minute/first-ten-minute targets rather than assert them from text length.
@@ -214,7 +220,7 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Acceptance:** Consequences follow accumulated state and history rather than arbitrary punishment; high-risk options provide narrative warning without exact hidden math; callback windows remain achievable through week 9.
 **Verification:** CONTENT and FOCUSED contrasting rider-policy histories, including changed context and resumed play; review ordinary/opportunity/human content pacing against CONTENT_GUIDE.
 
-**Checkpoint C06:** T21-T23 form the first nine weeks. Run cumulative FULL/STATIC/BUILD/CONTENT; check authored content totals separately from decisions seen per history.
+**Checkpoint C07:** Review cumulative first-nine-week content, callback capacity and budgets; authored nodes and decisions seen per history are different counts.
 
 ### T24 - Weeks 10-12 payoff
 **Status:** [ ] Blocked by G0, G1 and dependencies.
@@ -236,13 +242,13 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Status:** [ ] Blocked by G0, G1 and dependencies.
 **Description:** Audit the integrated candidate against content budgets, reachable behavior and the planned slice shape.
 **Dependencies:** T24, T25, T17.
-**Files likely touched:** Content ledger; bounded balance/content adjustments; validation/evidence record; task status within the file limit. **Scope:** M (3-5 files).
+**Files likely touched:** Content ledger; bounded balance/content adjustments; validation/evidence record; task status. **Scope:** M target (3-5 files); separate independent repairs.
 **Acceptance:** Account for 50-70 nodes, 8-10 chains, around eight recurring NPCs and three competitors without double-counting proof/fallback content; validate required delivery and 2-4 choices/events on reachable paths; measure per-history decisions against the approximate 30-35 target without claiming duration/fun is proven.
 **Verification:** CONTENT plus FULL on cumulative histories using the D6 coverage method; record deviations and open focused repair tasks when fixes exceed this task's scope. Reserve duration validation for T29.
 
-**Checkpoint C07:** T24-T26 freeze a full-slice candidate after cumulative FULL/STATIC/BUILD/CONTENT. The content ledger must expose missing targets rather than silently change them.
+**Checkpoint C08:** Freeze the full-slice candidate after cumulative checks; record deviations rather than silently changing targets.
 
-## Conditional verification and handoff stage
+## Final verification and handoff
 
 ### T27 - Full acceptance regression
 **Status:** [ ] Blocked by G0, G1 and dependencies.
@@ -268,7 +274,7 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Acceptance:** Record interaction comprehension, first-ten-minute stakeholder understanding, consequence recognition, visible growth, defensible choices and curiosity; measure session/slice duration and decision counts; separate observations from interpretation and apply the approved go/no-go method without invented pass rates.
 **Verification:** Observe representative new players on the frozen build; preserve anonymized protocol/results per D3, report untested outcomes and submit G2 evidence for owner review.
 
-**Gate G2:** T27-T29 must supply technical, content, device and player evidence before claiming the prototype meets the spec. Failed criteria block completion or require an explicit spec change.
+**Gate G2:** Require all ACs, cumulative content, target-device and representative player evidence before declaring the slice complete. Failures block completion or require explicit spec changes.
 
 ### T30 - Prototype handoff
 **Status:** [ ] Blocked by G0, G1, G2 and dependencies.
@@ -276,4 +282,4 @@ File roles below are provisional, not claims of an existing architecture. T06 su
 **Dependencies:** T29.
 **Files likely touched:** README.md; implementation/run instructions; evidence index; tasks/plan.md; tasks/todo.md. **Scope:** M (3-5 files).
 **Acceptance:** Provide actual setup/verification commands, tested revision and AC/playtest evidence; document limitations, rollback/save-compatibility implications and remaining open decisions; obtain owner review before any next-phase or release commitment.
-**Verification:** Follow the handoff instructions from the recorded environment, inspect the final diff and apply the standing Definition of Done; explicitly distinguish self-review from independent review and unrun checks from passes.
+**Verification:** Follow the handoff instructions, inspect the final diff and apply the standing Definition of Done with the repository-readable minimum in plan.md; distinguish self-review from independent review and unrun checks from passes.
