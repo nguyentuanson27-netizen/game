@@ -40,10 +40,16 @@ Prepare D1-D6 as one concise decision package, not six separate approval rounds.
 | D2: state/content | Minimal formats/tooling for the five SPEC concepts, identifiers, condition/effect and option rules, callback windows/order and checkpoint state. Walk a small converging example; do not design a generic rules language. |
 | D3: persistence/privacy | Local format/storage/versioning and recovery meeting SPEC section 3; decide corrupt/unsupported-save handling and analytics/privacy boundaries before collection. No cloud or migration framework is assumed. |
 | D4: prototype rules | Initial values/units, both services' settlement, weekly event budget, progression and early-failure/week-12 behavior. These are source gaps requiring explicit decisions, not values supplied by this plan. |
-| D5: presentation | Prototype asset/audio limits, placeholders, language/localization and fictional identity. Do not require final art or commercial branding. |
+| D5: presentation | Minimal prototype art contract: asset groups needed by the slice, source-of-truth/workflow, placeholder-vs-production boundary, language/localization and fictional identity, plus only the naming/export/aspect-ratio/format constraints required by the chosen runtime and current UI. Do not require final art or commercial branding. |
 | D6: verification | Test/CI scope, device procedure, bounded content-coverage approach and player-observation method. Bind actual paths and commands for the first runnable slice only; no invented participant count/pass rate. |
 
 G0 needs owner approval of this package and the first slice's task details. It does not require the final file layout or exact test commands for T21-T30. Before each later slice, inspect the code that now exists, fill its paths/checks, and split oversized or independent work; no new approval ceremony is needed unless a material decision changes. Approved tooling/CI integration must have explicit tasks before it is needed. A material unresolved dependency still blocks its task. Merging this planning PR does not approve G0 or authorize code, merge or deployment.
+
+### Art package dependency (A1)
+
+After D5 is approved, a dedicated follow-up art-direction/asset-package PR produces the golden references and actual asset package needed for visual-growth work. The dependency is the **approved package**, not a hardcoded GitHub PR number: if that follow-up happens to be the next PR it may be #3, but repository sequencing must not become a product contract.
+
+A1 must satisfy the D5 contract and cover the asset groups consumed by T25. It may proceed in parallel with gameplay implementation. When D5 permits placeholders, A1 does **not** block T07-T24; only work that consumes the approved production/golden asset package is blocked on A1. This keeps art ownership explicit without moving the full art direction into this planning PR.
 
 ## 3. Delivery order and dependencies
 
@@ -57,7 +63,8 @@ T12 + T18 -> T15 -> T19 -> T20 -> G1
 T12 -> T13 -> T14
 T15 -> T16 -> T17
 G1 + T14 + T17 -> T21 -> T22 -> T23 -> T24
-T21 -> T25
+G0 -> Art-package follow-up -> A1
+T21 + A1 -> T25
 T24 + T25 + T17 -> T26 -> T27 + T28 -> T29 -> G2 -> T30
 ```
 
