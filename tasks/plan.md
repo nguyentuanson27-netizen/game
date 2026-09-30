@@ -47,9 +47,9 @@ G0 needs owner approval of this package and the first slice's task details. It d
 
 ### Art package dependency (A1)
 
-After D5 is approved, a dedicated follow-up art-direction/asset-package PR produces the golden references and actual asset package needed for visual-growth work. The dependency is the **approved package**, not a hardcoded GitHub PR number: if that follow-up happens to be the next PR it may be #3, but repository sequencing must not become a product contract.
+After D5 is approved, a dedicated follow-up art-direction/asset-package PR produces the golden references and approved prototype asset package needed for visual-growth work. The package may contain approved placeholders, production assets, or a mix according to D5; final production art is not implied. The dependency is the **approved package**, not a hardcoded GitHub PR number: if that follow-up happens to be the next PR it may be #3, but repository sequencing must not become a product contract.
 
-A1 must satisfy the D5 contract and cover the asset groups consumed by T25. It may proceed in parallel with gameplay implementation. When D5 permits placeholders, A1 does **not** block T07-T24; only work that consumes the approved production/golden asset package is blocked on A1. This keeps art ownership explicit without moving the full art direction into this planning PR.
+A1 must satisfy the D5 contract and cover the asset groups consumed by T25. It may proceed in parallel with gameplay implementation. When D5 permits placeholders, A1 does **not** block T07-T24; only tasks explicitly depending on A1 (currently T25 and downstream integration) wait for it. This keeps art ownership explicit without moving the full art direction into this planning PR.
 
 ## 3. Delivery order and dependencies
 
