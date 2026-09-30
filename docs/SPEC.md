@@ -39,6 +39,18 @@ Growth must introduce new categories of decisions, not merely larger numbers.
 
 The main retention loop is **one more week**.
 
+### Session continuity
+
+The prototype must support local save/resume without a network connection. These are player-visible requirements, not a choice of save format or storage technology:
+
+- A choice is acknowledged as complete only after a coherent local checkpoint is saved: the choice, its immediate effects, relationships/policies/precedents, and pending callbacks are recorded together.
+- Resume restores the current week and phase, the active event, decisions already resolved this week, and pending/resolved consequences. It must not reroll the active event, lose an acknowledged choice, or apply an effect twice.
+- Week-end settlement and `Next Week` advancement are checkpointed too. Reopening a report or repeating `Next Week` must not settle the same week twice or skip a week.
+- If interrupted during a save, recover either the previous complete checkpoint or the new complete checkpoint, never a mixture. Once a checkpoint is saved, its effects remain committed even if the app closes before feedback is displayed.
+- If saving fails, do not acknowledge success or allow further decisions/week advancement. Show a recoverable error and preserve the previous checkpoint for retry/resume; never silently reset the campaign.
+
+Time away from the app does not advance in-game weeks. Save format, storage and versioning remain open implementation decisions in section 31.
+
 ## 4. Starting business
 
 The company launches with two bicycle-based services:
@@ -55,12 +67,19 @@ The world is fictional. The business may use recognizable marketplace dynamics, 
 Each week:
 
 1. Short business brief.
-2. 2–4 decisions/events.
-3. Company simulation resolves the choices.
-4. Immediate stakeholder feedback appears.
-5. Hidden/delayed consequences update.
-6. Weekly report summarizes what the player can reasonably know.
-7. Player chooses `Next Week`.
+2. Resolve 2–4 decisions/events one at a time using the cycle below.
+3. Resolve recurring economy and deferred effects due at this week-end boundary exactly once, using the state after those decisions.
+4. Save the completed settlement and show a weekly report of what the player can reasonably know.
+5. Player chooses `Next Week`; save advancement to the following week without repeating the completed settlement.
+
+For each decision:
+
+- Evaluate the event and its available options against the latest committed state, not a frozen start-of-week snapshot. Save the selected active event and phase before presenting it so resume cannot reroll it.
+- Accept the tap, or obtain confirmation for a major irreversible action as specified in section 24.
+- Apply immediate effects (including hidden state), relationships, policies and precedents, and register delayed consequences in the same choice checkpoint.
+- After that checkpoint succeeds, show short immediate stakeholder feedback, then evaluate the next event against the updated state.
+
+Do not defer immediate choice effects until the weekly report or apply them again during settlement. Events unlocked by week-end settlement enter the following week's selection. Callback delivery follows section 21.
 
 Decisions should modify more than a score. They may change:
 
@@ -194,6 +213,8 @@ A company built around aggressive influence may gain:
 - hostile M&A expertise.
 
 Two players may therefore see the same crisis with different choices.
+
+Evaluate history-dependent options before presenting each event. Every presented decision must retain 2–4 selectable options. If filtering would leave fewer than two, use authored, context-valid alternatives or another valid event variant; never re-enable an ineligible option merely to fill the quota.
 
 ## 13. Economy
 
@@ -346,6 +367,18 @@ Main content types:
 
 Prototype content target: roughly 50–70 authored event nodes, 8–10 chains, about eight recurring NPCs and three competitors. The prototype is for validating the loop, not proving full-campaign content volume.
 
+### Callback delivery and event coverage
+
+A required callback is a follow-up needed to pay off an important earlier decision or prove a prototype requirement. Ordinary state-based event eligibility does not by itself promise a future callback.
+
+- Each required callback has an authored delivery window (earliest and latest in-game week), eligibility conditions, an ordering for equal deadlines, and a resolution for changed context.
+- At each event slot, required callbacks whose delivery window has opened and whose conditions hold take priority over ordinary events, earliest deadline first; equal deadlines use the authored order. Never deliver a callback before its earliest week. Reserve enough slots to meet required deadlines within the weekly budget. A callback deferred for lack of slots stays pending with its original deadline until its resolution is committed.
+- If the original context becomes invalid, use an authored valid variant or explicitly close the consequence in the weekly report by its deadline, explaining the changed circumstances. Never apply an unchosen option as a fallback. Lack of event slots alone is not a story reason to cancel a callback.
+- Content must make required delivery windows achievable within the 2–4 weekly event budget across reachable slice histories. Over-capacity deadlines are a content validation failure: rebalance windows or converge branches before accepting that content, rather than silently dropping callbacks or extending deadlines at runtime.
+- When too few events are eligible, use hand-authored, low-stakes fallback events that satisfy current state, cooldown and option rules. Validate fallback coverage for reachable slice states; do not force an ineligible event. Fallback decisions count toward the weekly budget and the 30–35-decision slice target.
+
+See [Content Authoring Guide](CONTENT_GUIDE.md) for the authoring checklist. The data schema and scheduler implementation remain open; these delivery guarantees do not.
+
 ## 22. Content signature
 
 Memorable stories should often follow:
@@ -375,6 +408,8 @@ At least one chain must clearly demonstrate:
 
 `earlier policy -> stakeholder reaction -> public problem`
 
+Also demonstrate evolving decision space: two documented play histories reach the same shared crisis by week 12, but at least one selectable option differs because of an earlier relationship or precedent. Both histories must still offer 2–4 valid options. Different dialogue or numeric outcomes alone do not satisfy this requirement. The same chain may prove both requirements; no increase to the content budget is implied.
+
 ## 24. Mobile UX
 
 Home screen: city/HQ visual progression plus current company snapshot.
@@ -387,7 +422,9 @@ Primary navigation should remain small; initial target:
 
 Events are full-screen cards with portrait/scene, concise situation text and large vertically stacked options in the thumb-accessible lower portion of the screen.
 
-Normal decisions do not require confirmation. Irreversible/high-impact actions may.
+Normal choices commit on tap. Only major irreversible actions require confirmation; their effects apply only after confirmation. Cancelling leaves the event unresolved and changes no gameplay state.
+
+Content must explicitly mark major irreversible actions; not every persistent consequence requires a confirmation dialog.
 
 Weekly reports are short and end with a prominent `Next Week` action.
 
@@ -458,6 +495,18 @@ The vertical slice succeeds when representative new players can:
 
 The design is failing if players primarily reduce options to obvious `+5/-5` arithmetic.
 
+### Required behavior checks
+
+Implement and run these checks when the playable prototype exists; this documentation does not claim they already pass:
+
+- **AC-01 — Within-week state:** an earlier choice removes a contact's support; a later event in the same week cannot offer that contact's help using stale state and still has 2–4 valid choices. Settlement does not reapply the earlier choice's effects.
+- **AC-02 — Callback contention:** required callbacks beat ordinary events; overflow remains pending and resolves within its original window. Nothing is delivered before its earliest week; equal-deadline ordering is stable. Reject content with more required deliveries than reachable slots before accepting the content set.
+- **AC-03 — Changed context and coverage:** invalidate a pending callback's original context and verify a valid variant or explicit report closure by its deadline. Exercise a state with too few ordinary events and verify valid fallback coverage without bypassing cooldowns or option conditions.
+- **AC-04 — Offline resume:** close/reopen on an unanswered event, after a committed choice, after settlement on the report, and after `Next Week`. Restore the same committed state, active event and pending callbacks; do not reroll, duplicate effects, repeat settlement or skip weeks. Repeated activation of the same action commits it only once.
+- **AC-05 — Interrupted/failed save:** interrupt before and after a checkpoint is saved, including before feedback appears. Resume only a complete previous/new state. A save failure shows no success, blocks further progression and preserves the previous checkpoint for recovery.
+- **AC-06 — History-dependent choices:** play the two histories from section 23 to the same crisis by week 12 and compare selectable options. At least one differs for the documented historical reason, with 2–4 valid options in both histories.
+- **AC-07 — Confirmation:** ordinary choices need no dialog. Cancelling a major irreversible action changes no gameplay state or scheduled consequences; confirming commits it once and preserves that result across resume.
+
 ## 30. Explicit non-goals for prototype
 
 Do not build yet:
@@ -480,7 +529,7 @@ Before implementation planning, decide and document:
 
 - engine/framework and exact supported versions;
 - target mobile OS/store strategy;
-- save-data model;
+- save-data model, storage and versioning that satisfy the session-continuity contract in section 3;
 - content data format/tooling;
 - test strategy;
 - visual/audio production constraints;
