@@ -22,7 +22,7 @@ This file records product decisions already agreed during discovery so later wor
 - Important events may use 4; truly binary events may use 2.
 - Choices may express clean, pragmatic, grey or dirty strategies, but those labels are not shown to the player.
 - No swipe-left/right core mechanic.
-- Normal choice is committed on tap; only major irreversible actions need confirmation.
+- Normal choices commit on tap. Only major irreversible actions require confirmation; their effects apply only after confirmation. Cancelling leaves the event unresolved and changes no gameplay state.
 
 ### Simulation philosophy
 - No simple Good/Evil meter.
@@ -31,6 +31,18 @@ This file records product decisions already agreed during discovery so later wor
 - Important decisions create precedents and delayed consequences.
 - Relationships and company history may unlock or remove future options.
 - Growth must change the type of problems, not just increase values.
+
+### Resolution and callback delivery
+- Resolve each choice and save its immediate effects, relationships/policies/precedents and scheduled consequences before acknowledging completion or evaluating the next event.
+- Settle recurring economy and due week-end effects once; `Next Week` advances without settling the same week again.
+- Required callbacks have authored delivery windows, take priority over ordinary events by earliest deadline with authored tie ordering, and remain pending when slots are full. Changed context requires a valid variant or explicit report closure; slot shortage alone cannot cancel delivery.
+- Validate required-callback capacity and state-appropriate fallback coverage within the weekly budget. Every presented decision retains 2–4 selectable, valid options.
+- Canonical delivery and ordering rules: [SPEC section 5](SPEC.md#5-core-gameplay-loop) and [section 21](SPEC.md#callback-delivery-and-event-coverage).
+
+### Session continuity
+- Local offline resume is required for the prototype. Preserve completed choices, company/history state, current week/phase and pending/resolved consequences together; no rerolls, lost acknowledged choices or duplicated effects.
+- Interrupted saves recover a complete previous/new checkpoint. Failed saves block progression without claiming success or resetting the campaign; time away does not advance weeks.
+- Player-visible behavior is locked in [SPEC section 3](SPEC.md#session-continuity); save format, storage and versioning are not selected.
 
 ### Retention and campaign
 - Main hook: one more in-game week to see consequences.
@@ -45,6 +57,8 @@ This file records product decisions already agreed during discovery so later wor
 - Roughly 30–35 decisions.
 - 50–70 authored event nodes as the initial content budget.
 - Must demonstrate at least one clear earlier-decision -> later-consequence chain.
+- Two documented histories must reach the same crisis by week 12 with at least one history-dependent difference in selectable options and 2–4 valid options in each history; dialogue-only differences are insufficient.
+- Required prototype verification scenarios are [SPEC AC-01 through AC-07](SPEC.md#required-behavior-checks); they are acceptance requirements, not evidence of an existing implementation.
 
 ### Content
 - Hand-authored core events for MVP.
@@ -70,7 +84,7 @@ Do not invent these choices without an explicit decision:
 - monetization/pricing;
 - localization scope;
 - analytics stack;
-- save-data implementation;
+- save-data implementation (format, storage and versioning; player-visible continuity is already locked);
 - event/content data format and authoring tools;
 - CI/build/test commands;
 - audio production scope.
