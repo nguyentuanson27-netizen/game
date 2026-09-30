@@ -68,9 +68,9 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 
 ### A1 - Approved prototype art package (external follow-up)
 **Status:** [ ] Blocked by G0 / D5 approval.
-**Description:** A dedicated follow-up art-direction/asset-package PR creates and approves the golden references plus actual asset bundle required by T25. This plan names the dependency but does not hardcode a GitHub PR number.
+**Description:** A dedicated follow-up art-direction/asset-package PR creates and approves the golden references plus prototype asset bundle required by T25. The bundle may use approved placeholders, production assets, or a mix according to D5; this plan names the dependency but does not hardcode a GitHub PR number.
 **Dependencies:** G0, T05.
-**Acceptance:** Package covers the D5 asset groups consumed by T25 and follows its source-of-truth/workflow plus required naming/export/aspect-ratio/format constraints; placeholder and production assets are clearly distinguished.
+**Acceptance:** Package covers the D5 asset groups consumed by T25 and follows its source-of-truth/workflow plus required naming/export/aspect-ratio/format constraints; every asset is clearly marked placeholder or production where that distinction matters.
 **Verification:** Review the package against D5, portrait/mobile constraints and PRODUCT_GUARDRAILS. A1 may progress in parallel with T07-T24 and does not block them when D5 allows placeholders; T25 cannot start until A1 is approved.
 
 ## Small proof and first playable loop
