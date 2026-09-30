@@ -15,10 +15,13 @@ Each event should define:
 - **Situation** — concise mobile-readable context
 - **Why now** — 1–3 state/relationship/precedent conditions
 - **Options** — usually 3, sometimes 2 or 4
+- **Option availability** — conditions and context-valid alternatives that preserve 2–4 selectable options
+- **Confirmation** — explicitly mark major irreversible actions; other choices commit on tap
 - **Immediate effects** — feedback the player can reasonably observe
 - **Delayed effects** — hidden or deferred state changes
 - **Memory created** — only when the world can meaningfully call it back
-- **Follow-up** — optional chain continuation
+- **Follow-up** — optional chain continuation; mark any required callback explicitly
+- **Required callback delivery** — earliest/latest in-game week, eligibility, equal-deadline order and changed-context resolution, when applicable
 - **Cooldown/repeatability**
 
 ## Option rules
@@ -59,6 +62,14 @@ Memorable chains should often follow:
 `setup -> decision -> time passes -> callback -> new context -> harder decision -> payoff`
 
 Do not make every choice schedule a bespoke future event. Most choices should modify shared state, relationships or eligibility; explicit future hooks are reserved for meaningful decisions.
+
+### Required callback delivery
+
+Follow [SPEC section 21](SPEC.md#callback-delivery-and-event-coverage): required callbacks take priority, remain pending when slots are full, and must resolve within their authored window. Author a valid variant or an explicit weekly-report closure when their original context becomes invalid; do not silently discard them or apply an unchosen option.
+
+Check competing callbacks together, not only individual chains. Reachable histories must fit required deliveries into the weekly budget; infeasible deadline combinations fail content validation. Supply state-appropriate fallback events for otherwise uncovered slots without bypassing cooldown or option conditions.
+
+Callbacks used to prove the prototype's delayed-consequence and evolving-choice requirements must reach their playable payoff by week 12. A report-only closure cannot substitute for the required same-crisis, different-options demonstration.
 
 ## Branching rule
 
@@ -151,6 +162,10 @@ Before accepting an event:
 - [ ] Consequences follow the fiction and company state.
 - [ ] At least one meaningful state/relationship effect.
 - [ ] Uses player history when relevant.
+- [ ] Option conditions use current committed state and leave 2–4 selectable, valid options in every presented variant.
+- [ ] Major irreversible actions are marked for confirmation; cancelling applies no effects.
+- [ ] Required callbacks have achievable windows and explicit changed-context resolutions; verify competing chains together.
+- [ ] Fallback events cover reachable gaps without violating eligibility or cooldowns.
 - [ ] Does not expose hidden arithmetic unnecessarily.
 - [ ] Does not create unbounded branching.
 - [ ] Fits the current campaign stage.
