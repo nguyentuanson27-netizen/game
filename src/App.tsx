@@ -1,6 +1,30 @@
+import { useState } from "react";
+import { ContentError, type ContentPack } from "./game/content/loader.ts";
+import { loadProofPack } from "./game/content/proof.ts";
+import { createIdbCheckpointStore } from "./game/persistence/idbStore.ts";
+import type { CheckpointStore } from "./game/persistence/store.ts";
+import { GameScreen } from "./game/ui/GameScreen.tsx";
 import { PwaUpdate } from "./pwa/PwaUpdate.tsx";
 
-export function App() {
+interface AppProps {
+  /** Injected in tests; the app uses IndexedDB by default. */
+  store?: CheckpointStore;
+  /** Injected in tests; the app loads the bundled proof content by default. */
+  loadPack?: () => ContentPack;
+}
+
+type Boot = { pack: ContentPack; store: CheckpointStore } | { error: ContentError };
+
+export function App({ store, loadPack = loadProofPack }: AppProps = {}) {
+  const [boot] = useState<Boot>(() => {
+    try {
+      return { pack: loadPack(), store: store ?? createIdbCheckpointStore() };
+    } catch (error) {
+      if (error instanceof ContentError) return { error };
+      throw error;
+    }
+  });
+
   return (
     <div className="shell">
       <header className="shell__header">
@@ -10,20 +34,20 @@ export function App() {
       </header>
 
       <main className="shell__main">
-        <section className="card" aria-labelledby="shell-status-title">
-          <h2 id="shell-status-title" className="card__title">
-            Khung ứng dụng đã sẵn sàng
-          </h2>
-          <p>
-            Đây mới chỉ là khung kỹ thuật của nguyên mẫu. Chưa có sự kiện, lựa chọn hay lưu tiến
-            trình nào.
-          </p>
-        </section>
+        {"error" in boot ? (
+          <section className="notice" role="alert">
+            <p className="notice__text">
+              Nội dung trò chơi không hợp lệ nên không thể bắt đầu. Bản lưu không bị thay đổi.
+            </p>
+          </section>
+        ) : (
+          <GameScreen store={boot.store} pack={boot.pack} />
+        )}
       </main>
 
       <footer className="shell__footer">
         <PwaUpdate />
-        <p className="shell__note">Nguyên mẫu T07 · không có máy chủ, không thu thập dữ liệu.</p>
+        <p className="shell__note">Nguyên mẫu · không có máy chủ, không thu thập dữ liệu.</p>
       </footer>
     </div>
   );

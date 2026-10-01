@@ -17,7 +17,7 @@ Do not silently override locked product decisions.
 
 ## Current project state
 
-G0 approved the prototype baseline (static PWA: Node 24.21.0, npm 11.19.0, React 19.3.0, Vite 8.3.1, TypeScript 7.0.2; see `docs/G0_DECISION_PACKAGE.md`). T07 added a minimal runnable scaffold; there is no gameplay yet.
+G0 approved the prototype baseline (static PWA: Node 24.21.0, npm 11.19.0, React 19.3.0, Vite 8.3.1, TypeScript 7.0.2; see `docs/G0_DECISION_PACKAGE.md`). T07 added a minimal runnable scaffold. T08 added the content boundary (`src/game/content/`), IndexedDB checkpoints (`src/game/persistence/`) and resume of the first unanswered proof event; choices, settlement and reports follow in T09-T12.
 
 Commands (see `README.md`): `npm ci`, `npm run check`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e`, `npm run verify`.
 
