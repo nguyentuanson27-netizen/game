@@ -137,12 +137,20 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Checkpoint C03:** Verify one durable choice, unanswered/answered resume and basic failed-write/retry behavior before extending the loop.
 
 ### T10 - Current-state options and confirmation
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
 **Description:** Present the next event against the updated state and honor the authored confirmation flag.
 **Dependencies:** T09.
 **Files likely touched:** Eligibility/resolution; decision presenter; event fixture; behavior tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** A prior choice can remove an option in the next event without leaving fewer than two valid choices; ordinary tap needs no dialog; cancel changes no state or scheduled consequences and confirm commits once.
 **Verification:** FOCUSED AC-01/AC-07 scenarios, including lost contact support, context-valid alternatives and cancel/confirm followed by resume; inspect the UI path with DEVICE.
+
+**T10 evidence (Node 24.21.0, npm 11.19.0):**
+- Code: `src/game/domain/nextStep.ts` (planned slot -> authored fallback when it cannot be presented), `presentation.ts` (non-repeatable events are not shown twice), `src/game/ui/ConfirmDialog.tsx` + `EventCard.tsx` (native modal `<dialog>`, only for options authored `confirmation: "required"`). Checkpoint v1 gains `resolvedEventIds` (consumer: non-repeatable check; defaults to `[]`).
+- The next event is always evaluated inside the same draft that commits the previous choice, from the state about to be committed, so there is no stale snapshot to read. Option sets are stored in the checkpoint and re-verified on resume.
+- Focused tests (`tests/game/domain/currentState.test.ts`) use the real proof content plus a test-only beat in week 3 (`rider_claim -> estrange beat -> shared crisis`; the crisis is placed there only to read state, delivery is T15): fund -> crisis offers cite/joint; decline -> announce/quiet; fund then losing the rider's support -> `joint_statement` disappears while the fund (and `cite_policy`) remain, so the relationship alone explains it; every one of the 6 paths keeps 2-4 options; stored option ids equal a re-evaluation of the committed state and differ from the week-start evaluation. Fallback: a planned event with 0 or 1 selectable options is replaced by the authored fallback (invalid options are never revived); with no valid event left the choice is refused and nothing is written.
+- UI (`GameScreen.test.tsx`, Playwright `choice-confirmation.spec.ts`): ordinary choice commits on tap with no dialog; the major option opens a dialog with focus on "Hủy" and writes nothing; cancel / Escape leave the event unresolved with zero state, callback or checkpoint change (also after a reload); confirm commits exactly once (double activation too), a failed confirmed save shows an error and applies nothing, and the result survives reopening.
+- Run locally: `npm run verify` and Playwright Chromium pass (counts in the PR).
+- Limits: variant selection for callbacks (`engaged`/`aggrieved`) belongs to T15/T16 and is not implemented; the "valid variant" capability here is the fallback substitution and state-dependent option sets/context lines. Confirmation copy is generic Vietnamese (the authored `confirmationNote` is a reviewer note and is not shown). AC-01 is covered at the within-week option level; the settlement half of AC-01 is T11. AC-07 covered for the one authored irreversible option. **Not run:** WebKit locally (CI), real device.
 
 ### T11 - Settle one week once
 **Status:** [ ] Blocked by dependencies.

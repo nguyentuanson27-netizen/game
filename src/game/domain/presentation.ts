@@ -13,12 +13,19 @@ export interface PresentedEvent {
 
 export type PresentResult =
   | { ok: true; presented: PresentedEvent }
-  | { ok: false; reason: "unknown-event" | "not-eligible" | "option-count"; message: string };
+  | {
+      ok: false;
+      reason: "unknown-event" | "not-eligible" | "already-resolved" | "option-count";
+      message: string;
+    };
 
 /** Evaluate an event against `state` and return what the player may choose from. */
 export function presentEvent(pack: ContentPack, eventId: string, state: WorldState): PresentResult {
   const event = pack.events.get(eventId);
   if (!event) return { ok: false, reason: "unknown-event", message: `Unknown event ${eventId}` };
+  if (event.repeatable === false && state.resolvedEventIds.includes(eventId)) {
+    return { ok: false, reason: "already-resolved", message: `${eventId} was already resolved` };
+  }
   if (!allHold(event.eligibility ?? [], state)) {
     return { ok: false, reason: "not-eligible", message: `${eventId} is not eligible` };
   }

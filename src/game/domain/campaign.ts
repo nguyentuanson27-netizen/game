@@ -48,6 +48,9 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
   for (const id of Object.keys(checkpoint.npcStatus)) {
     if (!pack.npcs.has(id)) issues.push(`unknown npc ${id}`);
   }
+  for (const id of checkpoint.resolvedEventIds) {
+    if (!pack.events.has(id)) issues.push(`unknown resolved event ${id}`);
+  }
   for (const id of Object.keys(checkpoint.recurringCosts)) {
     if (!pack.policyIds.has(id)) issues.push(`unknown recurring cost source ${id}`);
   }

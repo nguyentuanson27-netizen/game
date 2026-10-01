@@ -222,6 +222,123 @@ describe("choosing an option", () => {
   });
 });
 
+describe("confirmation for a major irreversible option", () => {
+  const SETTLE = /Trả một lần để họ rút phản ánh/;
+  const tapSettle = () => fireEvent.click(screen.getByRole("button", { name: SETTLE }));
+
+  it("commits an ordinary choice on tap with no dialog", async () => {
+    const { store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+
+    fireEvent.click(screen.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await screen.findByRole("status");
+    expect(store.commits).toHaveLength(2);
+  });
+
+  it("asks first, focusing the safe answer, and writes nothing while asking", async () => {
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    const before = await inner.load();
+
+    tapSettle();
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/không thể hoàn tác/)).toBeTruthy();
+    expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Hủy" }));
+    expect(store.commits).toHaveLength(1);
+    expect(await inner.load()).toEqual(before);
+  });
+
+  it("cancel leaves the event unresolved with no state change, callback or checkpoint", async () => {
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    const before = await inner.load();
+    tapSettle();
+    const dialog = await screen.findByRole("dialog");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hủy" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Chiếc xe hỏng sau ca mưa" })).toBeTruthy();
+    expect(optionButtons()).toHaveLength(3);
+    expect(store.commits).toHaveLength(1);
+    expect(await inner.load()).toEqual(before);
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.pendingCallbacks).toEqual([]);
+  });
+
+  it("treats the dialog's cancel event (Escape) like Hủy", async () => {
+    const { store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    tapSettle();
+    const dialog = await screen.findByRole("dialog");
+
+    fireEvent(dialog, new Event("cancel", { cancelable: true }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(store.commits).toHaveLength(1);
+  });
+
+  it("confirm commits exactly once, and the result survives reopening", async () => {
+    const { inner, store } = setup();
+    const first = render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    tapSettle();
+    const dialog = await screen.findByRole("dialog");
+    const confirm = within(dialog).getByRole("button", { name: "Xác nhận" });
+
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+
+    expect((await screen.findByRole("status")).textContent).toContain("Họ nhận khoản tiền");
+    expect(store.commits).toHaveLength(2);
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint).toMatchObject({
+      sequence: 2,
+      metrics: { cash: 42, riderNetwork: 45 },
+      npcStatus: { "npc.recurring_rider": "departed" },
+    });
+    first.unmount();
+
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    expect(store.commits).toHaveLength(2);
+    expect(await inner.load()).toEqual(stored);
+  });
+
+  it("shows an error and applies nothing if the confirmed save fails, then commits once on retry", async () => {
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    store.failNextCommits(1);
+    tapSettle();
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Xác nhận" }),
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Không lưu được lựa chọn");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect((await inner.load()) as unknown).toMatchObject({ checkpoint: { sequence: 1 } });
+
+    tapSettle();
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Xác nhận" }),
+    );
+
+    await screen.findByRole("status");
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.metrics.cash).toBe(42);
+  });
+});
+
 describe("blocking and recovery screens", () => {
   async function twoSaves(ctx: ReturnType<typeof setup>) {
     const first = await ctx.inner.commit(firstDraft());

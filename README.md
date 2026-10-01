@@ -50,4 +50,4 @@ npm run test:e2e     # Playwright smoke tests, Chromium + WebKit (needs `npx pla
 
 ## Status
 
-T08-T09: the app loads the bundled T18 proof content through a Zod boundary, saves each active event as an IndexedDB checkpoint before showing it, and commits one tap as a single checkpoint (choice, effects, policies, relationships, precedents, scheduled callbacks and the next event) before showing feedback. Week settlement and the weekly report are not built yet (T11-T12). See [`tasks/todo.md`](tasks/todo.md) for task status and evidence.
+T08-T10: the app loads the bundled T18 proof content through a Zod boundary, saves each active event as an IndexedDB checkpoint before showing it, and commits one tap as a single checkpoint (choice, effects, policies, relationships, precedents, scheduled callbacks and the next event) before showing feedback; the next event is evaluated from the state just committed, and options marked irreversible ask for confirmation. Week settlement and the weekly report are not built yet (T11-T12). See [`tasks/todo.md`](tasks/todo.md) for task status and evidence.

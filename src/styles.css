@@ -223,3 +223,21 @@ body {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.confirm {
+  width: min(calc(100vw - 32px), 440px);
+  padding: 20px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.confirm::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.confirm__text {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}

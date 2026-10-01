@@ -2,7 +2,10 @@ import type { ContentPack } from "../content/loader.ts";
 import type { Checkpoint } from "../persistence/checkpoint.ts";
 
 /** The part of a checkpoint that conditions read. */
-export type WorldState = Pick<Checkpoint, "metrics" | "policies" | "memories" | "npcStatus">;
+export type WorldState = Pick<
+  Checkpoint,
+  "metrics" | "policies" | "memories" | "npcStatus" | "resolvedEventIds"
+>;
 
 /** Everything a choice can change; checkpoints carry exactly this plus week/phase bookkeeping. */
 export type CampaignState = WorldState & Pick<Checkpoint, "recurringCosts" | "pendingCallbacks">;
@@ -25,6 +28,7 @@ export function initialCampaignState(pack: ContentPack): CampaignState {
     policies: [],
     memories: [],
     npcStatus,
+    resolvedEventIds: [],
     recurringCosts: {},
     pendingCallbacks: [],
   };

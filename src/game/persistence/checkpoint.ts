@@ -29,6 +29,8 @@ const common = {
   policies: z.array(idSchema),
   memories: z.array(idSchema),
   npcStatus: z.record(idSchema, z.string().min(1)),
+  /** Events already resolved in the campaign; non-repeatable events are never presented again. */
+  resolvedEventIds: z.array(idSchema).default([]),
   /** Weekly cost each policy adds (D4 `recurringPolicyCost` is their sum). Read by settlement. */
   recurringCosts: z.record(idSchema, z.number().int()).default({}),
   /**
