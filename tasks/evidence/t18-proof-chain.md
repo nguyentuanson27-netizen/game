@@ -20,13 +20,12 @@ Chain shape: `setup (W3) -> decision -> precedent -> time passes -> callback (W7
 
 ## Inventory and content-budget ledger
 
-Count these once toward the existing 50–70 node / 8–10 chain budget. T18 adds no new target.
+Count the event nodes once toward the existing 50–70 node / 8–10 chain budget; the report closure is tracked separately. T18 adds no new target.
 
 | Item | Count | IDs |
 |---|---|---|
-| Authored nodes | **6** | `evt.proof.rider_claim`, `var.rider_voice_followup.engaged`, `var.rider_voice_followup.aggrieved`, `evt.proof.public_rider_dispute`, `evt.proof.fallback_shift_roster`, `closure.rider_voice_followup.departed` |
-| of which presented decision events | 5 | setup 1, callback variants 2, crisis 1, fallback 1 |
-| of which report-only closure | 1 | no decision, no slot |
+| Authored event nodes (budget count) | **5** | `evt.proof.rider_claim`, `var.rider_voice_followup.engaged`, `var.rider_voice_followup.aggrieved`, `evt.proof.public_rider_dispute`, `evt.proof.fallback_shift_roster` (setup 1, callback variants 2, crisis 1, fallback 1) |
+| Report closures (tracked separately, not in the event-node budget) | 1 | `closure.rider_voice_followup.departed`; no decision, no slot |
 | Event chains | **1** | `chain.rider_dispute` (the fallback node is unattached) |
 | Required callbacks | 2 | `cb.rider_voice_followup`, `cb.public_rider_dispute` |
 | Role/NPC placeholders | 2 | `npc.recurring_rider` (recurring rider), `npc.ops_contact` (operations contact) |
@@ -34,7 +33,7 @@ Count these once toward the existing 50–70 node / 8–10 chain budget. T18 add
 | Precedents | 3 | `prec.rider_dispute.negotiated` / `.declined` / `.suppressed` |
 | Memories | 7 | `mem.rider_claim_on_record` plus 6 crisis payoff memories `mem.public_dispute.*` |
 
-Rough share of budget: 6 of 50–70 nodes (about 9–12%), 1 of 8–10 chains. The slice's "around 8 recurring NPCs" gets 2 role placeholders from this pack. No merchant or competitor role was needed, so none was invented.
+Rough share of budget: 5 of 50–70 event nodes (about 7–10%), 1 of 8–10 chains. The slice's "around 8 recurring NPCs" gets 2 role placeholders from this pack. No merchant or competitor role was needed, so none was invented.
 
 Identity: role-based ids only. No name, company, city, competitor, art or vendor asset is chosen or referenced. Player copy is Vietnamese-only per D5.
 
@@ -169,9 +168,10 @@ All run locally on this branch, 2026-10-01. The first was a plain JSON parse; th
 | Weekly budget equals D4 (sum 34); proof slots ≤ budget every week | pass |
 | History JSON numbers (selectable ids, unavailable lists, cash trace, W3/W10 settlements, pre-crisis state) equal recomputation from the authored effects with D4 settlement | pass |
 | W3 settlement for A/B equals G0 T04 A/B paper checks | pass |
+| Event-node count 5, report closure 1 tracked separately, 1 chain; every `stage` is `street_startup`, `local_platform` or `city_player` | pass |
 | 12-week proof-only replay of all 21 paths never fails or goes below 0 cash | pass |
 
-The 89 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
+The 90 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
 
 ## Review against CONTENT_GUIDE, D2, D4, D5
 

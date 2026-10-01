@@ -14,10 +14,12 @@
       "Player copy is Vietnamese-only (G0 D5). Delta values are D4 tuning constants and are never shown to the player."
     ],
     "contentBudget": {
-      "nodes": 6,
-      "nodeBreakdown": "4 presented event nodes (1 setup + 2 callback variants + 1 crisis) + 1 fallback event node + 1 report-closure node",
+      "eventNodes": 5,
+      "eventNodeBreakdown": "1 setup + 2 callback variants + 1 shared crisis + 1 fallback",
+      "reportClosures": 1,
+      "reportClosureNote": "Report-only closure: no decision, no event slot. Tracked separately; not counted in the event-node budget.",
       "chains": 1,
-      "chainNote": "The fallback node is not attached to the chain. Count each node once toward the 50-70 node / 8-10 chain prototype budget.",
+      "chainNote": "The fallback node is not attached to the chain. Count each event node once toward the 50-70 node / 8-10 chain prototype budget.",
       "newNpcRoles": 2
     },
     "weeklyBudget": [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2]
@@ -496,7 +498,7 @@
       "chain": null,
       "role": "fallback",
       "title": "Ca làm cuối tuần chưa đủ người",
-      "stage": "any",
+      "stage": "local_platform",
       "speaker": "npc.ops_contact",
       "category": "operational",
       "eligibility": [],
