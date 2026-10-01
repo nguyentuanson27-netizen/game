@@ -84,12 +84,18 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** Walk the draft against CONTENT_GUIDE and D2/D4/D5 on paper; no runtime pass is implied. T08-T12/T15 use it as fixtures; T19 validates the playable proof, and T17 later checks combined content. T17 is not a drafting prerequisite.
 
 ### T07 - Minimal runnable scaffold
-**Status:** [ ] Ready; not started.
+**Status:** [~] Implemented; awaiting CI (Chromium + WebKit) and device smoke. Do not check off until those are recorded.
 **Description:** Establish only the approved runtime/tooling and a launchable portrait shell for the first decision slice.
 **Dependencies:** T06.
 **Files likely touched:** Chosen runtime entry; dependency/build configuration and lockfile if applicable; smoke test; setup instructions/task record. **Scope:** M target; coherent generated scaffold may need a documented exception.
 **Acceptance:** Pinned approved toolchain launches the shell on the chosen prototype target; actual setup/test/build commands are documented and executable; no unapproved services or dependencies are added.
 **Verification:** Run initial FOCUSED, STATIC and BUILD; perform DEVICE launch smoke check. Review dependencies/install behavior before installation. Keep necessary generated/config/lock files together when that preserves a runnable scaffold; explain a larger diff instead of mechanically splitting it.
+
+**T07 evidence (Node 24.21.0, npm 11.19.0):**
+- Run locally from a clean `npm ci`: `npm run check`, `typecheck`, `test` (2 files / 6 tests) and `build` (`npm run verify`) pass; `npm audit` reports 0 vulnerabilities.
+- Playwright smoke (4 tests: launch, no horizontal overflow at 390x844, manifest/icons under sub-path `/game/`, offline reload after service-worker control) passes on **Chromium only**, using the pre-installed Chromium via an uncommitted local config. Offline test was cross-checked: with service workers blocked, the offline reload fails.
+- **Not run:** WebKit (Playwright browser download blocked by the sandbox network policy; runs in `.github/workflows/verify.yml`), the committed `playwright.config.ts` as-is locally, the CI workflow itself, real Android/iOS device smoke, and the deployed-update path (no deployment exists yet).
+- Scope notes: `zod` and `idb` named in D1 are not installed yet; T08 adds them when first used. No GitHub Pages deploy workflow in T07 (sub-path support only, via `BASE_PATH`). Transitive `glob@11.1.0` (via `workbox-build`, build-time only) prints an npm deprecation notice.
 
 **Checkpoint C02:** Draft and scaffold are ready for the first event; paper content review and actual launch evidence remain distinct.
 

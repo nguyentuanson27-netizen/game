@@ -31,6 +31,23 @@ The player resolves short business situations with 2–4 choices. Decisions chan
 - [`assets/README.md`](assets/README.md) — planned asset layout and vendor/runtime separation.
 - [`AGENTS.md`](AGENTS.md) — instructions for coding/design agents working in this repository.
 
+## Development
+
+Requires Node.js `24.21.0` and npm `11.19.0` (see `.node-version`; `engine-strict` is on). The prototype is a static installable PWA built with React 19.3.0, Vite 8.3.1 and TypeScript 7.0.2 — see [G0 Decision Package](docs/G0_DECISION_PACKAGE.md).
+
+```bash
+npm ci               # install from the lockfile
+npm run dev          # local dev server
+npm run check        # Biome format + lint
+npm run typecheck    # TypeScript
+npm run test         # Vitest unit tests
+npm run build        # production build into dist/
+npm run verify       # check + typecheck + test + build (fast local gate)
+npm run test:e2e     # Playwright smoke tests, Chromium + WebKit (needs `npx playwright install chromium webkit` once)
+```
+
+`BASE_PATH` sets the repository sub-path for GitHub Pages, e.g. `BASE_PATH=/game/ npm run build`. `npm run test:e2e` builds and serves the app under `/game/` itself.
+
 ## Status
 
-Specification/planning phase. No implementation stack has been selected yet. Four Kenney CC0 packs are selected as replaceable demo placeholders, but the final art direction remains open and recurring character art is deferred. Do not infer framework, engine, build commands or architecture until they are explicitly chosen and documented.
+Prototype scaffold (T07): a launchable portrait shell with PWA manifest, offline app shell and prompt-based updates. There is no gameplay, content runtime or save system yet; those follow in T08+ per [`tasks/todo.md`](tasks/todo.md).

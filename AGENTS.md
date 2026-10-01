@@ -17,9 +17,11 @@ Do not silently override locked product decisions.
 
 ## Current project state
 
-The repository is in specification phase. No engine, framework, package manager, build commands, test commands or architecture have been chosen yet.
+G0 approved the prototype baseline (static PWA: Node 24.21.0, npm 11.19.0, React 19.3.0, Vite 8.3.1, TypeScript 7.0.2; see `docs/G0_DECISION_PACKAGE.md`). T07 added a minimal runnable scaffold; there is no gameplay yet.
 
-If implementation work requires one of those decisions, surface it instead of guessing.
+Commands (see `README.md`): `npm ci`, `npm run check`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e`, `npm run verify`.
+
+Decisions not yet made (for example content runtime, persistence code, economy implementation) belong to later tasks. If work needs one of them, surface it instead of guessing.
 
 ## Product invariants
 
