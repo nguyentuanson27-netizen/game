@@ -49,7 +49,7 @@ The prototype must support local save/resume without a network connection. These
 - If interrupted during a save, recover either the previous complete checkpoint or the new complete checkpoint, never a mixture. Once a checkpoint is saved, its effects remain committed even if the app closes before feedback is displayed.
 - If saving fails, do not acknowledge success or allow further decisions/week advancement. Show a recoverable error and preserve the previous checkpoint for retry/resume; never silently reset the campaign.
 
-Time away from the app does not advance in-game weeks. Save format, storage and versioning remain open implementation decisions in section 31.
+Time away from the app does not advance in-game weeks. The approved prototype persistence implementation is summarized in section 31; this player-visible continuity contract remains authoritative.
 
 ## 4. Starting business
 
@@ -377,7 +377,7 @@ A required callback is a follow-up needed to pay off an important earlier decisi
 - Content must make required delivery windows achievable within the 2–4 weekly event budget across reachable slice histories. Over-capacity deadlines are a content validation failure: rebalance windows or converge branches before accepting that content, rather than silently dropping callbacks or extending deadlines at runtime.
 - When too few events are eligible, use hand-authored, low-stakes fallback events that satisfy current state, cooldown and option rules. Validate fallback coverage for reachable slice states; do not force an ineligible event. Fallback decisions count toward the weekly budget and the 30–35-decision slice target.
 
-See [Content Authoring Guide](CONTENT_GUIDE.md) for the authoring checklist. The data schema and scheduler implementation remain open; these delivery guarantees do not.
+See [Content Authoring Guide](CONTENT_GUIDE.md) for the authoring checklist. The approved prototype content format/tooling baseline is summarized in section 31; exact runtime schema/types and scheduler implementation remain implementation work, while these delivery guarantees do not.
 
 ## 22. Content signature
 
@@ -521,19 +521,19 @@ Do not build yet:
 - large multi-country map;
 - live-service retention systems.
 
-## 31. Technical status / open questions
+## 31. Approved prototype technical baseline
 
-No engine/framework has been chosen yet. Therefore the repository currently has no authoritative build, test, lint or development commands.
+G0 was approved on 2026-10-01 for the fast 12-week prototype. The authoritative decision rationale and first-slice bindings are in [G0 Decision Package](G0_DECISION_PACKAGE.md).
 
-Before implementation planning, decide and document:
+Prototype implementation baseline:
 
-- engine/framework and exact supported versions;
-- target mobile OS/store strategy;
-- save-data model, storage and versioning that satisfy the session-continuity contract in section 3;
-- content data format/tooling;
-- test strategy;
-- visual/audio production constraints;
-- localization requirements;
-- analytics/privacy requirements, if any.
+- Runtime/delivery: static installable PWA using Node.js `24.21.0` LTS + npm `11.19.0`, React/React DOM `19.3.0`, Vite `8.3.1` and TypeScript `7.0.2`; shared demo via GitHub Pages with repository sub-path support.
+- Offline boundary: initial acquisition needs network; after service-worker readiness, core gameplay plus used local content/assets must work offline. No backend/API, login, payment, cloud save or required runtime CDN for the prototype.
+- Content: hand-authored UTF-8 JSON under `content/prototype/`, stable semantic IDs, Zod boundary validation and a small allowlisted condition/effect vocabulary; no executable content or generic story DSL.
+- Persistence/privacy: IndexedDB through `idb`, schema-versioned whole checkpoints, `current` + `previous` recovery, stale-write rejection and explicit corrupt/unsupported-save handling. No account, analytics/ads SDK, uploads, personal-data collection or server gameplay logs.
+- Simulation: deterministic settlement for both bicycle services, the approved 34-decision 12-week budget, prototype-only tuning constants, explicit early-failure behavior and week-12 `Prototype Complete` endpoint.
+- Presentation: portrait/mobile UI, Vietnamese-only prototype copy, Kenney placeholder packs, neutral silhouette/avatar character placeholders, no final branding or audio production.
+- Verification categories: TypeScript typecheck, Biome format/lint, Vitest, Playwright Chromium/WebKit, Vite production build and GitHub Actions. T07 creates/pins the supporting package versions, lockfile and actual runnable commands; this spec does not claim those commands pass before the scaffold exists.
+- Content verification stays bounded to real proof content and reachable proof states; do not introduce a generic solver merely to satisfy the prototype gate.
 
-Do not invent these implementation choices from this product spec.
+Final/commercial questions deliberately remain open: native wrapper and iOS/Android store/release strategy, final art/branding/names, monetization, localization beyond the Vietnamese prototype, post-prototype analytics/account/cloud-save/privacy strategy, save migration beyond the prototype schema boundary, and final audio scope.
