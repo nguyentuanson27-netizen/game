@@ -165,9 +165,19 @@ body {
   font-size: 0.9375rem;
 }
 
-.event__notice {
-  color: var(--muted);
-  font-size: 0.875rem;
+.event__error {
+  margin: 0;
+  color: var(--focus);
+  font-size: 0.9375rem;
+}
+
+.feedback {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  line-height: 1.4;
 }
 
 .options {

@@ -11,19 +11,27 @@ interface StoredCheckpoint {
   sequence: number;
   parentSequence: number | null;
   week: number;
-  activeEvent: { eventId: string; optionIds: string[] };
+  phase: string;
+  activeEvent: { eventId: string; optionIds: string[] } | null;
+  metrics: { riderNetwork: number };
+  policies: string[];
+  recurringCosts: Record<string, number>;
+  npcStatus: Record<string, string>;
+  memories: string[];
+  pendingCallbacks: { callbackId: string }[];
+  weekDecisions: { slot: number; optionId: string }[];
 }
 
-/** Read the committed `current` checkpoint straight from IndexedDB, bypassing the app. */
-function readCurrent(page: Page): Promise<StoredCheckpoint | null> {
+/** Read a committed slot straight from IndexedDB, bypassing the app. */
+function readSlot(page: Page, key: "current" | "previous"): Promise<StoredCheckpoint | null> {
   return page.evaluate(
-    (dbName) =>
+    ({ dbName, slot }) =>
       new Promise<StoredCheckpoint | null>((resolve, reject) => {
         const open = indexedDB.open(dbName);
         open.onerror = () => reject(open.error);
         open.onsuccess = () => {
           const db = open.result;
-          const get = db.transaction("checkpoints").objectStore("checkpoints").get("current");
+          const get = db.transaction("checkpoints").objectStore("checkpoints").get(slot);
           get.onerror = () => reject(get.error);
           get.onsuccess = () => {
             db.close();
@@ -31,9 +39,11 @@ function readCurrent(page: Page): Promise<StoredCheckpoint | null> {
           };
         };
       }),
-    "bicycle-platform-prototype",
+    { dbName: "bicycle-platform-prototype", slot: key },
   );
 }
+
+const readCurrent = (page: Page) => readSlot(page, "current");
 
 const options = (page: Page) => page.getByRole("group", { name: "Phương án" }).getByRole("button");
 
@@ -53,7 +63,7 @@ test.describe("unanswered event resume (AC-04)", () => {
       week: 1,
       activeEvent: { eventId: "evt.proof.rider_claim" },
     });
-    expect(saved?.activeEvent.optionIds).toHaveLength(3);
+    expect(saved?.activeEvent?.optionIds).toHaveLength(3);
 
     const before = await options(page).allTextContents();
     const overflow = await page.evaluate(() => ({
@@ -96,5 +106,84 @@ test.describe("unanswered event resume (AC-04)", () => {
     } finally {
       await server.stop();
     }
+  });
+
+  test.describe("after a committed choice (AC-04)", () => {
+    const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+
+    async function chooseFundPolicy(page: Page) {
+      await page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }).click();
+      await expect(page.getByRole("status")).toContainText("Họ cảm ơn");
+      await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
+    }
+
+    function expectCommittedChoice(saved: StoredCheckpoint | null) {
+      expect(saved).toMatchObject({
+        sequence: 2,
+        parentSequence: 1,
+        phase: "event",
+        metrics: { riderNetwork: 60 },
+        policies: ["policy.rider_support_fund"],
+        recurringCosts: { "policy.rider_support_fund": 6 },
+        npcStatus: { "npc.recurring_rider": "ally" },
+        weekDecisions: [{ slot: 1, optionId: "opt.rider_claim.fund_policy" }],
+        activeEvent: { eventId: "evt.proof.fallback_shift_roster" },
+      });
+      expect(saved?.memories).toContain("prec.rider_dispute.negotiated");
+      expect(saved?.pendingCallbacks.map((p) => p.callbackId)).toEqual([
+        "cb.rider_voice_followup",
+        "cb.public_rider_dispute",
+      ]);
+    }
+
+    test("keeps the whole decision and the next event after a reload", async ({ page }) => {
+      await page.goto("./");
+      await chooseFundPolicy(page);
+
+      // The feedback is only visible once the single checkpoint holding everything is committed.
+      const saved = await readCurrent(page);
+      expectCommittedChoice(saved);
+      expect((await readSlot(page, "previous"))?.sequence).toBe(1);
+      const before = await options(page).allTextContents();
+
+      await page.reload();
+
+      await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
+      expect(await options(page).allTextContents()).toEqual(before);
+      expect(await readCurrent(page)).toEqual(saved);
+    });
+
+    test("keeps it when reopened offline after the service worker is ready", async ({ page }) => {
+      const server = await startStaticServer(distDir, basePath);
+      try {
+        await page.goto(server.url);
+        await chooseFundPolicy(page);
+        const saved = await readCurrent(page);
+        expectCommittedChoice(saved);
+
+        await page.evaluate(async () => {
+          await navigator.serviceWorker.ready;
+        });
+        await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+        await server.stop();
+        await page.reload();
+
+        await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
+        expect(await readCurrent(page)).toEqual(saved);
+      } finally {
+        await server.stop();
+      }
+    });
+
+    test("applies a double tap once", async ({ page }) => {
+      await page.goto("./");
+      const button = page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ });
+      await expect(button).toBeVisible();
+
+      await button.dblclick();
+      await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
+
+      expectCommittedChoice(await readCurrent(page));
+    });
   });
 });

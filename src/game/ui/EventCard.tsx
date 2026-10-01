@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { PresentedEvent } from "../domain/presentation.ts";
 
 interface EventCardProps {
@@ -6,14 +5,26 @@ interface EventCardProps {
   slot: number;
   slotCount: number;
   presented: PresentedEvent;
+  /** True while a choice is being saved: every option is disabled so a tap cannot repeat. */
+  busy: boolean;
+  /** Set when the last tap could not be saved; nothing was recorded. */
+  error: string | null;
+  onChoose: (optionId: string) => void;
 }
 
-export function EventCard({ week, slot, slotCount, presented }: EventCardProps) {
+export function EventCard({
+  week,
+  slot,
+  slotCount,
+  presented,
+  busy,
+  error,
+  onChoose,
+}: EventCardProps) {
   const { event, options, contextLines } = presented;
-  const [notice, setNotice] = useState<string | null>(null);
 
   return (
-    <section className="card event" aria-labelledby="event-title">
+    <section className="card event" aria-labelledby="event-title" aria-busy={busy}>
       <p className="event__meta">
         Tuần {week} · Quyết định {slot}/{slotCount}
       </p>
@@ -34,17 +45,17 @@ export function EventCard({ week, slot, slotCount, presented }: EventCardProps) 
             key={option.id}
             type="button"
             className="button option"
-            // T08 resumes the unanswered event; resolving a choice is T09.
-            onClick={() => setNotice("Bản này chưa ghi nhận lựa chọn.")}
+            disabled={busy}
+            onClick={() => onChoose(option.id)}
           >
             <span className="option__text">{option.text}</span>
             <span className="option__hint">{option.hint}</span>
           </button>
         ))}
       </fieldset>
-      {notice ? (
-        <p role="status" className="event__notice">
-          {notice}
+      {error ? (
+        <p role="alert" className="event__error">
+          {error}
         </p>
       ) : null}
     </section>
