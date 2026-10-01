@@ -77,7 +77,7 @@ Use IndexedDB through `idb`, with `schemaVersion: 1`, monotonic checkpoint seque
 - `current`: last committed checkpoint;
 - `previous`: prior committed checkpoint for recovery.
 
-Each candidate carries `parentSequence`, the sequence it was derived from.
+Each candidate carries `parentSequence`, the sequence it was derived from. The initial checkpoint uses `parentSequence: null` and is valid only when no `current` checkpoint exists.
 
 A choice/settlement/advance save uses one read-write transaction to:
 1. validate the full candidate;
