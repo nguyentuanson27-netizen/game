@@ -113,7 +113,8 @@ test.describe("unanswered event resume (AC-04)", () => {
 
     async function chooseFundPolicy(page: Page) {
       await page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }).click();
-      await expect(page.getByRole("status")).toContainText("Họ cảm ơn");
+      // The PWA offline-ready notice is also a status region, so match the feedback by its text.
+      await expect(page.getByRole("status").filter({ hasText: "Họ cảm ơn" })).toBeVisible();
       await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
     }
 
