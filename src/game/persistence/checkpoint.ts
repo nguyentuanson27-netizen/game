@@ -91,6 +91,12 @@ export const checkpointSchema = z
     }),
     z.strictObject({
       ...common,
+      /** After the week-12 report: the approved `Prototype Complete` endpoint. There is no week 13. */
+      phase: z.literal("complete"),
+      activeEvent: z.null(),
+    }),
+    z.strictObject({
+      ...common,
       /** D4: after a committed settlement Cash < -25 is an explicit, terminal failed state. */
       phase: z.literal("failed"),
       activeEvent: z.null(),
@@ -112,4 +118,6 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 export type CheckpointDraft = DistributiveOmit<Checkpoint, "sequence">;
 
 export type EventCheckpointDraft = Extract<CheckpointDraft, { phase: "event" }>;
-export type ReportCheckpoint = Extract<Checkpoint, { phase: "report" | "failed" }>;
+export type ReportCheckpoint = Extract<Checkpoint, { phase: "report" }>;
+export type FailedCheckpoint = Extract<Checkpoint, { phase: "failed" }>;
+export type CompleteCheckpoint = Extract<Checkpoint, { phase: "complete" }>;

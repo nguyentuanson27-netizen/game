@@ -1,11 +1,14 @@
 import type { ContentPack } from "../content/loader.ts";
+import { advanceWeek } from "../domain/advanceWeek.ts";
 import { resumeCheckpoint, startCampaign } from "../domain/campaign.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
 import { resolveChoice } from "../domain/resolveChoice.ts";
 import { settleWeek } from "../domain/settlement.ts";
 import type {
   Checkpoint,
+  CompleteCheckpoint,
   EventCheckpoint,
+  FailedCheckpoint,
   ReportCheckpoint,
   SettlementCheckpoint,
 } from "../persistence/checkpoint.ts";
@@ -16,10 +19,12 @@ export type SessionState =
   | { kind: "event"; checkpoint: EventCheckpoint; presented: PresentedEvent }
   /** Every decision slot of the week is committed; the week awaits settlement. */
   | { kind: "settlement"; checkpoint: SettlementCheckpoint }
-  /** Settlement is committed; the weekly report is shown. */
+  /** Settlement is committed; the weekly report is shown and `Next Week` is pending. */
   | { kind: "report"; checkpoint: ReportCheckpoint }
   /** Settlement left Cash below the D4 threshold: the explicit failed state. */
-  | { kind: "failed"; checkpoint: ReportCheckpoint }
+  | { kind: "failed"; checkpoint: FailedCheckpoint }
+  /** The week-12 report was closed: the approved `Prototype Complete` endpoint. */
+  | { kind: "complete"; checkpoint: CompleteCheckpoint }
   | { kind: "recover"; previous: Checkpoint }
   | { kind: "unsupported"; schemaVersion: number }
   | { kind: "unusable" }
@@ -45,6 +50,8 @@ function fromCheckpoint(pack: ContentPack, checkpoint: Checkpoint): SessionState
       return { kind: "report", checkpoint };
     case "failed":
       return { kind: "failed", checkpoint };
+    case "complete":
+      return { kind: "complete", checkpoint };
   }
 }
 
@@ -146,6 +153,22 @@ export async function settle(
   checkpoint: SettlementCheckpoint,
 ): Promise<SettleResult> {
   const committed = await store.commit(settleWeek(checkpoint));
+  if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
+  return { ok: true, state: fromCheckpoint(pack, committed.value) };
+}
+
+/**
+ * `Next Week`: advance one week (or finish after week 12) in one checkpoint. The new week or the
+ * endpoint is shown only from the committed result; on failure the report stays as it was.
+ */
+export async function nextWeek(
+  store: CheckpointStore,
+  pack: ContentPack,
+  checkpoint: ReportCheckpoint,
+): Promise<SettleResult> {
+  const advanced = advanceWeek(pack, checkpoint);
+  if (!advanced.ok) return { ok: false, error: "invalid", message: advanced.message };
+  const committed = await store.commit(advanced.draft);
   if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
   return { ok: true, state: fromCheckpoint(pack, committed.value) };
 }

@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ContentPack } from "../content/loader.ts";
-import type { EventCheckpoint, SettlementCheckpoint } from "../persistence/checkpoint.ts";
+import { reportLines } from "../domain/reportLines.ts";
+import type {
+  EventCheckpoint,
+  ReportCheckpoint,
+  SettlementCheckpoint,
+} from "../persistence/checkpoint.ts";
 import type { CheckpointStore } from "../persistence/store.ts";
 import { EventCard } from "./EventCard.tsx";
-import { bootstrap, choose, recover, resetCampaign, type SessionState, settle } from "./session.ts";
+import {
+  bootstrap,
+  choose,
+  nextWeek,
+  recover,
+  resetCampaign,
+  type SessionState,
+  settle,
+} from "./session.ts";
 import { WeeklyReport } from "./WeeklyReport.tsx";
 
 interface GameScreenProps {
@@ -12,6 +25,9 @@ interface GameScreenProps {
 }
 
 type Screen = { kind: "loading" } | SessionState;
+type ActionResult =
+  | { ok: true; state: SessionState; feedback?: string }
+  | { ok: false; error: string; message: string };
 
 export function GameScreen({ store, pack }: GameScreenProps) {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
@@ -43,58 +59,46 @@ export function GameScreen({ store, pack }: GameScreenProps) {
     }
   }, []);
 
-  const onChoose = useCallback(
-    async (checkpoint: EventCheckpoint, optionId: string) => {
-      if (choosing.current) return;
-      choosing.current = true;
-      setBusy(true);
-      setChoiceError(null);
-      try {
-        const result = await choose(store, pack, checkpoint, optionId);
-        if (result.ok) {
-          setFeedback(result.feedback);
-          setScreen(result.state);
-        } else if (result.error === "stale") {
-          setFeedback(null);
-          setScreen({ kind: "save-error", error: "stale", message: result.message });
-        } else {
-          setChoiceError(
-            "Không lưu được lựa chọn. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
-          );
-        }
-      } finally {
-        choosing.current = false;
-        setBusy(false);
+  // Every progressing action (choice, settlement, Next Week) goes through here: one at a time
+  // (ref, not state, so two taps in the same frame cannot both pass), and the next screen and any
+  // feedback come only from a committed result.
+  const commit = useCallback(async (task: () => Promise<ActionResult>, failure: string) => {
+    if (choosing.current) return;
+    choosing.current = true;
+    setBusy(true);
+    setChoiceError(null);
+    try {
+      const result = await task();
+      if (result.ok) {
+        setFeedback(result.feedback ?? null);
+        setScreen(result.state);
+      } else if (result.error === "stale") {
+        setFeedback(null);
+        setScreen({ kind: "save-error", error: "stale", message: result.message });
+      } else {
+        setChoiceError(failure);
       }
-    },
-    [store, pack],
-  );
+    } finally {
+      choosing.current = false;
+      setBusy(false);
+    }
+  }, []);
 
-  const onSettle = useCallback(
-    async (checkpoint: SettlementCheckpoint) => {
-      if (choosing.current) return;
-      choosing.current = true;
-      setBusy(true);
-      setChoiceError(null);
-      try {
-        const result = await settle(store, pack, checkpoint);
-        if (result.ok) {
-          setFeedback(null);
-          setScreen(result.state);
-        } else if (result.error === "stale") {
-          setScreen({ kind: "save-error", error: "stale", message: result.message });
-        } else {
-          setChoiceError(
-            "Không lưu được kết quả tuần. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
-          );
-        }
-      } finally {
-        choosing.current = false;
-        setBusy(false);
-      }
-    },
-    [store, pack],
-  );
+  const onChoose = (checkpoint: EventCheckpoint, optionId: string) =>
+    commit(
+      () => choose(store, pack, checkpoint, optionId),
+      "Không lưu được lựa chọn. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
+    );
+  const onSettle = (checkpoint: SettlementCheckpoint) =>
+    commit(
+      () => settle(store, pack, checkpoint),
+      "Không lưu được kết quả tuần. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
+    );
+  const onNextWeek = (checkpoint: ReportCheckpoint) =>
+    commit(
+      () => nextWeek(store, pack, checkpoint),
+      "Không lưu được việc sang tuần mới. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
+    );
 
   switch (screen.kind) {
     case "loading":
@@ -131,9 +135,15 @@ export function GameScreen({ store, pack }: GameScreenProps) {
           {feedback ? <Feedback text={feedback} /> : null}
           <section className="card" aria-labelledby="settlement-title" aria-busy={busy}>
             <h2 id="settlement-title" className="card__title">
-              Tuần {checkpoint.week}: đã xong các quyết định
+              {checkpoint.weekDecisions.length === 0
+                ? `Tuần ${checkpoint.week}`
+                : `Tuần ${checkpoint.week}: đã xong các quyết định`}
             </h2>
-            <p>Mọi quyết định của tuần đã được lưu. Hãy tổng kết để xem kết quả tuần.</p>
+            <p>
+              {checkpoint.weekDecisions.length === 0
+                ? "Tuần này chưa có tình huống cần quyết định. Hãy tổng kết để xem kết quả tuần."
+                : "Mọi quyết định của tuần đã được lưu. Hãy tổng kết để xem kết quả tuần."}
+            </p>
             <div className="notice__actions">
               <button
                 type="button"
@@ -154,11 +164,34 @@ export function GameScreen({ store, pack }: GameScreenProps) {
       );
     }
 
-    case "report":
-      return <WeeklyReport checkpoint={screen.checkpoint} failed={false} />;
+    case "report": {
+      const { checkpoint } = screen;
+      return (
+        <WeeklyReport
+          checkpoint={checkpoint}
+          lines={reportLines(pack, checkpoint)}
+          busy={busy}
+          error={choiceError}
+          onNextWeek={() => void onNextWeek(checkpoint)}
+        />
+      );
+    }
 
     case "failed":
-      return <WeeklyReport checkpoint={screen.checkpoint} failed />;
+      return <WeeklyReport checkpoint={screen.checkpoint} lines={[]} failed />;
+
+    case "complete":
+      return (
+        <section className="card" aria-labelledby="complete-title">
+          <h2 id="complete-title" className="card__title">
+            Prototype Complete
+          </h2>
+          <p>
+            Bạn đã hoàn thành 12 tuần của bản nguyên mẫu. Tiền mặt cuối cùng:{" "}
+            {screen.checkpoint.metrics.cash}. Bản nguyên mẫu dừng ở đây.
+          </p>
+        </section>
+      );
 
     case "save-error": {
       const stale = screen.error === "stale";
