@@ -1,0 +1,635 @@
+{
+  "fixture": {
+    "id": "proof.rider_dispute",
+    "task": "T18",
+    "status": "draft-fixture",
+    "locale": "vi",
+    "shapeNotice": "PROPOSED FIXTURE SHAPE. Not runtime-validated and not the runtime schema. T08 owns the Zod schema and may rename fields; ids, conditions, effects, windows and option availability are the content being proven. No code has loaded or executed this file.",
+    "authoringRules": [
+      "Authored UTF-8 JSON, stable semantic ids, no executable content, no generic rules DSL (G0 D2).",
+      "Conditions use only eq, neq, gte, lte, has, notHas. This fixture uses eq, neq, has, notHas; gte/lte are not needed.",
+      "Effects use only the G0 D2 vocabulary: metricAdjust, policyAdd, recurringCostAdjust, npcStatusSet, memoryAdd, callbackSchedule. flagAdd and demandModifierAdjust are in the vocabulary but unused here.",
+      "All condition lists are AND. There is no OR; alternatives are expressed as separate options or variants.",
+      "Role-based placeholder ids only. No canonical character, company, city or competitor identity is chosen here.",
+      "Player copy is Vietnamese-only (G0 D5). Delta values are D4 tuning constants and are never shown to the player."
+    ],
+    "contentBudget": {
+      "eventNodes": 5,
+      "eventNodeBreakdown": "1 setup + 2 callback variants + 1 shared crisis + 1 fallback",
+      "reportClosures": 1,
+      "reportClosureNote": "Report-only closure: no decision, no event slot. Tracked separately; not counted in the event-node budget.",
+      "chains": 1,
+      "chainNote": "The fallback node is not attached to the chain. Count each event node once toward the 50-70 node / 8-10 chain prototype budget.",
+      "newNpcRoles": 2
+    },
+    "weeklyBudget": [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2]
+  },
+
+  "vocabulary": {
+    "conditionRefs": {
+      "metric": ["metric.cash", "metric.riderNetwork", "metric.publicTrust"],
+      "npcStatus": ["npc.recurring_rider.status"],
+      "setMembership": ["policies", "memories"]
+    },
+    "conditionShapes": {
+      "scalar": { "op": "eq|neq|gte|lte", "ref": "<conditionRef>", "value": "<scalar>" },
+      "set": { "op": "has|notHas", "set": "policies|memories", "id": "<semantic id>" }
+    },
+    "effectShapes": {
+      "metricAdjust": { "kind": "metricAdjust", "metric": "cash|riderNetwork|publicTrust", "delta": "<int>" },
+      "policyAdd": { "kind": "policyAdd", "id": "<policy id>" },
+      "recurringCostAdjust": { "kind": "recurringCostAdjust", "source": "<policy id>", "delta": "<int>" },
+      "npcStatusSet": { "kind": "npcStatusSet", "npc": "<npc id>", "status": "<status>" },
+      "memoryAdd": { "kind": "memoryAdd", "id": "<memory or precedent id>" },
+      "callbackSchedule": { "kind": "callbackSchedule", "callback": "<callback id>" }
+    }
+  },
+
+  "npcs": [
+    {
+      "id": "npc.recurring_rider",
+      "role": "recurring rider",
+      "purpose": "The first rider the player knows personally. Represents rider interests and carries the player's treatment of riders forward.",
+      "statuses": ["ally", "neutral", "resentful", "departed"],
+      "initialStatus": "neutral",
+      "usableAsPartner": "only while status is ally",
+      "unusableWhen": "status is departed (left the network); also not a joint-statement partner while neutral or resentful"
+    },
+    {
+      "id": "npc.ops_contact",
+      "role": "operations contact",
+      "purpose": "Optimizes service reliability. Speaks the callback warning and the crisis advice. Holds no relationship state in this proof.",
+      "statuses": [],
+      "initialStatus": null
+    }
+  ],
+
+  "policies": [
+    {
+      "id": "policy.rider_support_fund",
+      "label": "Rider accident-support fund",
+      "createdBy": ["opt.rider_claim.fund_policy", "opt.crisis.announce_new_policy"],
+      "readBy": ["opt.crisis.cite_policy", "opt.crisis.announce_new_policy", "opt.crisis.joint_statement"]
+    },
+    {
+      "id": "policy.rider_review_seat",
+      "label": "Rider representative seat on rider-policy review",
+      "createdBy": ["opt.rider_voice.engaged.grant_seat"],
+      "readBy": ["opt.crisis.refer_to_review_panel"]
+    }
+  ],
+
+  "memories": [
+    {
+      "id": "mem.rider_claim_on_record",
+      "kind": "memory",
+      "createdBy": "all options of evt.proof.rider_claim",
+      "readBy": ["cb.rider_voice_followup", "cb.public_rider_dispute"]
+    },
+    {
+      "id": "prec.rider_dispute.negotiated",
+      "kind": "precedent",
+      "meaning": "The first rider accident claim was answered with a standing policy.",
+      "createdBy": ["opt.rider_claim.fund_policy"],
+      "readBy": ["var.rider_voice_followup.engaged", "opt.crisis.quiet_settlement"]
+    },
+    {
+      "id": "prec.rider_dispute.declined",
+      "kind": "precedent",
+      "meaning": "The first rider accident claim was refused and the rider stayed in the network.",
+      "createdBy": ["opt.rider_claim.decline"],
+      "readBy": ["var.rider_voice_followup.aggrieved"]
+    },
+    {
+      "id": "prec.rider_dispute.suppressed",
+      "kind": "precedent",
+      "meaning": "The first rider accident claim was closed by a private payment and the rider left.",
+      "createdBy": ["opt.rider_claim.settle_and_part"],
+      "readBy": ["evt.proof.public_rider_dispute.contextLines (dialogue-only)"],
+      "note": "Read only by a dialogue line in this proof. It changes no selectable option; later slice content (e.g. the PR-agency offer) is the intended further reader."
+    },
+    {
+      "id": "mem.public_dispute.delayed",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.hold_and_review"],
+      "readBy": [],
+      "note": "Crisis payoff memory. Consumed by the W12 report line and the later PR-agency offer (SPEC section 23), neither authored in T18."
+    },
+    {
+      "id": "mem.public_dispute.cited_policy",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.cite_policy"],
+      "readBy": [],
+      "note": "Crisis payoff memory; see mem.public_dispute.delayed."
+    },
+    {
+      "id": "mem.public_dispute.policy_under_pressure",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.announce_new_policy"],
+      "readBy": [],
+      "note": "Crisis payoff memory; see mem.public_dispute.delayed."
+    },
+    {
+      "id": "mem.public_dispute.joint_statement",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.joint_statement"],
+      "readBy": [],
+      "note": "Crisis payoff memory; see mem.public_dispute.delayed."
+    },
+    {
+      "id": "mem.public_dispute.panel_review",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.refer_to_review_panel"],
+      "readBy": [],
+      "note": "Crisis payoff memory; see mem.public_dispute.delayed."
+    },
+    {
+      "id": "mem.public_dispute.settled_quietly",
+      "kind": "memory",
+      "createdBy": ["opt.crisis.quiet_settlement"],
+      "readBy": [],
+      "note": "Crisis payoff memory; see mem.public_dispute.delayed."
+    }
+  ],
+
+  "chains": [
+    {
+      "id": "chain.rider_dispute",
+      "thesis": "earlier policy -> stakeholder reaction -> public problem",
+      "shape": "setup -> decision -> precedent -> time passes -> callback -> changed context -> shared crisis",
+      "nodes": [
+        "evt.proof.rider_claim",
+        "var.rider_voice_followup.engaged",
+        "var.rider_voice_followup.aggrieved",
+        "closure.rider_voice_followup.departed",
+        "evt.proof.public_rider_dispute"
+      ],
+      "callbacks": ["cb.rider_voice_followup", "cb.public_rider_dispute"],
+      "convergence": "All three setup options converge on the same callback id (one variant or a closure) and on the same crisis event id. The crisis event is one node whose option availability reads the setup precedent, the policies and the rider relationship."
+    }
+  ],
+
+  "events": [
+    {
+      "id": "evt.proof.rider_claim",
+      "chain": "chain.rider_dispute",
+      "role": "setup",
+      "title": "Chiếc xe hỏng sau ca mưa",
+      "stage": "street_startup",
+      "speaker": "npc.recurring_rider",
+      "category": "character",
+      "placement": { "proofWeek": 3, "note": "Ordinary event. The proof walk-through places it in W3; ordinary selection is T10's concern." },
+      "eligibility": [{ "op": "notHas", "set": "memories", "id": "mem.rider_claim_on_record" }],
+      "whyNow": "Mưa lớn tuần này, và đây là tài xế bạn quen mặt nhất. Cả nhóm đang chờ xem bạn xử lý ra sao.",
+      "situation": "Một tài xế quen mặt ngã xe trên đoạn đường ngập khi đang giao hàng. Xe hỏng và họ mất ba ca làm. Họ nhắn riêng hỏi công ty có hỗ trợ gì không. Các tài xế khác đang xem bạn trả lời thế nào.",
+      "options": [
+        {
+          "id": "opt.rider_claim.fund_policy",
+          "text": "Lập quỹ hỗ trợ sửa xe cho mọi tài xế",
+          "hint": "Tốn đều mỗi tuần, nhưng tài xế sẽ tin bạn hơn.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 10 },
+            { "kind": "policyAdd", "id": "policy.rider_support_fund" },
+            { "kind": "recurringCostAdjust", "source": "policy.rider_support_fund", "delta": 6 },
+            { "kind": "npcStatusSet", "npc": "npc.recurring_rider", "status": "ally" },
+            { "kind": "memoryAdd", "id": "prec.rider_dispute.negotiated" },
+            { "kind": "memoryAdd", "id": "mem.rider_claim_on_record" },
+            { "kind": "callbackSchedule", "callback": "cb.rider_voice_followup" },
+            { "kind": "callbackSchedule", "callback": "cb.public_rider_dispute" }
+          ],
+          "feedback": "Họ cảm ơn và kể lại với cả nhóm. Kế toán ghi thêm một khoản chi cố định mỗi tuần."
+        },
+        {
+          "id": "opt.rider_claim.decline",
+          "text": "Từ chối: đây là rủi ro nghề, công ty không chi",
+          "hint": "Giữ được tiền mặt, nhưng cả nhóm sẽ nhớ.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -10 },
+            { "kind": "npcStatusSet", "npc": "npc.recurring_rider", "status": "resentful" },
+            { "kind": "memoryAdd", "id": "prec.rider_dispute.declined" },
+            { "kind": "memoryAdd", "id": "mem.rider_claim_on_record" },
+            { "kind": "callbackSchedule", "callback": "cb.rider_voice_followup" },
+            { "kind": "callbackSchedule", "callback": "cb.public_rider_dispute" }
+          ],
+          "feedback": "Họ không nhắn lại nữa. Tin này lan trong nhóm tài xế trước giờ cao điểm."
+        },
+        {
+          "id": "opt.rider_claim.settle_and_part",
+          "text": "Trả một lần để họ rút phản ánh và rời mạng lưới",
+          "hint": "Gọn ngay lúc này, nhưng khó quay lại.",
+          "requires": [],
+          "confirmation": "required",
+          "confirmationNote": "Major irreversible action (SPEC section 24): effects apply only after confirmation; cancelling leaves the event unresolved and changes no state.",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": -8 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -5 },
+            { "kind": "npcStatusSet", "npc": "npc.recurring_rider", "status": "departed" },
+            { "kind": "memoryAdd", "id": "prec.rider_dispute.suppressed" },
+            { "kind": "memoryAdd", "id": "mem.rider_claim_on_record" },
+            { "kind": "callbackSchedule", "callback": "cb.rider_voice_followup" },
+            { "kind": "callbackSchedule", "callback": "cb.public_rider_dispute" }
+          ],
+          "feedback": "Họ nhận khoản tiền và ngừng nhận đơn. Chuyện này tạm yên, nhưng không ai còn nói chuyện thẳng với họ."
+        }
+      ],
+      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three options, none conditional: always 3 selectable." },
+      "memoryCreated": ["mem.rider_claim_on_record", "prec.rider_dispute.negotiated | prec.rider_dispute.declined | prec.rider_dispute.suppressed"],
+      "requiredCallbacksScheduled": ["cb.rider_voice_followup", "cb.public_rider_dispute"],
+      "cooldownWeeks": null,
+      "repeatable": false
+    },
+
+    {
+      "id": "var.rider_voice_followup.engaged",
+      "chain": "chain.rider_dispute",
+      "role": "callbackVariant",
+      "title": "Người tài xế ấy giờ nói thay cả nhóm",
+      "stage": "local_platform",
+      "whyNow": "Quỹ hỗ trợ bạn lập đã giúp tài xế này có uy tín trong nhóm.",
+      "speaker": "npc.recurring_rider",
+      "category": "character",
+      "deliveredBy": "cb.rider_voice_followup",
+      "situation": "Từ vụ ngã xe, tài xế quen mặt thành người cả nhóm hỏi ý kiến. Họ vẫn nhớ quỹ hỗ trợ bạn lập. Giờ họ đề nghị được góp ý mỗi khi công ty đổi quy định cho tài xế.",
+      "options": [
+        {
+          "id": "opt.rider_voice.engaged.grant_seat",
+          "text": "Cho họ một ghế đại diện khi xét quy định tài xế",
+          "hint": "Có người nói giúp bạn, nhưng quyết định sẽ chậm hơn.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "policyAdd", "id": "policy.rider_review_seat" },
+            { "kind": "recurringCostAdjust", "source": "policy.rider_review_seat", "delta": 2 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 5 }
+          ],
+          "feedback": "Họ nhận lời. Từ nay mỗi thay đổi về tài xế đều phải qua một buổi họp."
+        },
+        {
+          "id": "opt.rider_voice.engaged.keep_informal",
+          "text": "Giữ kênh nhắn riêng như hiện nay",
+          "hint": "Linh hoạt, nhưng không ràng buộc ai.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 2 }
+          ],
+          "feedback": "Họ gật đầu. Vẫn nhắn cho bạn trước khi nói với nhóm."
+        },
+        {
+          "id": "opt.rider_voice.engaged.defer_to_review",
+          "text": "Hẹn họ sau kỳ rà soát quy định cuối quý",
+          "hint": "Nhẹ cho ngân sách, nhưng họ có thể thất vọng.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "npcStatusSet", "npc": "npc.recurring_rider", "status": "neutral" },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -3 }
+          ],
+          "feedback": "Họ nói sẽ chờ. Giọng đã khác so với lần trước."
+        }
+      ],
+      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three unconditional options: always 3 selectable." },
+      "cooldownWeeks": null,
+      "repeatable": false
+    },
+
+    {
+      "id": "var.rider_voice_followup.aggrieved",
+      "chain": "chain.rider_dispute",
+      "role": "callbackVariant",
+      "title": "Bài đăng trong nhóm tài xế",
+      "stage": "local_platform",
+      "whyNow": "Quyết định từ chối của bạn giờ đã lộ ra trong nhóm tài xế.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "deliveredBy": "cb.rider_voice_followup",
+      "situation": "Người tài xế từng bị bạn từ chối đã đăng vào nhóm tài xế lớn nhất khu vực. Xe hỏng, mất ba ca, công ty không hỗ trợ. Nhiều người bình luận đồng tình. Quản lý vận hành muốn bạn có câu trả lời trước khi bài lan ra ngoài nhóm.",
+      "options": [
+        {
+          "id": "opt.rider_voice.aggrieved.meet_and_listen",
+          "text": "Gặp trực tiếp, nghe hết rồi mới trả lời",
+          "hint": "Mất thời gian và ít tiền, nhưng giữ được cuộc trò chuyện.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": -4 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 5 },
+            { "kind": "npcStatusSet", "npc": "npc.recurring_rider", "status": "neutral" }
+          ],
+          "feedback": "Họ đến, nói thẳng, rồi gỡ bài. Họ chưa tha thứ, nhưng chịu nghe."
+        },
+        {
+          "id": "opt.rider_voice.aggrieved.hold_line",
+          "text": "Đăng trả lời công khai, giữ nguyên quyết định",
+          "hint": "Giữ lập trường, nhưng bạn sẽ bị coi là cứng nhắc.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": -5 }
+          ],
+          "feedback": "Câu trả lời được chia sẻ nhiều hơn bài gốc. Không ai trong nhóm nhắn riêng cho bạn nữa."
+        },
+        {
+          "id": "opt.rider_voice.aggrieved.route_to_ops",
+          "text": "Giao quản lý vận hành trả lời theo mẫu chung",
+          "hint": "Ít rủi ro ngay lúc này, nhưng nghe như né tránh.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -3 }
+          ],
+          "feedback": "Bài đăng chìm dần, nhưng nhiều tài xế nhận xét công ty chỉ trả lời bằng mẫu soạn sẵn."
+        }
+      ],
+      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three unconditional options: always 3 selectable." },
+      "cooldownWeeks": null,
+      "repeatable": false
+    },
+
+    {
+      "id": "evt.proof.public_rider_dispute",
+      "chain": "chain.rider_dispute",
+      "role": "sharedCrisis",
+      "title": "Chuyện tài xế lên báo địa phương",
+      "stage": "city_player",
+      "speaker": "npc.ops_contact",
+      "category": "crisis",
+      "deliveredBy": "cb.public_rider_dispute",
+      "whyNow": "Một vụ ngã xe mới trên đúng đoạn đường cũ, và nhóm tài xế đem so với cách công ty từng xử lý vụ trước.",
+      "situation": "Một tài xế khác vừa ngã xe trên đoạn đường ngập ấy. Nhóm tài xế đăng công khai và so với cách công ty xử lý vụ trước. Một tờ báo địa phương hỏi công ty trả lời trước tối nay. Quản lý vận hành khuyên bạn nghĩ kỹ rồi mới nói.",
+      "contextLines": {
+        "note": "Dialogue-only. These lines do NOT count toward the AC-06 option-difference proof.",
+        "lines": [
+          {
+            "when": [{ "op": "has", "set": "policies", "id": "policy.rider_support_fund" }],
+            "text": "Bài đăng nhắc đến quỹ hỗ trợ của công ty và hỏi vì sao ca mất thu nhập không được tính."
+          },
+          {
+            "when": [{ "op": "notHas", "set": "policies", "id": "policy.rider_support_fund" }],
+            "text": "Bài đăng nhắc rằng công ty chưa có quy định hỗ trợ nào cho tài xế gặp nạn."
+          },
+          {
+            "when": [{ "op": "has", "set": "memories", "id": "prec.rider_dispute.suppressed" }],
+            "text": "Có người nhắc rằng vụ trước được dàn xếp riêng, rồi người trong cuộc rời đi."
+          }
+        ]
+      },
+      "options": [
+        {
+          "id": "opt.crisis.hold_and_review",
+          "text": "Hoãn phát ngôn hai ngày, rà soát các ca tai nạn",
+          "hint": "Có thời gian tìm hiểu, nhưng im lặng dễ bị đọc là né tránh.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": -5 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.delayed" }
+          ],
+          "feedback": "Bài viết lên báo với dòng 'công ty chưa phản hồi'. Bạn có hai ngày để chuẩn bị.",
+          "reportLine": "Công ty im lặng hai ngày; báo đăng tin kèm câu 'chưa có phản hồi'."
+        },
+        {
+          "id": "opt.crisis.cite_policy",
+          "text": "Công bố quy định quỹ hỗ trợ và số ca đã chi",
+          "hint": "Chứng minh bạn có làm, nhưng lộ chỗ quỹ chưa phủ tới.",
+          "requires": [{ "op": "has", "set": "policies", "id": "policy.rider_support_fund" }],
+          "unavailableBecause": "Không có quỹ hỗ trợ nào để công bố.",
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": 5 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -3 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.cited_policy" }
+          ],
+          "feedback": "Báo trích nguyên văn quy định. Nhóm tài xế chỉ ra ca mất thu nhập vẫn chưa được tính.",
+          "reportLine": "Công ty công bố quỹ hỗ trợ; nhóm tài xế chỉ ra khoảng trống mà quỹ chưa phủ tới."
+        },
+        {
+          "id": "opt.crisis.announce_new_policy",
+          "text": "Công bố quỹ hỗ trợ tài xế ngay bây giờ",
+          "hint": "Làm dịu dư luận, nhưng bị hỏi sao đến lúc này mới có.",
+          "requires": [{ "op": "notHas", "set": "policies", "id": "policy.rider_support_fund" }],
+          "unavailableBecause": "Công ty đã có quỹ hỗ trợ; không còn là chính sách mới để công bố.",
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": -8 },
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": 2 },
+            { "kind": "policyAdd", "id": "policy.rider_support_fund" },
+            { "kind": "recurringCostAdjust", "source": "policy.rider_support_fund", "delta": 6 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.policy_under_pressure" }
+          ],
+          "feedback": "Quỹ được công bố trong đêm. Nhiều người hỏi vì sao chỉ có sau khi lên báo.",
+          "reportLine": "Quỹ hỗ trợ ra đời sau khi lên báo; nhiều tài xế hỏi sao không có từ đầu."
+        },
+        {
+          "id": "opt.crisis.joint_statement",
+          "text": "Cùng tài xế quen mặt ra thông báo chung",
+          "hint": "Được tin cậy hơn, nhưng bạn sẽ phải giữ lời với họ.",
+          "requires": [
+            { "op": "eq", "ref": "npc.recurring_rider.status", "value": "ally" },
+            { "op": "has", "set": "policies", "id": "policy.rider_support_fund" }
+          ],
+          "unavailableBecause": "Người tài xế quen mặt không còn là người ủng hộ bạn (hoặc không còn trong mạng lưới), hoặc công ty chưa có quỹ hỗ trợ để cùng cam kết mở rộng.",
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": 6 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 5 },
+            { "kind": "recurringCostAdjust", "source": "policy.rider_support_fund", "delta": 3 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.joint_statement" }
+          ],
+          "feedback": "Họ đứng cạnh bạn trong thông báo và cam kết mở rộng quỹ sang ca mất thu nhập. Báo đăng cả hai.",
+          "reportLine": "Tài xế quen mặt đứng cạnh công ty trong thông báo chung; họ ghi nhận và chờ quỹ được mở rộng."
+        },
+        {
+          "id": "opt.crisis.refer_to_review_panel",
+          "text": "Chuyển vụ việc cho hội đồng rà soát có đại diện tài xế",
+          "hint": "Nghe có trọng lượng, nhưng chưa có kết luận ngay.",
+          "requires": [{ "op": "has", "set": "policies", "id": "policy.rider_review_seat" }],
+          "unavailableBecause": "Chưa có ghế đại diện tài xế trong khâu rà soát quy định.",
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": 3 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 3 },
+            { "kind": "metricAdjust", "metric": "cash", "delta": -2 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.panel_review" }
+          ],
+          "feedback": "Đại diện tài xế phát biểu trước báo rằng vụ việc đang được xem xét nghiêm túc.",
+          "reportLine": "Hội đồng rà soát có đại diện tài xế nhận vụ việc; báo chờ kết luận."
+        },
+        {
+          "id": "opt.crisis.quiet_settlement",
+          "text": "Dàn xếp riêng với các tài xế liên quan, đề nghị gỡ bài",
+          "hint": "Dập nhanh, nhưng bài viết có thể bị chụp lại.",
+          "requires": [{ "op": "notHas", "set": "memories", "id": "prec.rider_dispute.negotiated" }],
+          "unavailableBecause": "Vụ trước đã được giải quyết công khai bằng chính sách; không còn khoản tồn đọng để dàn xếp riêng.",
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": -10 },
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": -3 },
+            { "kind": "memoryAdd", "id": "mem.public_dispute.settled_quietly" }
+          ],
+          "feedback": "Bài đăng được gỡ sau vài giờ. Ảnh chụp màn hình vẫn còn lưu truyền.",
+          "reportLine": "Bài đăng bị gỡ sau dàn xếp riêng; ảnh chụp màn hình vẫn lưu truyền."
+        }
+      ],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 4,
+        "reason": "Lower bound: opt.crisis.hold_and_review has no condition, and exactly one of opt.crisis.cite_policy / opt.crisis.announce_new_policy is selectable (has vs notHas on the same policy id), so at least 2 in every state. Upper bound within this proof pack: joint_statement requires status ally plus policy.rider_support_fund and panel requires policy.rider_review_seat, both reachable only on the fund_policy path where announce_new_policy and quiet_settlement are unavailable, so the maximum is 4 (hold, cite, joint, panel). If other slice content later changes rider status or adds policies, this must be re-checked (T17)."
+      },
+      "optionAvailabilityDriversAC06": [
+        "policy.rider_support_fund",
+        "prec.rider_dispute.negotiated",
+        "npc.recurring_rider.status",
+        "policy.rider_review_seat"
+      ],
+      "memoryCreated": [
+        "mem.public_dispute.delayed",
+        "mem.public_dispute.cited_policy",
+        "mem.public_dispute.policy_under_pressure",
+        "mem.public_dispute.joint_statement",
+        "mem.public_dispute.panel_review",
+        "mem.public_dispute.settled_quietly"
+      ],
+      "cooldownWeeks": null,
+      "repeatable": false
+    },
+
+    {
+      "id": "evt.proof.fallback_shift_roster",
+      "chain": null,
+      "role": "fallback",
+      "title": "Ca làm cuối tuần chưa đủ người",
+      "stage": "local_platform",
+      "whyNow": "Cuối tuần sắp tới, ca tối ở khu đông người đang thiếu tài xế.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "eligibility": [],
+      "situation": "Quản lý vận hành báo ca tối cuối tuần ở khu đông người đang thiếu tài xế. Chưa phải sự cố, nhưng đơn có thể chờ lâu hơn bình thường.",
+      "options": [
+        {
+          "id": "opt.fallback.arrange_extra_shift",
+          "text": "Thưởng nhẹ để có thêm người nhận ca tối",
+          "hint": "Tốn một chút, đỡ thiếu người.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": -3 },
+            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 2 }
+          ],
+          "feedback": "Vài tài xế nhận thêm ca tối. Đơn giao đều hơn."
+        },
+        {
+          "id": "opt.fallback.leave_roster_as_is",
+          "text": "Giữ nguyên, để đơn chờ lâu hơn một chút",
+          "hint": "Giữ tiền mặt, nhưng khách có thể chờ lâu.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            { "kind": "metricAdjust", "metric": "cash", "delta": 2 },
+            { "kind": "metricAdjust", "metric": "publicTrust", "delta": -2 }
+          ],
+          "feedback": "Cuối tuần đơn chờ lâu hơn. Vài khách để lại nhận xét không hài lòng."
+        }
+      ],
+      "selectableCoverage": { "min": 2, "max": 4, "reason": "Two unconditional options: always 2 selectable. Binary low-stakes fallback." },
+      "fallbackRules": {
+        "usedOnlyWhen": "too few other events are eligible for a slot (SPEC section 21)",
+        "stateIndependent": true,
+        "note": "Does not read or write chain state; it cannot bypass any option condition or cooldown of another event."
+      },
+      "repeatable": false
+    }
+  ],
+
+  "callbacks": [
+    {
+      "id": "cb.rider_voice_followup",
+      "chain": "chain.rider_dispute",
+      "sourceDecision": {
+        "event": "evt.proof.rider_claim",
+        "options": ["opt.rider_claim.fund_policy", "opt.rider_claim.decline", "opt.rider_claim.settle_and_part"],
+        "scheduledBy": "callbackSchedule effect on every source option"
+      },
+      "required": true,
+      "window": { "earliestWeek": 7, "latestWeek": 8, "weekBasis": "absolute in-game week" },
+      "tieOrder": 1,
+      "tieOrderNote": "Lower number delivers first when deadlines (latestWeek) are equal. Authored order across the proof pack: cb.rider_voice_followup (1), cb.public_rider_dispute (2).",
+      "eligibility": [{ "op": "has", "set": "memories", "id": "mem.rider_claim_on_record" }],
+      "consumesEventSlot": "yes when a variant event is delivered; no when a report closure is used",
+      "variants": [
+        {
+          "event": "var.rider_voice_followup.engaged",
+          "when": [
+            { "op": "neq", "ref": "npc.recurring_rider.status", "value": "departed" },
+            { "op": "has", "set": "memories", "id": "prec.rider_dispute.negotiated" }
+          ]
+        },
+        {
+          "event": "var.rider_voice_followup.aggrieved",
+          "when": [
+            { "op": "neq", "ref": "npc.recurring_rider.status", "value": "departed" },
+            { "op": "has", "set": "memories", "id": "prec.rider_dispute.declined" }
+          ]
+        }
+      ],
+      "variantNote": "Variants are mutually exclusive because exactly one of the three precedents is set by the source decision. Evaluation order is the list order.",
+      "changedContext": {
+        "invalidWhen": "No variant's `when` holds at evaluation time (in this proof: the rider is departed).",
+        "resolution": {
+          "type": "reportClosure",
+          "closure": "closure.rider_voice_followup.departed",
+          "closedInReportOfWeek": "the first week of the window in which the callback would otherwise have been delivered (W7)"
+        },
+        "appliesUnchosenOption": false,
+        "slotShortageCancels": false
+      },
+      "pendingRule": "If no slot is available the callback stays pending with latestWeek 8 until its resolution is committed (SPEC section 21)."
+    },
+    {
+      "id": "cb.public_rider_dispute",
+      "chain": "chain.rider_dispute",
+      "sourceDecision": {
+        "event": "evt.proof.rider_claim",
+        "options": ["opt.rider_claim.fund_policy", "opt.rider_claim.decline", "opt.rider_claim.settle_and_part"],
+        "scheduledBy": "callbackSchedule effect on every source option"
+      },
+      "required": true,
+      "window": { "earliestWeek": 10, "latestWeek": 11, "weekBasis": "absolute in-game week" },
+      "tieOrder": 2,
+      "eligibility": [{ "op": "has", "set": "memories", "id": "mem.rider_claim_on_record" }],
+      "consumesEventSlot": "yes",
+      "variants": [
+        { "event": "evt.proof.public_rider_dispute", "when": [] }
+      ],
+      "variantNote": "A single event with state-adaptive option availability, so no context can invalidate it. Reads current committed state at presentation time.",
+      "changedContext": {
+        "invalidWhen": "Cannot occur: the event has no precondition beyond the source memory.",
+        "resolution": {
+          "type": "none",
+          "reportClosureAllowed": false,
+          "reason": "CONTENT_GUIDE: a report-only closure cannot substitute for the required same-crisis, different-options demonstration. It must be playable by W11, leaving W12 for the report/payoff."
+        },
+        "appliesUnchosenOption": false,
+        "slotShortageCancels": false
+      },
+      "pendingRule": "If no slot is available the callback stays pending with latestWeek 11 until its resolution is committed."
+    }
+  ],
+
+  "closures": [
+    {
+      "id": "closure.rider_voice_followup.departed",
+      "type": "reportClosure",
+      "callback": "cb.rider_voice_followup",
+      "consumesEventSlot": false,
+      "playerChoice": false,
+      "reportText": "Người tài xế từng phản ánh đã rời mạng lưới sau thỏa thuận. Không còn ai trong nhóm đứng ra hỏi lại chuyện đó, và vụ việc được ghi là đã khép.",
+      "effects": [],
+      "effectsNote": "No gameplay effects. The consequence of the original choice is already committed (precedent, status, cash). Closing applies no option the player did not choose."
+    }
+  ]
+}
