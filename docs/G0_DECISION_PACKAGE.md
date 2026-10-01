@@ -92,6 +92,8 @@ A mismatch is a recoverable stale-write conflict: do not acknowledge or overwrit
 Recovery:
 - valid `current` → resume exactly;
 - invalid/unsupported `current` + valid `previous` → explicit recovery;
+- when recovery is confirmed, use one recovery transaction to re-check that `previous` is still the selected valid checkpoint and `current` is still invalid/missing/unsupported, then promote the recovered checkpoint to a valid `current` before gameplay resumes;
+- subsequent saves derive from that recovered `current.sequence`;
 - neither valid → blocking recovery; reset requires confirmation;
 - never silently coerce/reset unsupported future schema.
 
@@ -195,14 +197,14 @@ npm run verify
 
 ### Immediate task bindings
 
-| Task | Bound paths/responsibility | Required evidence |
+| Task | Actual paths for the first slice | Required evidence |
 |---|---|---|
-| T18 | `content/prototype/` proof chain/history JSON + one evidence record | Paper/data-shape review; two histories document shared-crisis selectable-option difference; no runtime pass claimed. |
-| T07 | package/tool configs, `src/` portrait shell, browser smoke test, verify workflow | Install, check/typecheck/test/build, PWA manifest/service worker, Chromium/WebKit smoke. |
-| T08 | content schema/loader, checkpoint store, event presentation, focused persistence/resume tests | AC-04/05: same event/options on resume; failed/stale save no success; complete checkpoint recovery. |
-| T09 | choice resolver + checkpoint integration + idempotency/state tests | AC-01/04/05: effects/history/callbacks commit together; no duplicate effects. |
+| T18 | `content/prototype/proof-chain.json`; `content/prototype/proof-histories.json`; `tasks/evidence/t18-proof-chain.md` | Paper/data-shape review; two histories document shared-crisis selectable-option difference; no runtime pass claimed. |
+| T07 | `package.json`; `package-lock.json`; `vite.config.ts`; `src/main.tsx`; `src/App.tsx`; `tests/e2e/smoke.spec.ts`; `.github/workflows/verify.yml` | Install, check/typecheck/test/build, PWA manifest/service worker, Chromium/WebKit smoke. |
+| T08 | `src/game/content/`; `src/game/persistence/`; `src/game/ui/`; `tests/game/`; `tests/e2e/offline-resume.spec.ts` | AC-04/05: same event/options on resume; failed/stale save no success; recovered checkpoint can save again; complete checkpoint recovery. |
+| T09 | `src/game/domain/`; `src/game/persistence/`; `src/game/ui/`; `tests/game/`; `tests/e2e/offline-resume.spec.ts` | AC-01/04/05: effects/history/callbacks commit together; no duplicate effects. |
 
-Exact filenames inside those groups follow the simplest coherent scaffold. Later slices are detailed only when they start.
+These are the concrete first-slice locations required by T06, not a full repository file map. Files inside the listed directories may follow the simplest coherent scaffold. Later slices are detailed only when they start.
 
 Also verify the deployed PWA update path once available: install/load version A, deploy B, accept update prompt, confirm B activates without discarding the committed local checkpoint.
 
