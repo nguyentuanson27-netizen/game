@@ -27,8 +27,10 @@ The player resolves short business situations with 2–4 choices. Decisions chan
 - [`docs/CONTENT_GUIDE.md`](docs/CONTENT_GUIDE.md) — event, NPC, chain and consequence authoring rules.
 - [`docs/PRODUCT_GUARDRAILS.md`](docs/PRODUCT_GUARDRAILS.md) — scope, fictionalization, safety and differentiation boundaries.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — decisions already locked during product discovery.
+- [`docs/PROTOTYPE_ART.md`](docs/PROTOTYPE_ART.md) — demo-first placeholder art sources, boundaries and replacement rules.
+- [`assets/README.md`](assets/README.md) — planned asset layout and vendor/runtime separation.
 - [`AGENTS.md`](AGENTS.md) — instructions for coding/design agents working in this repository.
 
 ## Status
 
-Specification phase. No implementation stack has been selected yet. Do not infer framework, engine, build commands or architecture until they are explicitly chosen and documented.
+Specification/planning phase. No implementation stack has been selected yet. Four Kenney CC0 packs are selected as replaceable demo placeholders, but the final art direction remains open and recurring character art is deferred. Do not infer framework, engine, build commands or architecture until they are explicitly chosen and documented.
