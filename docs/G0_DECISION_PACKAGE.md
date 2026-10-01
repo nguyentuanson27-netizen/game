@@ -91,11 +91,12 @@ A mismatch is a recoverable stale-write conflict: do not acknowledge or overwrit
 
 Recovery:
 - valid `current` → resume exactly;
-- invalid/unsupported `current` + valid `previous` → explicit recovery;
-- when recovery is confirmed, use one recovery transaction to re-check that `previous` is still the selected valid checkpoint and `current` is still invalid/missing/unsupported, then promote the recovered checkpoint to a valid `current` before gameplay resumes;
+- corrupt/missing `current` + valid `previous` → explicit recovery;
+- when that recovery is confirmed, use one recovery transaction to re-check that `previous` is still the selected valid checkpoint and `current` is still corrupt/missing, then promote the recovered checkpoint to a valid `current` before gameplay resumes;
 - subsequent saves derive from that recovered `current.sequence`;
-- neither valid → blocking recovery; reset requires confirmation;
-- never silently coerce/reset unsupported future schema.
+- unsupported future-schema `current` → block this older app/version and preserve the save; do not overwrite it with `previous`;
+- neither usable checkpoint → blocking recovery; reset requires confirmation;
+- never silently coerce/reset an unsupported future schema.
 
 Prototype privacy: no account, cloud save, analytics/ads SDK, uploads, personal-data collection or server gameplay logs. Site-storage clearing is an explicit prototype limitation.
 
