@@ -147,6 +147,13 @@ describe("proof content boundary", () => {
     ).toContain("unknown event evt.proof.nope");
   });
 
+  it("rejects a callback whose source option belongs to a different event", () => {
+    const issues = rejected((chain) => {
+      chain.callbacks[0].sourceDecision.options = ["opt.crisis.hold_and_review"];
+    });
+    expect(issues).toContain("is not an option of evt.proof.rider_claim");
+  });
+
   it("rejects duplicate ids and a plan that exceeds the weekly budget", () => {
     expect(
       rejected((chain) => {

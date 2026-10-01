@@ -5,11 +5,13 @@ import { type ContentPack, loadContentPack } from "../../src/game/content/loader
 import { startCampaign } from "../../src/game/domain/campaign.ts";
 import { nextStep } from "../../src/game/domain/nextStep.ts";
 import { resolveChoice } from "../../src/game/domain/resolveChoice.ts";
+import { settleWeek } from "../../src/game/domain/settlement.ts";
 import { initialCampaignState } from "../../src/game/domain/worldState.ts";
 import type {
   Checkpoint,
   CheckpointDraft,
   EventCheckpoint,
+  ReportCheckpoint,
   SettlementCheckpoint,
 } from "../../src/game/persistence/checkpoint.ts";
 import type { CheckpointStore, LoadResult, StoreResult } from "../../src/game/persistence/store.ts";
@@ -189,4 +191,33 @@ export function settlementAt(
 export function seedDraft(checkpoint: Checkpoint): CheckpointDraft {
   const { sequence: _sequence, ...rest } = checkpoint;
   return { ...rest, parentSequence: null };
+}
+
+/** The week-1 report of the production proof pack after fund policy + extra evening shift. */
+export function weekOneReport(pack: ContentPack = proofPack()): ReportCheckpoint {
+  const draft = settleWeek(
+    replayToSettlement(pack, 1, [
+      "opt.rider_claim.fund_policy",
+      "opt.fallback.arrange_extra_shift",
+    ]),
+  );
+  if (draft.phase !== "report") throw new Error("expected a report");
+  return { ...draft, sequence: 4 };
+}
+
+/**
+ * The proof pack plus one test-only, repeatable beat in each of `weeks`, so the Next Week
+ * mechanism can be exercised. The shipped proof loop authors no decisions after week 1.
+ */
+export function playablePack(weeks: number[] = [2]): ContentPack {
+  return packFrom((chain, loop) => {
+    chain.events.push(
+      testEvent(
+        "evt.test.week_beat",
+        [testOption("opt.test.week_beat.steady"), testOption("opt.test.week_beat.push")],
+        { repeatable: true },
+      ),
+    );
+    for (const week of weeks) loop.weeks[week - 1].slots = ["evt.test.week_beat"];
+  });
 }

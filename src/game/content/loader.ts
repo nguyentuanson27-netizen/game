@@ -150,8 +150,12 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
     if (!events.has(cb.sourceDecision.event)) {
       issues.push(`${cb.id}: unknown source event ${cb.sourceDecision.event}`);
     }
+    const sourceEvent = events.get(cb.sourceDecision.event);
     for (const id of cb.sourceDecision.options) {
       if (!optionIds.has(id)) issues.push(`${cb.id}: unknown source option ${id}`);
+      else if (sourceEvent && !sourceEvent.options.some((o) => o.id === id)) {
+        issues.push(`${cb.id}: source option ${id} is not an option of ${sourceEvent.id}`);
+      }
     }
     for (const c of cb.eligibility) checkCondition(cb.id, c);
     for (const variant of cb.variants) {

@@ -2,7 +2,11 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it } from "vitest";
 import { App } from "../../../src/App.tsx";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
-import { corruptSlot, proofPack, spyOn, uniqueDbName } from "../helpers.ts";
+import { corruptSlot, playablePack, spyOn, uniqueDbName } from "../helpers.ts";
+
+// Next Week needs a week 2 with a decision, which the shipped proof loop does not author yet.
+const proofPack = () => playablePack();
+
 import { lostAck, rawSlots, SECRET } from "./faults.ts";
 
 afterEach(cleanup);
@@ -38,7 +42,7 @@ const noMoreProgress = {
   settle: () => screen.queryByRole("button", { name: "Tổng kết tuần" }),
   report: () => screen.queryByRole("heading", { name: "Báo cáo tuần 1" }),
   nextWeek: () => screen.queryByRole("button", { name: "Tuần tiếp theo" }),
-  week2: () => screen.queryByRole("heading", { name: "Tuần 2" }),
+  week2: () => screen.queryByText("Tuần 2 · Quyết định 1/1"),
 };
 
 describe("a failed save never lets the player move on (AC-05)", () => {
@@ -106,7 +110,7 @@ describe("a failed save never lets the player move on (AC-05)", () => {
     expect(await rawSlots(ctx.name)).toEqual(before);
 
     fireEvent.click(screen.getByRole("button", { name: "Tuần tiếp theo" }));
-    await screen.findByRole("heading", { name: "Tuần 2" });
+    await screen.findByText("Tuần 2 · Quyết định 1/1");
     const after = await rawSlots(ctx.name);
     expect(after.current).toMatchObject({ week: 2, parentSequence: before.current.sequence });
     expect(after.previous).toEqual(before.current);
@@ -165,9 +169,9 @@ describe("a committed write whose acknowledgement was lost (AC-05)", () => {
     await screen.findByText(/đã thay đổi ở tab/);
     fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
 
-    await screen.findByRole("heading", { name: "Tuần 2" });
+    await screen.findByText("Tuần 2 · Quyết định 1/1");
     const advanced = await rawSlots(ctx.name);
-    expect(advanced.current).toMatchObject({ week: 2, phase: "settlement", metrics: { cash: 53 } });
+    expect(advanced.current).toMatchObject({ week: 2, phase: "event", metrics: { cash: 53 } });
     expect(advanced.current.sequence).toBe(settled.current.sequence + 1);
   });
 });

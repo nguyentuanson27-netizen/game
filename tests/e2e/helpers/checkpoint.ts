@@ -42,3 +42,52 @@ export function readSlot(
 }
 
 export const readCurrent = (page: Page) => readSlot(page, "current");
+
+/**
+ * Seed the week-12 report from the stored week-1 report (same company state, so its settlement
+ * result stays exactly what D4 produces), as a normal checkpoint write that rotates the old
+ * current into `previous`. The shipped proof loop authors no decisions after week 1, so a real
+ * run cannot reach week 12; this exercises the `report -> Prototype Complete` boundary only.
+ * Reload the page afterwards so the app resumes from it.
+ */
+export function seedWeekTwelveReport(page: Page): Promise<void> {
+  return page.evaluate(
+    (dbName) =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open(dbName);
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction("checkpoints", "readwrite");
+          const store = tx.objectStore("checkpoints");
+          const get = store.get("current");
+          get.onsuccess = () => {
+            const current = get.result;
+            if (current?.phase !== "report") {
+              tx.abort();
+              reject(new Error("seeding needs a settled report"));
+              return;
+            }
+            store.put(current, "previous");
+            store.put(
+              {
+                ...current,
+                sequence: current.sequence + 1,
+                parentSequence: current.sequence,
+                week: 12,
+                weekDecisions: [],
+                settlement: { ...current.settlement, week: 12 },
+              },
+              "current",
+            );
+          };
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onabort = () => reject(tx.error ?? new Error("seed aborted"));
+        };
+      }),
+    "bicycle-platform-prototype",
+  );
+}

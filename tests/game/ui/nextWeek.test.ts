@@ -1,23 +1,34 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
 import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/session.ts";
-import { proofPack, seedDraft, settlementAt, spyOn, uniqueDbName } from "../helpers.ts";
+import {
+  playablePack,
+  proofPack,
+  seedDraft,
+  settlementAt,
+  spyOn,
+  uniqueDbName,
+} from "../helpers.ts";
 
 const open: Array<{ close(): Promise<void> }> = [];
 afterEach(async () => {
   await Promise.all(open.splice(0).map((s) => s.close()));
 });
 
-function newStore() {
+/**
+ * `pack` defaults to test-only content with one decision in week 2, so Next Week has a playable
+ * week to advance into; the shipped proof loop authors no decisions after week 1.
+ */
+function newStore(pack = playablePack()) {
   const name = uniqueDbName();
   const inner = createIdbCheckpointStore(name);
   open.push(inner);
-  return { name, inner, store: spyOn(inner), pack: proofPack() };
+  return { name, inner, store: spyOn(inner), pack };
 }
 
 /** Week 1 fully played and settled: the player is looking at the report. */
-async function atReport() {
-  const ctx = newStore();
+async function atReport(pack = playablePack()) {
+  const ctx = newStore(pack);
   let state = await bootstrap(ctx.store, ctx.pack);
   for (const optionId of ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"]) {
     if (state.kind !== "event") throw new Error(`expected an event, got ${state.kind}`);
@@ -30,6 +41,25 @@ async function atReport() {
   if (!settled.ok || settled.state.kind !== "report") throw new Error("settlement failed");
   return { ...ctx, report: settled.state.checkpoint };
 }
+
+describe("Next Week with the shipped proof pack", () => {
+  it("is refused: the report stays the current checkpoint and nothing is saved", async () => {
+    const pack = proofPack();
+    const { store, inner, report } = await atReport(pack);
+    const before = await inner.load();
+    const commits = store.commits.length;
+
+    const refused = await nextWeek(store, pack, report);
+
+    expect(refused).toMatchObject({ ok: false, error: "no-content" });
+    expect(store.commits).toHaveLength(commits);
+    expect(await inner.load()).toEqual(before);
+    expect(before).toEqual({ status: "ready", checkpoint: report });
+    // Repeating it is refused the same way; the campaign cannot drift into zero-decision weeks.
+    expect(await nextWeek(store, pack, report)).toMatchObject({ ok: false, error: "no-content" });
+    expect(store.commits).toHaveLength(commits);
+  });
+});
 
 describe("Next Week through the checkpoint store", () => {
   it("advances one week in one commit and shows it only after the commit", async () => {
@@ -52,12 +82,12 @@ describe("Next Week through the checkpoint store", () => {
     const result = await advancing;
 
     expect(store.commits).toHaveLength(commitsBefore + 1);
-    expect(result.ok && result.state.kind).toBe("settlement");
+    expect(result.ok && result.state.kind).toBe("event");
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
     expect(stored.checkpoint).toMatchObject({
       week: 2,
-      phase: "settlement",
+      phase: "event",
       sequence: report.sequence + 1,
       weekDecisions: [],
       metrics: report.metrics,
@@ -105,23 +135,24 @@ describe("Next Week through the checkpoint store", () => {
     const resumed = await bootstrap(reopenedStore, pack);
 
     expect(resumed).toEqual(advanced.state);
-    expect(resumed.kind === "settlement" && resumed.checkpoint.week).toBe(2);
-    expect(resumed.kind === "settlement" && resumed.checkpoint.metrics.cash).toBe(
-      report.metrics.cash,
-    );
+    expect(resumed.kind === "event" && resumed.checkpoint.week).toBe(2);
+    expect(resumed.kind === "event" && resumed.checkpoint.metrics.cash).toBe(report.metrics.cash);
     expect(reopenedStore.commits).toHaveLength(0);
   });
 
-  it("walks all 12 weeks with no week skipped, no week settled twice and the callbacks preserved", async () => {
-    const { store, inner, pack, report } = await atReport();
+  it("walks weeks 1-12 on test-only content with a decision every week: none skipped, none settled twice, callbacks preserved", async () => {
+    const pack = playablePack([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    const { store, inner, report } = await atReport(pack);
     const weeks: number[] = [report.week];
     let state = await nextWeek(store, pack, report).then((r) => {
       if (!r.ok) throw new Error(r.message);
       return r.state;
     });
 
-    while (state.kind === "settlement") {
-      const settled = await settle(store, pack, state.checkpoint);
+    while (state.kind === "event") {
+      const decided = await choose(store, pack, state.checkpoint, "opt.test.week_beat.steady");
+      if (!decided.ok || decided.state.kind !== "settlement") throw new Error("choice failed");
+      const settled = await settle(store, pack, decided.state.checkpoint);
       if (!settled.ok || settled.state.kind !== "report") throw new Error("settlement failed");
       weeks.push(settled.state.checkpoint.week);
       const next = await nextWeek(store, pack, settled.state.checkpoint);
@@ -133,12 +164,12 @@ describe("Next Week through the checkpoint store", () => {
     expect(state.kind).toBe("complete");
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
-    // 1 start + 2 choices + 12 settlements + 12 advances; every save derived from the previous one.
-    expect(stored.checkpoint.sequence).toBe(27);
+    // 1 start + 2 choices + settle/advance of week 1 + (choice, settle, advance) for weeks 2-12.
+    expect(stored.checkpoint.sequence).toBe(1 + 2 + 2 + 3 * 11);
     expect(stored.checkpoint).toMatchObject({
       phase: "complete",
       week: 12,
-      // Week 1 ended on 53 and each later empty week settles +6 once (62 riders, fund cost 71).
+      // Week 1 ended on 53 and each later week settles +6 once (62 riders, fund cost 71).
       metrics: { cash: 53 + 11 * 6 },
     });
     expect(stored.checkpoint.pendingCallbacks.map((p) => p.callbackId)).toEqual([
@@ -146,9 +177,9 @@ describe("Next Week through the checkpoint store", () => {
       "cb.public_rider_dispute",
     ]);
     // Reopening the endpoint neither advances nor saves.
-    const again = await bootstrap(store, pack);
-    expect(again.kind).toBe("complete");
-    expect(store.commits).toHaveLength(27);
+    const commits = store.commits.length;
+    expect((await bootstrap(store, pack)).kind).toBe("complete");
+    expect(store.commits).toHaveLength(commits);
   });
 
   it("settles week 12 and then closes the prototype instead of opening week 13", async () => {

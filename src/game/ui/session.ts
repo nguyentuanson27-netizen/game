@@ -137,7 +137,7 @@ export async function choose(
 
 export type SettleResult =
   | { ok: true; state: SessionState }
-  | { ok: false; error: StoreErrorCode; message: string };
+  | { ok: false; error: StoreErrorCode | "no-content"; message: string };
 
 /**
  * Settle the week once: one checkpoint holds the settled cash, the result and the new phase. The
@@ -163,7 +163,7 @@ export async function nextWeek(
   checkpoint: ReportCheckpoint,
 ): Promise<SettleResult> {
   const advanced = advanceWeek(pack, checkpoint);
-  if (!advanced.ok) return { ok: false, error: "invalid", message: advanced.message };
+  if (!advanced.ok) return { ok: false, error: "no-content", message: advanced.message };
   const committed = await store.commit(advanced.draft);
   if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
   return { ok: true, state: fromCheckpoint(pack, committed.value) };

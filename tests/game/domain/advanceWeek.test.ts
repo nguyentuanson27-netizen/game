@@ -5,6 +5,7 @@ import { settleWeek } from "../../../src/game/domain/settlement.ts";
 import type { ReportCheckpoint } from "../../../src/game/persistence/checkpoint.ts";
 import {
   packFrom,
+  playablePack,
   proofPack,
   replayToSettlement,
   settlementAt,
@@ -14,19 +15,41 @@ import {
 
 const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"];
 
-function reportAfter(pack = proofPack(), optionIds = FUND_THEN_SHIFT): ReportCheckpoint {
+function reportAfter(pack = playablePack(), optionIds = FUND_THEN_SHIFT): ReportCheckpoint {
   const draft = settleWeek(replayToSettlement(pack, 1, optionIds));
   if (draft.phase !== "report") throw new Error("expected a report");
   return { ...draft, sequence: 4 };
 }
 
-function advanced(report: ReportCheckpoint, pack = proofPack()) {
+function advanced(report: ReportCheckpoint, pack = playablePack()) {
   const result = advanceWeek(pack, report);
   if (!result.ok) throw new Error(result.message);
   return result.draft;
 }
 
-describe("Next Week", () => {
+describe("Next Week into a week the content has not authored", () => {
+  it("is refused for the shipped proof pack: week 2 has no playable slot", () => {
+    const pack = proofPack();
+    const report = reportAfter(pack);
+
+    const result = advanceWeek(pack, report);
+
+    expect(result).toMatchObject({ ok: false });
+    expect(!result.ok && result.message).toContain("week 2");
+  });
+
+  it("is refused for every week while the plan has no decisions, never producing a zero-decision week", () => {
+    const pack = proofPack();
+    for (const week of [1, 5, 11]) {
+      const draft = settleWeek(settlementAt(pack, week));
+      if (draft.phase !== "report") throw new Error("expected a report");
+
+      expect(advanceWeek(pack, { ...draft, sequence: 2 })).toMatchObject({ ok: false });
+    }
+  });
+});
+
+describe("Next Week (mechanism, on test-only content with a decision in week 2)", () => {
   it("advances exactly one week and resets only the week-local state", () => {
     const report = reportAfter();
 
@@ -35,8 +58,8 @@ describe("Next Week", () => {
     expect(draft).toMatchObject({
       week: 2,
       parentSequence: 4,
-      phase: "settlement", // week 2 has no authored decision slots yet
-      activeEvent: null,
+      phase: "event",
+      activeEvent: { eventId: "evt.test.week_beat" },
       weekDecisions: [],
     });
     expect("settlement" in draft).toBe(false);
@@ -108,7 +131,7 @@ describe("Next Week", () => {
     expect(advanceWeek(pack, noFund)).toMatchObject({ ok: false });
   });
 
-  it("finishes with Prototype Complete after week 12 and never creates week 13", () => {
+  it("finishes with Prototype Complete after a seeded week-12 report and never creates week 13", () => {
     const pack = proofPack();
     const draft = settleWeek(settlementAt(pack, 12));
     if (draft.phase !== "report") throw new Error("expected a report");

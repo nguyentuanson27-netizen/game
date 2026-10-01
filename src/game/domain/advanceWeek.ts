@@ -31,9 +31,10 @@ export function advanceWeek(pack: ContentPack, checkpoint: ReportCheckpoint): Ad
   // The new week's first slot is evaluated against the state settlement just committed.
   const next = nextStep(pack, week, 0, checkpoint);
   if (!next.ok) return { ok: false, message: next.message };
-  const draft: CheckpointDraft =
-    next.phase === "event"
-      ? { ...base, week, phase: "event", activeEvent: next.activeEvent }
-      : { ...base, week, phase: "settlement", activeEvent: null };
-  return { ok: true, draft };
+  // A week with no authored decisions is unfinished content, not a valid zero-decision week:
+  // refuse instead of settling it (and eventually "completing" the prototype) with nothing played.
+  if (next.phase !== "event") {
+    return { ok: false, message: `week ${week} has no authored decisions yet` };
+  }
+  return { ok: true, draft: { ...base, week, phase: "event", activeEvent: next.activeEvent } };
 }

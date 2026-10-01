@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { readSlot, type StoredCheckpoint } from "./helpers/checkpoint.ts";
+import { readSlot, type StoredCheckpoint, seedWeekTwelveReport } from "./helpers/checkpoint.ts";
 import {
   arm,
   crash,
@@ -116,21 +116,26 @@ const BOUNDARIES: Boundary[] = [
       expect(cp).toMatchObject({ phase: "report", week: 1, metrics: { cash: 53 } }),
   },
   {
-    name: "Next Week save",
+    // The shipped proof loop authors no decision after week 1, so the advance write is exercised
+    // at its only reachable production boundary: a seeded week-12 report -> Prototype Complete.
+    name: "Next Week save (seeded week-12 report -> Prototype Complete)",
     prepare: async (page) => {
       await expect(heading(page, EVENT_TITLE)).toBeVisible();
       await playToSettlement(page);
       await button(page, "Tổng kết tuần").click();
       await expect(heading(page, "Báo cáo tuần 1")).toBeVisible();
+      await seedWeekTwelveReport(page);
+      await page.reload();
+      await expect(heading(page, "Báo cáo tuần 12")).toBeVisible();
     },
-    trigger: (page) => button(page, "Tuần tiếp theo").click(),
+    trigger: (page) => button(page, "Kết thúc bản nguyên mẫu").click(),
     old: async (page) => {
-      await expect(heading(page, "Báo cáo tuần 1")).toBeVisible();
-      await expect(button(page, "Tuần tiếp theo")).toBeVisible();
+      await expect(heading(page, "Báo cáo tuần 12")).toBeVisible();
+      await expect(button(page, "Kết thúc bản nguyên mẫu")).toBeVisible();
     },
-    next: (page) => expect(heading(page, "Tuần 2")).toBeVisible(),
+    next: (page) => expect(heading(page, "Prototype Complete")).toBeVisible(),
     committed: (cp) =>
-      expect(cp).toMatchObject({ week: 2, phase: "settlement", metrics: { cash: 53 } }),
+      expect(cp).toMatchObject({ week: 12, phase: "complete", metrics: { cash: 53 } }),
   },
 ];
 

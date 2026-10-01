@@ -81,6 +81,9 @@ export function GameScreen({ store, pack }: GameScreenProps) {
           // playing and show the blocking recovery/unsupported screen from what is really stored.
           setFeedback(null);
           setScreen(await bootstrap(store, pack));
+        } else if (result.error === "no-content") {
+          // Nothing failed to save: the next week simply is not authored yet, so the report stays.
+          setChoiceError("Tuần tiếp theo chưa có nội dung. Bản nguyên mẫu dừng ở báo cáo này.");
         } else {
           setChoiceError(failure);
         }
@@ -186,7 +189,13 @@ export function GameScreen({ store, pack }: GameScreenProps) {
     }
 
     case "failed":
-      return <WeeklyReport checkpoint={screen.checkpoint} lines={[]} failed />;
+      return (
+        <WeeklyReport
+          checkpoint={screen.checkpoint}
+          lines={reportLines(pack, screen.checkpoint)}
+          failed
+        />
+      );
 
     case "complete":
       return (

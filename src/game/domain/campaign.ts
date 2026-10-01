@@ -6,7 +6,7 @@ import {
 } from "../persistence/checkpoint.ts";
 import { nextStep } from "./nextStep.ts";
 import { type PresentedEvent, presentEvent } from "./presentation.ts";
-import { FAILURE_CASH_THRESHOLD } from "./settlement.ts";
+import { computeSettlement, FAILURE_CASH_THRESHOLD } from "./settlement.ts";
 import { initialCampaignState } from "./worldState.ts";
 
 /**
@@ -46,8 +46,10 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
   for (const id of checkpoint.memories) {
     if (!pack.memoryIds.has(id)) issues.push(`unknown memory ${id}`);
   }
-  for (const id of Object.keys(checkpoint.npcStatus)) {
-    if (!pack.npcs.has(id)) issues.push(`unknown npc ${id}`);
+  for (const [id, status] of Object.entries(checkpoint.npcStatus)) {
+    const npc = pack.npcs.get(id);
+    if (!npc) issues.push(`unknown npc ${id}`);
+    else if (!npc.statuses.includes(status)) issues.push(`npc ${id} has unknown status ${status}`);
   }
   for (const id of checkpoint.resolvedEventIds) {
     if (!pack.events.has(id)) issues.push(`unknown resolved event ${id}`);
@@ -56,8 +58,13 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
     if (!pack.policyIds.has(id)) issues.push(`unknown recurring cost source ${id}`);
   }
   for (const pending of checkpoint.pendingCallbacks) {
-    if (!pack.callbacks.has(pending.callbackId)) {
+    const callback = pack.callbacks.get(pending.callbackId);
+    if (!callback) {
       issues.push(`unknown pending callback ${pending.callbackId}`);
+    } else if (pending.sourceEventId !== callback.sourceDecision.event) {
+      issues.push(`pending callback ${pending.callbackId} has the wrong source event`);
+    } else if (!callback.sourceDecision.options.includes(pending.sourceOptionId)) {
+      issues.push(`pending callback ${pending.callbackId} has a non-source option`);
     }
   }
   checkpoint.weekDecisions.forEach((decision, index) => {
@@ -80,6 +87,14 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
     if (checkpoint.phase === "report" || checkpoint.phase === "failed") {
       if (checkpoint.settlement.week !== checkpoint.week) {
         issues.push("settlement belongs to a different week");
+      }
+      // The stored result must be exactly what D4 produces from the committed state; a mismatch
+      // blocks the save (it is never recomputed or overwritten here).
+      const expected = computeSettlement(checkpoint, checkpoint.week);
+      for (const key of Object.keys(expected) as Array<keyof typeof expected>) {
+        if (checkpoint.settlement[key] !== expected[key]) {
+          issues.push(`settlement ${key} does not match the committed state`);
+        }
       }
       const failed = checkpoint.metrics.cash < FAILURE_CASH_THRESHOLD;
       if (failed !== (checkpoint.phase === "failed")) {
