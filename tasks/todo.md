@@ -228,14 +228,18 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **T13 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T13 section). Summary: a table-driven matrix runs every write boundary (first active-event save, choice, last choice into settlement, settlement, Next Week, week-12 completion) against four injected failures on the real `idb` store (browser refusal or transaction abort on each `put`), asserts both slots are byte-identical afterwards, nothing is reset, reopening resumes the old complete state, and a retry ends exactly equal to a fault-free run; lost-acknowledgement cases prove a committed write cannot be replayed; failed recovery/reset, mid-game corrupt/newer-version saves (now routed to the recovery/unsupported screens instead of a retry loop), and sanitized error contents are covered at store and screen level.
 
 ### T14 - Interruption matrix on the target
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented on Chromium + WebKit (Playwright); DEVICE force-close procedure documented but `Not run`. Awaiting CI and owner review; not checked off.
 **Description:** Verify the real persistence boundary, not only an in-memory substitute.
 **Dependencies:** T13.
 **Files likely touched:** Interruption test harness; scenario fixtures; verification record/task status. **Scope:** M (3-5 files).
 **Acceptance:** Before/after-write interruption restores a complete old/new checkpoint, including closure before feedback; offline app restart preserves every AC-04 boundary and AC-07 result; time away does not advance weeks.
 **Verification:** Run AC-04/AC-05/AC-07 via FOCUSED integration and DEVICE force-close/restart procedures; record environment, exact injection boundaries and coverage limits. Failed scenarios create focused fix tasks before continuation.
 
+**T14 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T14 section): environment, exact injection boundaries (abort before commit; commit then close before feedback) for 5 boundaries x 2 interruptions, an 8-restart offline browser-restart journey with a month-long clock jump each time, a no-clock/no-randomness guard, the DEVICE procedure (`Not run`) and coverage limits.
+
 **Checkpoint C05:** Broader recovery/interruption checks pass on the recorded target; preserve regressions and stop dependent work on failure.
+
+*C05 status:* automated T13/T14 evidence exists on Chromium + WebKit; the real-device runs were not performed and the owner has not signed it off, so C05 is not checked.
 
 ### T16 - Changed-context and fallback coverage
 **Status:** [ ] Blocked by dependencies.
