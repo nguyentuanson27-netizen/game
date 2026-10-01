@@ -191,7 +191,7 @@ npm run test:e2e
 npm run verify
 ```
 
-`verify` covers check + typecheck + tests + build + browser tests. This document does not claim these commands exist or pass yet.
+`verify` is the fast local gate: check + typecheck + unit/integration tests + build. Browser E2E stays a separate `test:e2e` command; CI runs both. This document does not claim these commands exist or pass yet.
 
 ### Immediate task bindings
 
