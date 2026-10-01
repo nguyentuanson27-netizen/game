@@ -1,4 +1,10 @@
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { startStaticServer } from "./helpers/static-server.ts";
+
+// Output of the `npm run build` that playwright.config.ts runs before the tests (sub-path /game/).
+const distDir = fileURLToPath(new URL("../../dist", import.meta.url));
+const basePath = "/game/";
 
 test.describe("prototype shell", () => {
   test("launches as a labelled prototype in the portrait viewport", async ({ page }) => {
@@ -40,21 +46,25 @@ test.describe("prototype shell", () => {
     }
   });
 
-  test("opens the app shell offline once the service worker is ready", async ({
-    page,
-    context,
-  }) => {
-    await page.goto("./");
-    await page.evaluate(async () => {
-      await navigator.serviceWorker.ready;
-    });
-    // Wait until the page is controlled so the reload below is served by the service worker.
-    await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
+  test("opens the app shell offline once the service worker is ready", async ({ page }) => {
+    // A dedicated server we can stop makes "offline" real in every engine. Playwright's
+    // context.setOffline() makes WebKit fail the reload even when a service worker could answer.
+    const server = await startStaticServer(distDir, basePath);
+    try {
+      await page.goto(server.url);
+      await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+      });
+      // Wait until the page is controlled so the reload below is served by the service worker.
+      await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
 
-    await context.setOffline(true);
-    await page.reload();
+      await server.stop();
+      await page.reload();
 
-    await expect(page.getByRole("heading", { level: 1, name: "Nền tảng xe đạp" })).toBeVisible();
-    await expect(page.getByText("Bản nguyên mẫu")).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1, name: "Nền tảng xe đạp" })).toBeVisible();
+      await expect(page.getByText("Bản nguyên mẫu")).toBeVisible();
+    } finally {
+      await server.stop();
+    }
   });
 });
