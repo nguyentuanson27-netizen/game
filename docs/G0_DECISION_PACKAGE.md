@@ -27,6 +27,8 @@ Core toolchain:
 - Vite `8.3.1`;
 - TypeScript `7.0.2`.
 
+Native/cross-platform delivery was considered for the prototype. PWA is preferred because it is the shortest path to a shareable demo with offline core play and no store/native build pipeline. Trade-off: install, storage and update behavior remains browser/OS-dependent. Final commercial delivery remains open.
+
 T07 pins exact compatible supporting packages in `package.json` / `package-lock.json`: React Vite/PWA plugins, Zod, `idb`, Vitest, Playwright, Biome, and required React/Node type packages. Those patch pins are scaffold details; changing the selected runtime/tool category is a G0-level decision.
 
 Delivery boundary:
@@ -67,7 +69,9 @@ Checkpoint state includes only accepted-content needs: version/sequence, week/ph
 
 Callbacks preserve authored window/order/context data. Before presentation, evaluate against latest committed state and require 2–4 valid choices. If filtering leaves fewer than two, use an authored valid alternative/fallback; never revive an invalid option.
 
-T18 provides the real converging proof content; this package invents no canonical story.
+Schema-only converging example, not canonical story content: Event A records precedent A or B and schedules a later callback. Both histories then converge on Event B; precedent A unlocks one valid option while precedent B receives a different authored valid option, and both versions still present 2–4 selectable choices. T18 replaces this example with the real proof-chain content.
+
+This package invents no canonical story.
 
 ---
 
@@ -209,7 +213,11 @@ These are the concrete first-slice locations required by T06, not a full reposit
 
 Also verify the deployed PWA update path once available: install/load version A, deploy B, accept update prompt, confirm B activates without discarding the committed local checkpoint.
 
-Content validation grows from real proof content; do not build a generic solver. Real Android/iOS smoke is required when available, otherwise `Not run`. G1 records player observations separately from reviewer interpretation; no invented participant quota.
+Content coverage stays bounded to the proof pack; do not build a generic solver. Enumerate its reachable proof states and check reference validity, 2–4 selectable options, callback windows/order, changed-context resolution, and fallback/deadline capacity.
+
+G1 observation records: interaction understanding, consequence recognition, stakeholder-tension understanding, desire for another week, and direct player comments. Keep direct observations/comments separate from reviewer interpretation; no invented participant quota.
+
+Real Android/iOS smoke is required when available, otherwise `Not run`.
 
 Roles:
 - implementer: coding agent on the task branch;
