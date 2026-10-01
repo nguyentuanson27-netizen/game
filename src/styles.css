@@ -268,3 +268,14 @@ body {
   margin: 12px 0 0;
   font-weight: 600;
 }
+
+.report__lines {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.report__next {
+  width: 100%;
+  margin-top: 16px;
+}

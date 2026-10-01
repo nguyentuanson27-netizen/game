@@ -70,6 +70,10 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
 
   const slotCount = pack.plan[checkpoint.week - 1]?.length ?? 0;
   if (checkpoint.phase !== "event") {
+    if (checkpoint.phase === "complete") {
+      if (checkpoint.week !== 12) issues.push("Prototype Complete before week 12");
+      return issues.length > 0 ? { ok: false, issues } : { ok: true, presented: null };
+    }
     if (checkpoint.weekDecisions.length !== slotCount) {
       issues.push(`${checkpoint.phase} phase before every decision slot of the week was resolved`);
     }

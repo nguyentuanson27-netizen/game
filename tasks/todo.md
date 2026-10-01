@@ -101,7 +101,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Checkpoint C02:** Draft and scaffold are ready for the first event; paper content review and actual launch evidence remain distinct.
 
 ### T08 - Resume an unanswered event
-**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
+**Status:** [~] Implemented and merged (PR #7); CI `verify` green on Chromium + WebKit at merge. Real-device smoke `Not run`; not checked off until owner review.
 **Description:** Load an event from T18 through the minimal local checkpoint boundary, validating data before use.
 **Dependencies:** T07, T18, T03.
 **Files likely touched:** Event loader/presenter; local checkpoint adapter; one event fixture; persistence test; task record. **Scope:** M (3-5 files).
@@ -118,7 +118,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 - **Not run:** WebKit locally (covered by CI), real Android/iOS device smoke (DEVICE), interrupted-save interleaving beyond the injected failure (T13/T14), the deployed-update path (nothing deployed).
 
 ### T09 - Commit one choice coherently
-**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off. C03 is not claimed until those are done.
+**Status:** [~] Implemented and merged (PR #8); CI `verify` green on Chromium + WebKit at merge. Real-device smoke `Not run`; not checked off until owner review.
 **Description:** Complete the first vertical path from tap through persistent effects to immediate feedback.
 **Dependencies:** T08, T04.
 **Files likely touched:** Choice resolution; checkpoint integration; feedback presenter; behavior tests; task record. **Scope:** M (3-5 files).
@@ -136,8 +136,10 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 
 **Checkpoint C03:** Verify one durable choice, unanswered/answered resume and basic failed-write/retry behavior before extending the loop.
 
+*C03 status:* the automated evidence exists (T08/T09 tests, CI on Chromium + WebKit); real-device resume (DEVICE) was not run and the owner has not signed it off, so C03 is not checked.
+
 ### T10 - Current-state options and confirmation
-**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
+**Status:** [~] Implemented and merged (PR #9); CI `verify` green on Chromium + WebKit at merge. Real-device smoke `Not run`; not checked off until owner review.
 **Description:** Present the next event against the updated state and honor the authored confirmation flag.
 **Dependencies:** T09.
 **Files likely touched:** Eligibility/resolution; decision presenter; event fixture; behavior tests; task record. **Scope:** M (3-5 files).
@@ -153,7 +155,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 - Limits: variant selection for callbacks (`engaged`/`aggrieved`) belongs to T15/T16 and is not implemented; the "valid variant" capability here is the fallback substitution and state-dependent option sets/context lines. Confirmation copy is generic Vietnamese (the authored `confirmationNote` is a reviewer note and is not shown). AC-01 is covered at the within-week option level; the settlement half of AC-01 is T11. AC-07 covered for the one authored irreversible option. **Not run:** WebKit locally (CI), real device.
 
 ### T11 - Settle one week once
-**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
+**Status:** [~] Implemented and merged (PR #10); CI `verify` green on Chromium + WebKit at merge. Real-device smoke `Not run`; not checked off until owner review.
 **Description:** Apply the approved recurring economy and due week-end effects after the week's decisions.
 **Dependencies:** T10, T04.
 **Files likely touched:** Week resolution; economy rules/config; checkpoint integration; settlement tests; task record. **Scope:** M (3-5 files).
@@ -168,14 +170,24 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 - Limits: no authored content produces demand modifiers or deferred week-end effects yet, so those paths are covered by arithmetic tests only. The `failed` state is terminal with no restart action (D4 asks only for an explicit failed state; a restart flow would be a new product decision). AC-01 settlement half and AC-04/AC-05 at settlement are covered; no AC is claimed as passing overall. **Not run:** WebKit locally (CI), real device.
 
 ### T12 - Report and durable advancement
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
 **Description:** Complete the short report -> Next Week -> brief path without leaking hidden arithmetic.
 **Dependencies:** T11.
 **Files likely touched:** Report/brief presentation; week advancement; checkpoint integration; transition tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Show only player-knowable report feedback; checkpoint advancement without re-settling or skipping a week; use the approved endpoint/early-failure behavior rather than adding an endless loop.
 **Verification:** FOCUSED AC-04 plus basic AC-05 at advancement: fail/retry, repeat Next Week and reopen with DEVICE. Progress stays blocked on a failed write, the prior complete checkpoint survives, and neither settlement nor advancement repeats.
 
+**T12 evidence (Node 24.21.0, npm 11.19.0):**
+- Code: `src/game/domain/advanceWeek.ts` (pure `Next Week`: report -> next week, or -> `complete` after week 12), `reportLines.ts` (authored `reportLine`s of the week's committed decisions), `session.ts` `nextWeek`, `WeeklyReport.tsx` (visible meters, jobs, income/cost/result, authored lines, Next Week), `GameScreen.tsx` (one commit helper for choice/settlement/advance). Checkpoint v1 gains the `complete` phase.
+- Next Week is its own checkpoint: it resets only `weekDecisions` and the settlement result, keeps metrics, policies, relationships, memories, recurring costs, demand modifiers, resolved events and pending callbacks, evaluates the new week's first slot against the state settlement committed, and accepts only a `report` checkpoint (no re-settlement, no skipped week). Week 12 -> `Prototype Complete`; no week 13. The failed state has no Next Week.
+- The report shows only player-knowable information: cash/jobs/income/cost/result, the three visible meters and authored report lines. A test asserts the report text contains no relationship status, precedent/policy/callback ids or internal factors.
+- Run locally: `npm run verify` (Vitest 12 files / 128 tests) and Playwright Chromium 16/16 pass, including a full 12-week run (27 contiguous checkpoints, cash 53 then +6 per empty week = 119, callbacks preserved) and offline reopen on the report and on week 2.
+- Covered: report resume without re-settlement or saves; one-week advance, double tap advances once; failed advance stays on the report with the previous checkpoint intact and retries once; reopen after advance restores week/phase; settlement not repeated; no week skipped (12-week walk); W12 endpoint; authored report lines.
+- Limits: weeks 2-12 have no authored decisions in the proof loop, so the 12-week walk is settle/advance only; when a new week's planned slot has no valid event and the fallback is spent, Next Week is refused with an error and the report stays (a content dead end that T17 validation, not runtime invention, must prevent). The `Prototype Complete` screen does not yet show the proof payoff (the crisis callback is delivered by T15). There is no brief screen: the first event's `whyNow` line and the week header act as the brief. AC-04/AC-05 are covered at the report and Next Week boundaries; no AC is claimed as passing overall. **Not run:** WebKit locally (CI), real device.
+
 **Checkpoint C04:** Verify a complete week, current-state choices, confirmation, once-only settlement/advancement and failure blocking at each new write.
+
+*C04 status:* automated evidence exists for a complete week and a full 12-week walk (unit, React and Playwright tests); real-device runs (DEVICE) were not run and the owner has not signed it off, so C04 is not checked.
 
 ## Early observation, then broader hardening
 

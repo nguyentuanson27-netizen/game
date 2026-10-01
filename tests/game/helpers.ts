@@ -165,3 +165,28 @@ export function testOption(id: string, effects: Raw[] = [], requires: Raw[] = []
     feedback: "Đã xử lý.",
   };
 }
+
+/** A checkpoint at `week` with every slot resolved and nothing settled, from the initial state. */
+export function settlementAt(
+  pack: ContentPack,
+  week: number,
+  over: Partial<SettlementCheckpoint> = {},
+): SettlementCheckpoint {
+  return {
+    schemaVersion: 1,
+    sequence: 1,
+    parentSequence: null,
+    week: week as SettlementCheckpoint["week"],
+    weekDecisions: [],
+    ...initialCampaignState(pack),
+    phase: "settlement",
+    activeEvent: null,
+    ...over,
+  };
+}
+
+/** The draft that stores `checkpoint` as the very first save (for seeding a store in tests). */
+export function seedDraft(checkpoint: Checkpoint): CheckpointDraft {
+  const { sequence: _sequence, ...rest } = checkpoint;
+  return { ...rest, parentSequence: null };
+}

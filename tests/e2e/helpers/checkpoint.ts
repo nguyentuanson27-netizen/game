@@ -6,7 +6,7 @@ export interface StoredCheckpoint {
   week: number;
   phase: string;
   activeEvent: { eventId: string; optionIds: string[] } | null;
-  metrics: { riderNetwork: number };
+  metrics: { riderNetwork: number; cash: number };
   policies: string[];
   recurringCosts: Record<string, number>;
   npcStatus: Record<string, string>;
