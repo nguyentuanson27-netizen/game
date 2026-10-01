@@ -2,11 +2,11 @@
 
 ## Status
 
-**Proposed for owner review. G0 is not approved yet.**
+**Approved — owner approval recorded 2026-10-01. G0 is cleared.**
 
-This package resolves only the D1–D6 choices required to start the 12-week prototype. After owner approval, amend this PR to record the approved choices in `docs/DECISIONS.md`, SPEC section 31, and T01–T06/G0 in `tasks/todo.md`; only then merge and unblock T18/T07.
+This package resolves the D1–D6 choices required to start the 12-week prototype. The owner explicitly approved the package and requested merge after the final T04 paper-check fix. This PR also records the approved choices in `docs/DECISIONS.md`, SPEC section 31, and T01–T06/G0 in `tasks/todo.md`. After merge, T18 and T07 may start under their own acceptance/verification requirements.
 
-| Decision | Proposed baseline |
+| Decision | Approved prototype baseline |
 |---|---|
 | D1 | Static installable PWA: Node 24.21.0 LTS/npm 11.19.0, React 19.3.0, Vite 8.3.1, TypeScript 7.0.2; GitHub Pages demo. |
 | D2 | Hand-authored JSON + Zod boundary validation, semantic IDs, small allowlisted condition/effect vocabulary; no executable content or generic rules DSL. |
@@ -259,11 +259,11 @@ Known limitations: browser site storage can be cleared; PWA install/update UX va
 
 ## Approval checklist
 
-- [ ] D1 runtime/delivery
-- [ ] D2 state/content
-- [ ] D3 save/privacy
-- [ ] D4 simulation
-- [ ] D5 presentation/art/language
-- [ ] D6 verification + first-slice bindings
+- [x] D1 runtime/delivery
+- [x] D2 state/content
+- [x] D3 save/privacy
+- [x] D4 simulation
+- [x] D5 presentation/art/language
+- [x] D6 verification + first-slice bindings
 
-Until owner approval is recorded and canonical docs are amended, **T18/T07 remain blocked**.
+G0 is cleared. After this PR merges, **T18 and T07 are ready to start**. Runtime install/build/browser/device evidence remains pending until T07 creates the scaffold.
