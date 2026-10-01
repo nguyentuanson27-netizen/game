@@ -21,7 +21,7 @@ G0 approved the prototype baseline (static PWA: Node 24.21.0, npm 11.19.0, React
 
 Commands (see `README.md`): `npm ci`, `npm run check`, `npm run typecheck`, `npm run test`, `npm run build`, `npm run test:e2e`, `npm run verify`.
 
-Decisions not yet made (for example content runtime, persistence code, economy implementation) belong to later tasks. If work needs one of them, surface it instead of guessing.
+Implementation details not fixed by G0 belong to later tasks. Preserve the approved content, persistence and simulation contracts in `docs/DECISIONS.md` and SPEC section 31; if a later task needs an additional material decision, surface it instead of guessing.
 
 ## Product invariants
 

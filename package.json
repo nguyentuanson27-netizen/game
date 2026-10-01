@@ -20,8 +20,10 @@
     "verify": "npm run check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "idb": "8.0.3",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
