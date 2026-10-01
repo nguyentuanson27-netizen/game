@@ -84,6 +84,7 @@ export function resolveChoice(
     resolvedEventIds: checkpoint.resolvedEventIds.includes(eventId)
       ? checkpoint.resolvedEventIds
       : [...checkpoint.resolvedEventIds, eventId],
+    demandModifiers: checkpoint.demandModifiers,
     recurringCosts: checkpoint.recurringCosts,
     pendingCallbacks: checkpoint.pendingCallbacks,
   };

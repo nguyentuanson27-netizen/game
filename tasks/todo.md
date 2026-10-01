@@ -153,12 +153,19 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 - Limits: variant selection for callbacks (`engaged`/`aggrieved`) belongs to T15/T16 and is not implemented; the "valid variant" capability here is the fallback substitution and state-dependent option sets/context lines. Confirmation copy is generic Vietnamese (the authored `confirmationNote` is a reviewer note and is not shown). AC-01 is covered at the within-week option level; the settlement half of AC-01 is T11. AC-07 covered for the one authored irreversible option. **Not run:** WebKit locally (CI), real device.
 
 ### T11 - Settle one week once
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off.
 **Description:** Apply the approved recurring economy and due week-end effects after the week's decisions.
 **Dependencies:** T10, T04.
 **Files likely touched:** Week resolution; economy rules/config; checkpoint integration; settlement tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Use current state after 2-4 sequential events and D4 rules for both services; save settlement once without reapplying immediate choice effects; events unlocked by settlement enter the following week.
 **Verification:** FOCUSED AC-01/AC-04 and basic AC-05 at settlement: repeat/fail/retry the write and reopen; compare complete state, no duplicated effects, and next-week eligibility unlocked only by settlement.
+
+**T11 evidence (Node 24.21.0, npm 11.19.0):**
+- Code: `src/game/domain/settlement.ts` (D4 model exactly: rider/merchant/trust factors by truncation, 18/12 base jobs, 0..40 / 0..30 clamps, fees 2/3, cost 65 + recurring policy cost, cash delta, failure when cash < -25), `session.ts` `settle`, `GameScreen.tsx` ("Tổng kết tuần" button), `WeeklyReport.tsx` (minimal summary; the full report and Next Week are T12). Checkpoint v1 gains the `report` and `failed` phases (carrying the settlement result) and `demandModifiers` (read by settlement, default 0; no authored effect sets them yet).
+- Settlement is one commit from the `settlement` phase (all authored slots resolved) to `report`/`failed`. It adds only the cash delta and the result; metrics, policies, relationships, memories, pending callbacks and decisions are carried over unchanged, so immediate effects are never re-applied. Only the `settlement` phase can settle, so a committed week cannot be settled again, and a reused old checkpoint is rejected as stale.
+- Run locally: `npm run verify` (Vitest 10 files / 107 tests) and Playwright Chromium 13/13 pass.
+- Covered: baseline 18+12 -> gross 72, cost 65, +7; history A (fund) 19+13, 77, 71, +6; history B (decline) 17+11, 67, 65, +2; the three `paperSettlementWeek3` entries and the week-10 A/B entries of `proof-histories.json` are reproduced by the real choice effects (including the recurring cost stacking 6+3); each service responds to its own inputs (merchants -> deliveries, trust -> rides, riders -> both, per-service demand); clamps and truncation toward zero; failure at -26 but not -25; failed settlement save keeps the unsettled week and blocks progress, retry applies the delta once; reload/report never settles again and never writes; duplicate taps settle once; the settled week stays week 1 with no active event (next-week events are only reachable through T12's Next Week); failed state resumes.
+- Limits: no authored content produces demand modifiers or deferred week-end effects yet, so those paths are covered by arithmetic tests only. The `failed` state is terminal with no restart action (D4 asks only for an explicit failed state; a restart flow would be a new product decision). AC-01 settlement half and AC-04/AC-05 at settlement are covered; no AC is claimed as passing overall. **Not run:** WebKit locally (CI), real device.
 
 ### T12 - Report and durable advancement
 **Status:** [ ] Blocked by dependencies.

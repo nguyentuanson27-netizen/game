@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ContentPack } from "../content/loader.ts";
-import type { EventCheckpoint } from "../persistence/checkpoint.ts";
+import type { EventCheckpoint, SettlementCheckpoint } from "../persistence/checkpoint.ts";
 import type { CheckpointStore } from "../persistence/store.ts";
 import { EventCard } from "./EventCard.tsx";
-import { bootstrap, choose, recover, resetCampaign, type SessionState } from "./session.ts";
+import { bootstrap, choose, recover, resetCampaign, type SessionState, settle } from "./session.ts";
+import { WeeklyReport } from "./WeeklyReport.tsx";
 
 interface GameScreenProps {
   store: CheckpointStore;
@@ -69,6 +70,32 @@ export function GameScreen({ store, pack }: GameScreenProps) {
     [store, pack],
   );
 
+  const onSettle = useCallback(
+    async (checkpoint: SettlementCheckpoint) => {
+      if (choosing.current) return;
+      choosing.current = true;
+      setBusy(true);
+      setChoiceError(null);
+      try {
+        const result = await settle(store, pack, checkpoint);
+        if (result.ok) {
+          setFeedback(null);
+          setScreen(result.state);
+        } else if (result.error === "stale") {
+          setScreen({ kind: "save-error", error: "stale", message: result.message });
+        } else {
+          setChoiceError(
+            "Không lưu được kết quả tuần. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
+          );
+        }
+      } finally {
+        choosing.current = false;
+        setBusy(false);
+      }
+    },
+    [store, pack],
+  );
+
   switch (screen.kind) {
     case "loading":
       return (
@@ -97,18 +124,41 @@ export function GameScreen({ store, pack }: GameScreenProps) {
       );
     }
 
-    case "settlement":
+    case "settlement": {
+      const { checkpoint } = screen;
       return (
         <>
           {feedback ? <Feedback text={feedback} /> : null}
-          <section className="card" aria-labelledby="settlement-title">
+          <section className="card" aria-labelledby="settlement-title" aria-busy={busy}>
             <h2 id="settlement-title" className="card__title">
-              Tuần {screen.checkpoint.week}: đã xong các quyết định
+              Tuần {checkpoint.week}: đã xong các quyết định
             </h2>
-            <p>Mọi quyết định của tuần đã được lưu. Phần tổng kết tuần sẽ có ở bước sau.</p>
+            <p>Mọi quyết định của tuần đã được lưu. Hãy tổng kết để xem kết quả tuần.</p>
+            <div className="notice__actions">
+              <button
+                type="button"
+                className="button button--primary"
+                disabled={busy}
+                onClick={() => void onSettle(checkpoint)}
+              >
+                Tổng kết tuần
+              </button>
+            </div>
+            {choiceError ? (
+              <p role="alert" className="event__error">
+                {choiceError}
+              </p>
+            ) : null}
           </section>
         </>
       );
+    }
+
+    case "report":
+      return <WeeklyReport checkpoint={screen.checkpoint} failed={false} />;
+
+    case "failed":
+      return <WeeklyReport checkpoint={screen.checkpoint} failed />;
 
     case "save-error": {
       const stale = screen.error === "stale";

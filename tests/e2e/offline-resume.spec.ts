@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
+import { activateTwice } from "./helpers/actions.ts";
 import { readCurrent, readSlot, type StoredCheckpoint } from "./helpers/checkpoint.ts";
 import { startStaticServer } from "./helpers/static-server.ts";
 
@@ -144,7 +145,7 @@ test.describe("unanswered event resume (AC-04)", () => {
       const button = page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ });
       await expect(button).toBeVisible();
 
-      await button.dblclick();
+      await activateTwice(button);
       await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
 
       expectCommittedChoice(await readCurrent(page));

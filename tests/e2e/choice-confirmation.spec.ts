@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { activateTwice } from "./helpers/actions.ts";
 import { readCurrent } from "./helpers/checkpoint.ts";
 
 const EVENT_TITLE = "Chiếc xe hỏng sau ca mưa";
@@ -36,7 +37,7 @@ test.describe("confirmation of a major irreversible choice (AC-07)", () => {
     expect(await readCurrent(page)).toEqual(before);
 
     await settle(page).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Xác nhận" }).dblclick();
+    await activateTwice(page.getByRole("dialog").getByRole("button", { name: "Xác nhận" }));
 
     await expect(page.getByRole("status").filter({ hasText: "Họ nhận khoản tiền" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();

@@ -1,9 +1,18 @@
 import { openDB } from "idb";
 import proofChain from "../../content/prototype/proof-chain.json";
 import proofLoop from "../../content/prototype/proof-loop.json";
-import { loadContentPack } from "../../src/game/content/loader.ts";
+import { type ContentPack, loadContentPack } from "../../src/game/content/loader.ts";
 import { startCampaign } from "../../src/game/domain/campaign.ts";
-import type { Checkpoint, CheckpointDraft } from "../../src/game/persistence/checkpoint.ts";
+import { nextStep } from "../../src/game/domain/nextStep.ts";
+import { resolveChoice } from "../../src/game/domain/resolveChoice.ts";
+import { initialCampaignState } from "../../src/game/domain/worldState.ts";
+import type {
+  Checkpoint,
+  CheckpointDraft,
+  EventCheckpoint,
+  SettlementCheckpoint,
+} from "../../src/game/persistence/checkpoint.ts";
+import type { CheckpointStore, LoadResult, StoreResult } from "../../src/game/persistence/store.ts";
 
 // biome-ignore lint/suspicious/noExplicitAny: tests mutate arbitrary authored JSON to build invalid content
 export type Raw = any;
@@ -23,7 +32,12 @@ export function nextDraft(checkpoint: Checkpoint): CheckpointDraft {
 let dbCounter = 0;
 export const uniqueDbName = () => `test-db-${++dbCounter}`;
 
-import type { CheckpointStore, LoadResult, StoreResult } from "../../src/game/persistence/store.ts";
+/** Overwrite a raw slot behind the store's back to simulate corruption or a newer save. */
+export async function corruptSlot(dbName: string, key: "current" | "previous", value: unknown) {
+  const db = await openDB(dbName, 1);
+  await db.put("checkpoints", value, key);
+  db.close();
+}
 
 export interface SpyStore extends CheckpointStore {
   commits: CheckpointDraft[];
@@ -73,24 +87,12 @@ export function spyOn(inner: CheckpointStore): SpyStore {
   };
 }
 
-/** Overwrite a raw slot behind the store's back to simulate corruption or a newer save. */
-export async function corruptSlot(dbName: string, key: "current" | "previous", value: unknown) {
-  const db = await openDB(dbName, 1);
-  await db.put("checkpoints", value, key);
-  db.close();
-}
-
-import { type ContentPack, loadContentPack as loadPack } from "../../src/game/content/loader.ts";
-import { nextStep } from "../../src/game/domain/nextStep.ts";
-import { initialCampaignState } from "../../src/game/domain/worldState.ts";
-import type { EventCheckpoint } from "../../src/game/persistence/checkpoint.ts";
-
 /** Proof content plus test-only additions; still goes through the real loader and validation. */
 export function packFrom(mutate: (chain: Raw, loop: Raw) => void): ContentPack {
   const chain = rawChain();
   const loop = rawLoop();
   mutate(chain, loop);
-  return loadPack(chain, loop);
+  return loadContentPack(chain, loop);
 }
 
 /** A first checkpoint positioned at `week`, as if earlier weeks had been played without effect. */
@@ -108,6 +110,29 @@ export function startAt(pack: ContentPack, week: number): EventCheckpoint {
     phase: "event",
     activeEvent: next.activeEvent,
   };
+}
+
+/** Apply `optionIds` in order from the start of `week`, numbering checkpoints like the store. */
+export function replay(pack: ContentPack, week: number, optionIds: string[]): Checkpoint {
+  let checkpoint: Checkpoint = startAt(pack, week);
+  for (const optionId of optionIds) {
+    if (checkpoint.phase !== "event") throw new Error("the week had no event left");
+    const resolved = resolveChoice(pack, checkpoint, optionId);
+    if (!resolved.ok) throw new Error(resolved.message);
+    checkpoint = { ...resolved.draft, sequence: checkpoint.sequence + 1 };
+  }
+  return checkpoint;
+}
+
+/** Replay a week that must end with every slot resolved, awaiting settlement. */
+export function replayToSettlement(
+  pack: ContentPack,
+  week: number,
+  optionIds: string[],
+): SettlementCheckpoint {
+  const checkpoint = replay(pack, week, optionIds);
+  if (checkpoint.phase !== "settlement") throw new Error("expected the settlement phase");
+  return checkpoint;
 }
 
 /** A small authored event used only by tests. */

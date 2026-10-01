@@ -6,6 +6,7 @@ import {
 } from "../persistence/checkpoint.ts";
 import { nextStep } from "./nextStep.ts";
 import { type PresentedEvent, presentEvent } from "./presentation.ts";
+import { FAILURE_CASH_THRESHOLD } from "./settlement.ts";
 import { initialCampaignState } from "./worldState.ts";
 
 /**
@@ -34,7 +35,7 @@ export type ResumeResult =
 
 /**
  * Check that a stored checkpoint still agrees with the loaded content and rebuild what to show
- * (null in the settlement phase, which has no active event). A mismatch is reported, never
+ * (null outside the event phase, which has no active event). A mismatch is reported, never
  * repaired: the save is left untouched.
  */
 export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): ResumeResult {
@@ -68,9 +69,18 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
   });
 
   const slotCount = pack.plan[checkpoint.week - 1]?.length ?? 0;
-  if (checkpoint.phase === "settlement") {
+  if (checkpoint.phase !== "event") {
     if (checkpoint.weekDecisions.length !== slotCount) {
-      issues.push("settlement phase before every decision slot of the week was resolved");
+      issues.push(`${checkpoint.phase} phase before every decision slot of the week was resolved`);
+    }
+    if (checkpoint.phase === "report" || checkpoint.phase === "failed") {
+      if (checkpoint.settlement.week !== checkpoint.week) {
+        issues.push("settlement belongs to a different week");
+      }
+      const failed = checkpoint.metrics.cash < FAILURE_CASH_THRESHOLD;
+      if (failed !== (checkpoint.phase === "failed")) {
+        issues.push("phase does not match the cash failure rule");
+      }
     }
     return issues.length > 0 ? { ok: false, issues } : { ok: true, presented: null };
   }

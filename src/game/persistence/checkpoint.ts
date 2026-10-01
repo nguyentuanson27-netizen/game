@@ -31,6 +31,11 @@ const common = {
   npcStatus: z.record(idSchema, z.string().min(1)),
   /** Events already resolved in the campaign; non-repeatable events are never presented again. */
   resolvedEventIds: z.array(idSchema).default([]),
+  /** D4 demand modifiers read by settlement. No authored effect sets them yet; they start at 0. */
+  demandModifiers: z.strictObject({ delivery: z.number().int(), ride: z.number().int() }).default({
+    delivery: 0,
+    ride: 0,
+  }),
   /** Weekly cost each policy adds (D4 `recurringPolicyCost` is their sum). Read by settlement. */
   recurringCosts: z.record(idSchema, z.number().int()).default({}),
   /**
@@ -49,6 +54,17 @@ const common = {
     .default([]),
 };
 
+/** What a settled week produced, as the report may show it (no internal factors). */
+const settlementResult = z.strictObject({
+  week: z.number().int().min(1).max(12),
+  deliveryJobs: z.number().int().min(0),
+  rideJobs: z.number().int().min(0),
+  grossIncome: z.number().int().min(0),
+  weeklyCost: z.number().int(),
+  cashDelta: z.number().int(),
+});
+export type SettlementResult = z.infer<typeof settlementResult>;
+
 export const checkpointSchema = z
   .discriminatedUnion("phase", [
     z.strictObject({
@@ -66,6 +82,20 @@ export const checkpointSchema = z
       phase: z.literal("settlement"),
       activeEvent: z.null(),
     }),
+    z.strictObject({
+      ...common,
+      /** Settlement is committed exactly once; the report is shown and Next Week is pending. */
+      phase: z.literal("report"),
+      activeEvent: z.null(),
+      settlement: settlementResult,
+    }),
+    z.strictObject({
+      ...common,
+      /** D4: after a committed settlement Cash < -25 is an explicit, terminal failed state. */
+      phase: z.literal("failed"),
+      activeEvent: z.null(),
+      settlement: settlementResult,
+    }),
   ])
   .refine((c) => (c.parentSequence === null ? c.sequence === 1 : c.parentSequence < c.sequence), {
     message: "parentSequence must be null for sequence 1 and lower than sequence otherwise",
@@ -74,6 +104,7 @@ export const checkpointSchema = z
 
 export type Checkpoint = z.infer<typeof checkpointSchema>;
 export type EventCheckpoint = Extract<Checkpoint, { phase: "event" }>;
+export type SettlementCheckpoint = Extract<Checkpoint, { phase: "settlement" }>;
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -81,3 +112,4 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 export type CheckpointDraft = DistributiveOmit<Checkpoint, "sequence">;
 
 export type EventCheckpointDraft = Extract<CheckpointDraft, { phase: "event" }>;
+export type ReportCheckpoint = Extract<Checkpoint, { phase: "report" | "failed" }>;
