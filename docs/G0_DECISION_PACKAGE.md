@@ -55,6 +55,8 @@ Development-only verification dependencies proposed in D6:
 
 Use exact versions in `package.json` for the initial scaffold and commit one `package-lock.json`.
 
+For T07, do not add a router or separate global-state framework. The three-tab shell and event flow start with React state plus small pure domain modules; add another dependency only when a concrete requirement justifies it.
+
 ## Delivery route
 
 - Shared prototype: **GitHub Pages built/deployed by GitHub Actions** from `main` after verification passes.
@@ -63,6 +65,8 @@ Use exact versions in `package.json` for the initial scaffold and commit one `pa
 - Final iOS/Android store strategy remains open; choosing PWA for the prototype does not decide the shipped product wrapper.
 
 A first visit/install naturally requires network access to acquire the app. After a successful load and service-worker readiness, the core game and the locally packaged assets/content it uses must work without network access.
+
+The Vite/PWA setup must support the repository sub-path used by GitHub Pages rather than assuming the site is hosted at `/`.
 
 ## PWA behavior
 
@@ -129,7 +133,7 @@ Do not introduce a generic narrative engine or executable scripting language.
 ## Authoring format
 
 - Hand-authored UTF-8 JSON files under `content/prototype/`.
-- Runtime/test schemas in TypeScript using Zod.
+- Runtime/test schemas in TypeScript using Zod once the runtime scaffold exists.
 - Validate authored content before it can enter game state.
 - Use stable semantic IDs such as `event.rider_shortage.01`; IDs are not filenames shown to players and must not encode vendor asset filenames.
 - Recurring NPC IDs can be role-based placeholders until canonical character identities are explicitly approved.
@@ -450,6 +454,7 @@ Playwright supports Chromium/WebKit projects and device emulation: https://playw
 
 ```text
 npm ci
+npx playwright install --with-deps chromium webkit
 npm run dev
 npm run check
 npm run typecheck
@@ -467,6 +472,8 @@ Planned meanings:
 - `build` → Vite production build;
 - `test:e2e` → Playwright Chromium + WebKit mobile projects;
 - `verify` → check + typecheck + unit/integration tests + build + browser tests.
+
+Browser installation is setup work, not part of each normal local `verify`; CI installs the pinned Playwright browser binaries/dependencies before `test:e2e`.
 
 T07 must create and actually run these commands before they become evidence. This G0 document does not claim they already exist or pass.
 
@@ -488,7 +495,9 @@ Dependency/security baseline:
 
 Do not build a generic solver.
 
-Start with schema/reference checks and the small T18 proof pack:
+Before runtime validation exists, T18 uses the D2 contract and an explicit paper/data checklist. Once T08 introduces the actual loader/schema, the same proof fixtures become executable validation inputs.
+
+Executable checks then grow from the small proof pack:
 
 - unique IDs/references;
 - valid 2–4 option counts after authored conditions for reachable proof states;
@@ -532,21 +541,20 @@ These paths are the expected boundaries for the **next** implementation slice. I
 
 ### T18 — proof-chain draft
 
-Expected paths:
+T18 remains independent from the runtime scaffold. Expected paths:
 
 ```text
 content/prototype/proof-chain.json
 content/prototype/proof-histories.json
-tests/content/proof-chain.test.ts
-tasks/evidence/g1-proof.md
+tasks/evidence/t18-proof-chain.md
 ```
 
 Verification before T18 is accepted:
 
-- Zod/schema or equivalent structural validation available at that point;
-- paper walk against `CONTENT_GUIDE.md` and D2/D4/D5;
+- paper/data-shape walk against `CONTENT_GUIDE.md` and D2/D4/D5;
+- IDs/references/options/windows reviewed using the proposed contract;
 - two expected histories documented with a selectable-option difference at the shared crisis;
-- no runtime-pass claim until integration exists.
+- no runtime/schema-test pass claimed before T07/T08 makes those checks executable.
 
 ### T07 — minimal runnable scaffold
 
@@ -570,6 +578,7 @@ tests/e2e/smoke.spec.ts
 Acceptance/verification:
 
 - pinned approved toolchain installs with `npm ci`;
+- Playwright Chromium/WebKit browser dependencies are installed for browser checks;
 - portrait shell launches locally;
 - PWA manifest/service-worker generation is present in production build;
 - `check`, `typecheck`, `test`, `build`, `test:e2e`, `verify` are executable and recorded;
@@ -589,7 +598,7 @@ tests/game/checkpoint-store.test.ts
 tests/e2e/offline-resume.spec.ts
 ```
 
-Verification centers on AC-04/AC-05: active event saved before presentation, same valid options after reopen, failed save blocks progression, prior complete checkpoint survives.
+Verification centers on AC-04/AC-05: active event saved before presentation, same valid options after reopen, failed save blocks progression, prior complete checkpoint survives. T08 also turns the T18 proof data into schema-validated runtime input.
 
 ### T09 — commit one choice coherently
 
