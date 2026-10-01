@@ -66,6 +66,17 @@ This file records product decisions already agreed during discovery so later wor
 - Branch-and-converge instead of exponential story trees.
 - Recurring NPCs and organizations remember relevant history.
 
+### Prototype demo art sourcing
+- For the fast prototype/demo, use these Kenney CC0 packs as **replaceable placeholders**: RPG Urban Pack, UI Pack, Game Icons and Scribble Platformer.
+- This selection does not lock the final art style or final branding.
+- RPG Urban Pack supplies urban/environment placeholders; its included characters are not canonical recurring NPCs.
+- UI Pack supplies temporary panels/buttons; Game Icons supplies generic navigation/metric/status icons; Scribble Platformer supplies temporary hand-drawn accents/scene dressing.
+- Recurring NPC/character art is deliberately deferred to a later art pass.
+- Keep gameplay/content contracts independent from vendor filenames so the placeholder art can be replaced later without rewriting story/state logic.
+- Keep runtime text outside image assets and package used art locally to preserve the offline-first requirement.
+- Source/provenance and current prototype-art rules are documented in [PROTOTYPE_ART](PROTOTYPE_ART.md) and [`assets/vendor/kenney/SOURCES.md`](../assets/vendor/kenney/SOURCES.md).
+- This source selection is an input to D5/A1; it does not by itself clear G0, complete A1 or unblock T25.
+
 ### Fictionalization
 - Real-world systems, fictional world.
 - No thinly disguised Grab/Uber/other real company.
