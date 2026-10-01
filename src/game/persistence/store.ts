@@ -71,3 +71,21 @@ export function classifySlot(raw: unknown): Slot {
   const parsed = checkpointSchema.safeParse(raw);
   return parsed.success ? { kind: "valid", checkpoint: parsed.data } : { kind: "corrupt" };
 }
+
+/**
+ * A safe, bounded description of a browser storage failure: the error's name only (for example
+ * `QuotaExceededError`). Messages can echo stored payloads, so they are never carried along.
+ */
+export function describeFault(error: unknown): string {
+  // Duck-typed: a DOMException from another realm is not always `instanceof Error`.
+  const name =
+    typeof error === "object" && error !== null ? (error as { name?: unknown }).name : null;
+  return typeof name === "string" && /^[A-Za-z]{1,64}$/.test(name) ? name : "UnknownError";
+}
+
+/** Which fields of a candidate were invalid, without echoing their values. */
+export function describeIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.code}`)
+    .join("; ");
+}

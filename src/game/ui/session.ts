@@ -12,7 +12,7 @@ import type {
   ReportCheckpoint,
   SettlementCheckpoint,
 } from "../persistence/checkpoint.ts";
-import type { CheckpointStore, StoreErrorCode } from "../persistence/store.ts";
+import { type CheckpointStore, describeFault, type StoreErrorCode } from "../persistence/store.ts";
 
 /** What the screen shows. `event` is only ever produced for a checkpoint that is already saved. */
 export type SessionState =
@@ -31,10 +31,6 @@ export type SessionState =
   | { kind: "invalid-checkpoint"; issues: string[] }
   | { kind: "save-error"; error: StoreErrorCode; message: string }
   | { kind: "load-error"; message: string };
-
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function fromCheckpoint(pack: ContentPack, checkpoint: Checkpoint): SessionState {
   const resumed = resumeCheckpoint(pack, checkpoint);
@@ -69,7 +65,7 @@ export async function bootstrap(store: CheckpointStore, pack: ContentPack): Prom
     try {
       loaded = await store.load();
     } catch (error) {
-      return { kind: "load-error", message: describe(error) };
+      return { kind: "load-error", message: describeFault(error) };
     }
     switch (loaded.status) {
       case "ready":

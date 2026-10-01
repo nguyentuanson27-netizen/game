@@ -62,27 +62,35 @@ export function GameScreen({ store, pack }: GameScreenProps) {
   // Every progressing action (choice, settlement, Next Week) goes through here: one at a time
   // (ref, not state, so two taps in the same frame cannot both pass), and the next screen and any
   // feedback come only from a committed result.
-  const commit = useCallback(async (task: () => Promise<ActionResult>, failure: string) => {
-    if (choosing.current) return;
-    choosing.current = true;
-    setBusy(true);
-    setChoiceError(null);
-    try {
-      const result = await task();
-      if (result.ok) {
-        setFeedback(result.feedback ?? null);
-        setScreen(result.state);
-      } else if (result.error === "stale") {
-        setFeedback(null);
-        setScreen({ kind: "save-error", error: "stale", message: result.message });
-      } else {
-        setChoiceError(failure);
+  const commit = useCallback(
+    async (task: () => Promise<ActionResult>, failure: string) => {
+      if (choosing.current) return;
+      choosing.current = true;
+      setBusy(true);
+      setChoiceError(null);
+      try {
+        const result = await task();
+        if (result.ok) {
+          setFeedback(result.feedback ?? null);
+          setScreen(result.state);
+        } else if (result.error === "stale") {
+          setFeedback(null);
+          setScreen({ kind: "save-error", error: "stale", message: result.message });
+        } else if (result.error === "recovery-required" || result.error === "unsupported-save") {
+          // The stored save changed under us (corrupt, or written by a newer version): stop
+          // playing and show the blocking recovery/unsupported screen from what is really stored.
+          setFeedback(null);
+          setScreen(await bootstrap(store, pack));
+        } else {
+          setChoiceError(failure);
+        }
+      } finally {
+        choosing.current = false;
+        setBusy(false);
       }
-    } finally {
-      choosing.current = false;
-      setBusy(false);
-    }
-  }, []);
+    },
+    [store, pack],
+  );
 
   const onChoose = (checkpoint: EventCheckpoint, optionId: string) =>
     commit(
