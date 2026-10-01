@@ -119,7 +119,7 @@ Same event `evt.proof.public_rider_dispute` (title, speaker `npc.ops_contact`, s
 | `opt.crisis.hold_and_review` | yes | yes | yes | none (always) |
 | `opt.crisis.cite_policy` | **yes** | no | no | `has policies policy.rider_support_fund` |
 | `opt.crisis.announce_new_policy` | no | **yes** | yes | `notHas policies policy.rider_support_fund` |
-| `opt.crisis.joint_statement` | **yes** | no | no | `eq npc.recurring_rider.status ally` |
+| `opt.crisis.joint_statement` | **yes** | no | no | `eq npc.recurring_rider.status ally` and `has policies policy.rider_support_fund` |
 | `opt.crisis.refer_to_review_panel` | no | no | no | `has policies policy.rider_review_seat` (only after A + `grant_seat`) |
 | `opt.crisis.quiet_settlement` | no | **yes** | yes | `notHas memories prec.rider_dispute.negotiated` |
 | **Selectable count** | **3** | **3** | **3** | |
@@ -131,7 +131,7 @@ A selectable: `[hold_and_review, cite_policy, joint_statement]`. B selectable: `
 The difference comes from state written by earlier decisions, not from copy or numbers:
 
 - **Policy.** A created `policy.rider_support_fund` at W3, which makes `cite_policy` selectable and `announce_new_policy` not. B has no such policy, so the reverse holds.
-- **Relationship.** A's rider is `ally` (set at W3, preserved by `keep_informal`), enabling `joint_statement`. B's rider is `resentful`; C's is `departed`.
+- **Relationship.** A's rider is `ally` (set at W3, preserved by `keep_informal`), enabling `joint_statement` (which also requires the fund it extends, now encoded as a second condition rather than relying on `ally` implying the fund). B's rider is `resentful`; C's is `departed`.
 - **Precedent.** A set `prec.rider_dispute.negotiated`, so `quiet_settlement` is unavailable (nothing is left to settle privately). B's `prec.rider_dispute.declined` leaves it available.
 
 No crisis option condition reads a metric, and the situation text variants in `contextLines` are explicitly dialogue-only and not counted. The sets of selectable ids differ by four options.
@@ -168,10 +168,11 @@ All run locally on this branch, 2026-10-01. The first was a plain JSON parse; th
 | Weekly budget equals D4 (sum 34); proof slots ≤ budget every week | pass |
 | History JSON numbers (selectable ids, unavailable lists, cash trace, W3/W10 settlements, pre-crisis state) equal recomputation from the authored effects with D4 settlement | pass |
 | W3 settlement for A/B equals G0 T04 A/B paper checks | pass |
+| Every event node has a `whyNow`; `joint_statement` requires both `ally` and the fund it extends, with the 7 reachable crisis states unchanged | pass |
 | Event-node count 5, report closure 1 tracked separately, 1 chain; every `stage` is `street_startup`, `local_platform` or `city_player` | pass |
 | 12-week proof-only replay of all 21 paths never fails or goes below 0 cash | pass |
 
-The 90 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
+The 96 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
 
 ## Review against CONTENT_GUIDE, D2, D4, D5
 

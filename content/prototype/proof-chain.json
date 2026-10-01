@@ -69,7 +69,7 @@
       "id": "policy.rider_support_fund",
       "label": "Rider accident-support fund",
       "createdBy": ["opt.rider_claim.fund_policy", "opt.crisis.announce_new_policy"],
-      "readBy": ["opt.crisis.cite_policy", "opt.crisis.announce_new_policy"]
+      "readBy": ["opt.crisis.cite_policy", "opt.crisis.announce_new_policy", "opt.crisis.joint_statement"]
     },
     {
       "id": "policy.rider_review_seat",
@@ -249,6 +249,7 @@
       "role": "callbackVariant",
       "title": "Người tài xế ấy giờ nói thay cả nhóm",
       "stage": "local_platform",
+      "whyNow": "Quỹ hỗ trợ bạn lập đã giúp tài xế này có uy tín trong nhóm.",
       "speaker": "npc.recurring_rider",
       "category": "character",
       "deliveredBy": "cb.rider_voice_followup",
@@ -302,6 +303,7 @@
       "role": "callbackVariant",
       "title": "Bài đăng trong nhóm tài xế",
       "stage": "local_platform",
+      "whyNow": "Quyết định từ chối của bạn giờ đã lộ ra trong nhóm tài xế.",
       "speaker": "npc.ops_contact",
       "category": "operational",
       "deliveredBy": "cb.rider_voice_followup",
@@ -426,8 +428,11 @@
           "id": "opt.crisis.joint_statement",
           "text": "Cùng tài xế quen mặt ra thông báo chung",
           "hint": "Được tin cậy hơn, nhưng bạn sẽ phải giữ lời với họ.",
-          "requires": [{ "op": "eq", "ref": "npc.recurring_rider.status", "value": "ally" }],
-          "unavailableBecause": "Người tài xế quen mặt không còn là người ủng hộ bạn, hoặc không còn trong mạng lưới.",
+          "requires": [
+            { "op": "eq", "ref": "npc.recurring_rider.status", "value": "ally" },
+            { "op": "has", "set": "policies", "id": "policy.rider_support_fund" }
+          ],
+          "unavailableBecause": "Người tài xế quen mặt không còn là người ủng hộ bạn (hoặc không còn trong mạng lưới), hoặc công ty chưa có quỹ hỗ trợ để cùng cam kết mở rộng.",
           "confirmation": "none",
           "effects": [
             { "kind": "metricAdjust", "metric": "publicTrust", "delta": 6 },
@@ -473,7 +478,7 @@
       "selectableCoverage": {
         "min": 2,
         "max": 4,
-        "reason": "Lower bound: opt.crisis.hold_and_review has no condition, and exactly one of opt.crisis.cite_policy / opt.crisis.announce_new_policy is selectable (has vs notHas on the same policy id), so at least 2 in every state. Upper bound within this proof pack: joint_statement requires status ally and panel requires policy.rider_review_seat, both reachable only on the fund_policy path where announce_new_policy and quiet_settlement are unavailable, so the maximum is 4 (hold, cite, joint, panel). If other slice content later changes rider status or adds policies, this must be re-checked (T17)."
+        "reason": "Lower bound: opt.crisis.hold_and_review has no condition, and exactly one of opt.crisis.cite_policy / opt.crisis.announce_new_policy is selectable (has vs notHas on the same policy id), so at least 2 in every state. Upper bound within this proof pack: joint_statement requires status ally plus policy.rider_support_fund and panel requires policy.rider_review_seat, both reachable only on the fund_policy path where announce_new_policy and quiet_settlement are unavailable, so the maximum is 4 (hold, cite, joint, panel). If other slice content later changes rider status or adds policies, this must be re-checked (T17)."
       },
       "optionAvailabilityDriversAC06": [
         "policy.rider_support_fund",
@@ -499,6 +504,7 @@
       "role": "fallback",
       "title": "Ca làm cuối tuần chưa đủ người",
       "stage": "local_platform",
+      "whyNow": "Cuối tuần sắp tới, ca tối ở khu đông người đang thiếu tài xế.",
       "speaker": "npc.ops_contact",
       "category": "operational",
       "eligibility": [],

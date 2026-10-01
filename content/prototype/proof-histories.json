@@ -84,7 +84,7 @@
       "crisisSelectableOptionIds": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"],
       "crisisUnavailable": [
         { "option": "opt.crisis.cite_policy", "reason": "has policies policy.rider_support_fund is false: there is no policy to cite." },
-        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false: the rider is resentful." },
+        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false (the rider is resentful); has policies policy.rider_support_fund is also false." },
         { "option": "opt.crisis.refer_to_review_panel", "reason": "has policies policy.rider_review_seat is false." }
       ],
       "paperCashAfterSettlementByWeek": [57, 64, 66, 68, 70, 72, 74, 76, 78, 66, 62, 58],
@@ -118,7 +118,7 @@
       "crisisSelectableOptionIds": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"],
       "crisisUnavailable": [
         { "option": "opt.crisis.cite_policy", "reason": "has policies policy.rider_support_fund is false." },
-        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false: the rider is departed." },
+        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false (the rider is departed); has policies policy.rider_support_fund is also false." },
         { "option": "opt.crisis.refer_to_review_panel", "reason": "has policies policy.rider_review_seat is false." }
       ],
       "paperCashAfterSettlementByWeek": [57, 64, 63, 70, 77, 84, 91, 98, 105, 102, 109, 116],
@@ -142,7 +142,7 @@
     "commonToBoth": ["opt.crisis.hold_and_review"],
     "onlyInA": [
       { "option": "opt.crisis.cite_policy", "because": "A holds policy.rider_support_fund (policy created by opt.rider_claim.fund_policy)." },
-      { "option": "opt.crisis.joint_statement", "because": "A's recurring rider has status ally (relationship set by opt.rider_claim.fund_policy and kept by opt.rider_voice.engaged.keep_informal)." }
+      { "option": "opt.crisis.joint_statement", "because": "A's recurring rider has status ally (set by opt.rider_claim.fund_policy, kept by opt.rider_voice.engaged.keep_informal) and A holds policy.rider_support_fund, which the joint commitment extends." }
     ],
     "onlyInB": [
       { "option": "opt.crisis.announce_new_policy", "because": "B has no policy.rider_support_fund; the option requires notHas of that policy." },
