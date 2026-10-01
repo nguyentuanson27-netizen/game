@@ -2,14 +2,24 @@ import type { ContentPack } from "../content/loader.ts";
 import { resumeCheckpoint, startCampaign } from "../domain/campaign.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
 import { resolveChoice } from "../domain/resolveChoice.ts";
-import type { Checkpoint, EventCheckpoint } from "../persistence/checkpoint.ts";
+import { settleWeek } from "../domain/settlement.ts";
+import type {
+  Checkpoint,
+  EventCheckpoint,
+  ReportCheckpoint,
+  SettlementCheckpoint,
+} from "../persistence/checkpoint.ts";
 import type { CheckpointStore, StoreErrorCode } from "../persistence/store.ts";
 
 /** What the screen shows. `event` is only ever produced for a checkpoint that is already saved. */
 export type SessionState =
   | { kind: "event"; checkpoint: EventCheckpoint; presented: PresentedEvent }
-  /** Every decision slot of the week is committed; settlement is T11. */
-  | { kind: "settlement"; checkpoint: Checkpoint }
+  /** Every decision slot of the week is committed; the week awaits settlement. */
+  | { kind: "settlement"; checkpoint: SettlementCheckpoint }
+  /** Settlement is committed; the weekly report is shown. */
+  | { kind: "report"; checkpoint: ReportCheckpoint }
+  /** Settlement left Cash below the D4 threshold: the explicit failed state. */
+  | { kind: "failed"; checkpoint: ReportCheckpoint }
   | { kind: "recover"; previous: Checkpoint }
   | { kind: "unsupported"; schemaVersion: number }
   | { kind: "unusable" }
@@ -24,10 +34,18 @@ function describe(error: unknown): string {
 function fromCheckpoint(pack: ContentPack, checkpoint: Checkpoint): SessionState {
   const resumed = resumeCheckpoint(pack, checkpoint);
   if (!resumed.ok) return { kind: "invalid-checkpoint", issues: resumed.issues };
-  if (checkpoint.phase === "event" && resumed.presented) {
-    return { kind: "event", checkpoint, presented: resumed.presented };
+  switch (checkpoint.phase) {
+    case "event":
+      return resumed.presented
+        ? { kind: "event", checkpoint, presented: resumed.presented }
+        : { kind: "invalid-checkpoint", issues: ["event phase without a presentable event"] };
+    case "settlement":
+      return { kind: "settlement", checkpoint };
+    case "report":
+      return { kind: "report", checkpoint };
+    case "failed":
+      return { kind: "failed", checkpoint };
   }
-  return { kind: "settlement", checkpoint };
 }
 
 /**
@@ -112,4 +130,22 @@ export async function choose(
     state: fromCheckpoint(pack, committed.value),
     feedback: resolved.option.feedback,
   };
+}
+
+export type SettleResult =
+  | { ok: true; state: SessionState }
+  | { ok: false; error: StoreErrorCode; message: string };
+
+/**
+ * Settle the week once: one checkpoint holds the settled cash, the result and the new phase. The
+ * report is shown only from the committed result; a failed save leaves the week unsettled.
+ */
+export async function settle(
+  store: CheckpointStore,
+  pack: ContentPack,
+  checkpoint: SettlementCheckpoint,
+): Promise<SettleResult> {
+  const committed = await store.commit(settleWeek(checkpoint));
+  if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
+  return { ok: true, state: fromCheckpoint(pack, committed.value) };
 }

@@ -241,3 +241,30 @@ body {
   margin: 0 0 16px;
   line-height: 1.5;
 }
+
+.report__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.report__list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report__list dt {
+  color: var(--muted);
+}
+
+.report__list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.report__failed {
+  margin: 12px 0 0;
+  font-weight: 600;
+}

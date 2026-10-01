@@ -339,6 +339,75 @@ describe("confirmation for a major irreversible option", () => {
   });
 });
 
+describe("settling the week", () => {
+  async function reachSettlement(store: ReturnType<typeof setup>["store"]) {
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    fireEvent.click(optionButtons()[0] as HTMLElement);
+    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    fireEvent.click(optionButtons()[0] as HTMLElement);
+    return screen.findByRole("button", { name: "Tổng kết tuần" });
+  }
+
+  it("settles on tap and shows the report only after the checkpoint is saved", async () => {
+    const { inner, store } = setup();
+    const button = await reachSettlement(store);
+    const release = store.holdNextCommit();
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(store.commits).toHaveLength(4));
+    expect(screen.queryByRole("heading", { name: "Báo cáo tuần 1" })).toBeNull();
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => release());
+
+    const report = await screen.findByRole("heading", { name: "Báo cáo tuần 1" });
+    expect(report).toBeTruthy();
+    expect(screen.getByText("Đơn giao hàng hoàn thành").nextSibling?.textContent).toBe("19");
+    expect(screen.getByText("Chuyến chở khách hoàn thành").nextSibling?.textContent).toBe("13");
+    expect(screen.getByText("Kết quả tuần").nextSibling?.textContent).toBe("+6");
+    expect(screen.getByText("Tiền mặt hiện có").nextSibling?.textContent).toBe("53");
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.phase).toBe("report");
+  });
+
+  it("settles once on a repeated tap and once more is impossible after a reload", async () => {
+    const { inner, store } = setup();
+    const button = await reachSettlement(store);
+
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await screen.findByRole("heading", { name: "Báo cáo tuần 1" });
+
+    expect(store.commits).toHaveLength(4);
+    cleanup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("heading", { name: "Báo cáo tuần 1" });
+    expect(store.commits).toHaveLength(4);
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.metrics.cash).toBe(53);
+  });
+
+  it("shows an error and no report when the save fails, and settles once on retry", async () => {
+    const { inner, store } = setup();
+    const button = await reachSettlement(store);
+    store.failNextCommits(1);
+
+    fireEvent.click(button);
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Không lưu được kết quả tuần");
+    expect(screen.queryByRole("heading", { name: "Báo cáo tuần 1" })).toBeNull();
+    expect((await inner.load()) as unknown).toMatchObject({ checkpoint: { phase: "settlement" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Tổng kết tuần" }));
+
+    await screen.findByRole("heading", { name: "Báo cáo tuần 1" });
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.metrics.cash).toBe(53);
+  });
+});
+
 describe("blocking and recovery screens", () => {
   async function twoSaves(ctx: ReturnType<typeof setup>) {
     const first = await ctx.inner.commit(firstDraft());
