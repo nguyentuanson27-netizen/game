@@ -3,6 +3,8 @@ import { checkpointSchema } from "./checkpoint.ts";
 import {
   type CheckpointStore,
   classifySlot,
+  describeFault,
+  describeIssues,
   type LoadResult,
   type StoreErrorCode,
   type StoreResult,
@@ -81,7 +83,7 @@ export function createIdbCheckpointStore(dbName: string = DEFAULT_DB_NAME): IdbC
         ...draft,
         sequence: (draft.parentSequence ?? 0) + 1,
       });
-      if (!provisional.success) return fail("invalid", provisional.error.message);
+      if (!provisional.success) return fail("invalid", describeIssues(provisional.error));
 
       let tx: Tx | undefined;
       try {
@@ -115,7 +117,7 @@ export function createIdbCheckpointStore(dbName: string = DEFAULT_DB_NAME): IdbC
         });
         if (!candidate.success) {
           await abort(tx);
-          return fail("invalid", candidate.error.message);
+          return fail("invalid", describeIssues(candidate.error));
         }
 
         if (current.kind === "valid") await store.put(current.checkpoint, PREVIOUS);
@@ -124,7 +126,7 @@ export function createIdbCheckpointStore(dbName: string = DEFAULT_DB_NAME): IdbC
         return { ok: true, value: candidate.data };
       } catch (error) {
         await abort(tx);
-        return fail("write-failed", error instanceof Error ? error.message : String(error));
+        return fail("write-failed", describeFault(error));
       }
     },
 
@@ -152,7 +154,7 @@ export function createIdbCheckpointStore(dbName: string = DEFAULT_DB_NAME): IdbC
         return { ok: true, value: previous.checkpoint };
       } catch (error) {
         await abort(tx);
-        return fail("write-failed", error instanceof Error ? error.message : String(error));
+        return fail("write-failed", describeFault(error));
       }
     },
 
@@ -177,7 +179,7 @@ export function createIdbCheckpointStore(dbName: string = DEFAULT_DB_NAME): IdbC
         return { ok: true, value: null };
       } catch (error) {
         await abort(tx);
-        return fail("write-failed", error instanceof Error ? error.message : String(error));
+        return fail("write-failed", describeFault(error));
       }
     },
 

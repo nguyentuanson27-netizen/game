@@ -218,12 +218,14 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Gate G1:** Review the small proof and observations now. This is not full-slice approval: T14 and T17 still block content expansion. No general validator is required to draft or observe the validated small pack.
 
 ### T13 - Expand save-failure coverage
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit and owner review before checking off.
 **Description:** Extend the safety already tested in T08-T12 to a systematic matrix; do not defer basic failure blocking to this task.
 **Dependencies:** T12, T03.
 **Files likely touched:** Checkpoint failure handling; error/retry presentation; fault fixtures; recovery tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Failed saves never show success or permit another decision/week advance; the previous complete checkpoint remains recoverable with no silent reset; retry/resume cannot duplicate effects or scheduled consequences.
 **Verification:** FOCUSED AC-05 across active-event, choice, settlement and advancement saves; add missing cases, D3 corrupt/unsupported-save behavior and retry/resume regressions. Reuse existing tests; errors must contain no secret/PII payloads.
+
+**T13 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T13 section). Summary: a table-driven matrix runs every write boundary (first active-event save, choice, last choice into settlement, settlement, Next Week, week-12 completion) against four injected failures on the real `idb` store (browser refusal or transaction abort on each `put`), asserts both slots are byte-identical afterwards, nothing is reset, reopening resumes the old complete state, and a retry ends exactly equal to a fault-free run; lost-acknowledgement cases prove a committed write cannot be replayed; failed recovery/reset, mid-game corrupt/newer-version saves (now routed to the recovery/unsupported screens instead of a retry loop), and sanitized error contents are covered at store and screen level.
 
 ### T14 - Interruption matrix on the target
 **Status:** [ ] Blocked by dependencies.
