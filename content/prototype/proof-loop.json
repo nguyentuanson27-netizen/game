@@ -1,0 +1,18 @@
+{
+  "id": "proof.loop",
+  "note": "Slot plan for the playable proof loop (T08-T12). It lists which authored proof events the loop walks each week and nothing else: required callbacks are persisted but not delivered here (T15), and weeks 2-12 have no authored decisions until T21-T24. Week 1 deliberately carries the proof setup event and the fallback so the loop can be played from the first tap; the T18 walk-through placement (W3/W7/W10) is replayed by T15/T19, not by this file.",
+  "weeks": [
+    { "week": 1, "slots": ["evt.proof.rider_claim", "evt.proof.fallback_shift_roster"] },
+    { "week": 2, "slots": [] },
+    { "week": 3, "slots": [] },
+    { "week": 4, "slots": [] },
+    { "week": 5, "slots": [] },
+    { "week": 6, "slots": [] },
+    { "week": 7, "slots": [] },
+    { "week": 8, "slots": [] },
+    { "week": 9, "slots": [] },
+    { "week": 10, "slots": [] },
+    { "week": 11, "slots": [] },
+    { "week": 12, "slots": [] }
+  ]
+}

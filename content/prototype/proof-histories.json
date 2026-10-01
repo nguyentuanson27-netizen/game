@@ -31,11 +31,32 @@
       "role": "demonstration",
       "summary": "Answers the first claim with a standing support policy, keeps the rider as an ally, keeps the channel informal.",
       "decisions": [
-        { "week": 3, "slot": 1, "node": "evt.proof.rider_claim", "option": "opt.rider_claim.fund_policy" },
-        { "week": 7, "slot": 1, "node": "var.rider_voice_followup.engaged", "option": "opt.rider_voice.engaged.keep_informal", "via": "cb.rider_voice_followup" },
-        { "week": 10, "slot": 1, "node": "evt.proof.public_rider_dispute", "option": "opt.crisis.joint_statement", "via": "cb.public_rider_dispute" }
+        {
+          "week": 3,
+          "slot": 1,
+          "node": "evt.proof.rider_claim",
+          "option": "opt.rider_claim.fund_policy"
+        },
+        {
+          "week": 7,
+          "slot": 1,
+          "node": "var.rider_voice_followup.engaged",
+          "option": "opt.rider_voice.engaged.keep_informal",
+          "via": "cb.rider_voice_followup"
+        },
+        {
+          "week": 10,
+          "slot": 1,
+          "node": "evt.proof.public_rider_dispute",
+          "option": "opt.crisis.joint_statement",
+          "via": "cb.public_rider_dispute"
+        }
       ],
-      "optionSequence": ["opt.rider_claim.fund_policy", "opt.rider_voice.engaged.keep_informal", "opt.crisis.joint_statement"],
+      "optionSequence": [
+        "opt.rider_claim.fund_policy",
+        "opt.rider_voice.engaged.keep_informal",
+        "opt.crisis.joint_statement"
+      ],
       "stateBeforeCrisis": {
         "policies": ["policy.rider_support_fund"],
         "memories": ["prec.rider_dispute.negotiated", "mem.rider_claim_on_record"],
@@ -44,19 +65,56 @@
         "recurringPolicyCost": 6
       },
       "callbackState": {
-        "cb.rider_voice_followup": { "deliveredWeek": 7, "resolution": "variant", "variant": "var.rider_voice_followup.engaged" },
-        "cb.public_rider_dispute": { "deliveredWeek": 10, "resolution": "event", "event": "evt.proof.public_rider_dispute" }
+        "cb.rider_voice_followup": {
+          "deliveredWeek": 7,
+          "resolution": "variant",
+          "variant": "var.rider_voice_followup.engaged"
+        },
+        "cb.public_rider_dispute": {
+          "deliveredWeek": 10,
+          "resolution": "event",
+          "event": "evt.proof.public_rider_dispute"
+        }
       },
-      "proofSlotsByWeek": { "3": ["evt.proof.rider_claim"], "7": ["var.rider_voice_followup.engaged"], "10": ["evt.proof.public_rider_dispute"] },
-      "crisisSelectableOptionIds": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy", "opt.crisis.joint_statement"],
+      "proofSlotsByWeek": {
+        "3": ["evt.proof.rider_claim"],
+        "7": ["var.rider_voice_followup.engaged"],
+        "10": ["evt.proof.public_rider_dispute"]
+      },
+      "crisisSelectableOptionIds": [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.cite_policy",
+        "opt.crisis.joint_statement"
+      ],
       "crisisUnavailable": [
-        { "option": "opt.crisis.announce_new_policy", "reason": "notHas policies policy.rider_support_fund is false: the fund already exists." },
-        { "option": "opt.crisis.refer_to_review_panel", "reason": "has policies policy.rider_review_seat is false: no seat was granted (keep_informal was chosen)." },
-        { "option": "opt.crisis.quiet_settlement", "reason": "notHas memories prec.rider_dispute.negotiated is false: the first claim was handled openly." }
+        {
+          "option": "opt.crisis.announce_new_policy",
+          "reason": "notHas policies policy.rider_support_fund is false: the fund already exists."
+        },
+        {
+          "option": "opt.crisis.refer_to_review_panel",
+          "reason": "has policies policy.rider_review_seat is false: no seat was granted (keep_informal was chosen)."
+        },
+        {
+          "option": "opt.crisis.quiet_settlement",
+          "reason": "notHas memories prec.rider_dispute.negotiated is false: the first claim was handled openly."
+        }
       ],
       "paperCashAfterSettlementByWeek": [57, 64, 70, 76, 82, 88, 94, 100, 106, 109, 112, 115],
-      "paperSettlementWeek3": { "deliveries": 19, "rides": 13, "gross": 77, "cost": 71, "cashDelta": 6 },
-      "paperSettlementWeek10": { "deliveries": 19, "rides": 13, "gross": 77, "cost": 74, "cashDelta": 3 }
+      "paperSettlementWeek3": {
+        "deliveries": 19,
+        "rides": 13,
+        "gross": 77,
+        "cost": 71,
+        "cashDelta": 6
+      },
+      "paperSettlementWeek10": {
+        "deliveries": 19,
+        "rides": 13,
+        "gross": 77,
+        "cost": 74,
+        "cashDelta": 3
+      }
     },
 
     {
@@ -64,11 +122,32 @@
       "role": "demonstration",
       "summary": "Refuses the first claim, holds the line publicly when the rider posts, then faces the same crisis with no policy and an unhappy rider.",
       "decisions": [
-        { "week": 3, "slot": 1, "node": "evt.proof.rider_claim", "option": "opt.rider_claim.decline" },
-        { "week": 7, "slot": 1, "node": "var.rider_voice_followup.aggrieved", "option": "opt.rider_voice.aggrieved.hold_line", "via": "cb.rider_voice_followup" },
-        { "week": 10, "slot": 1, "node": "evt.proof.public_rider_dispute", "option": "opt.crisis.announce_new_policy", "via": "cb.public_rider_dispute" }
+        {
+          "week": 3,
+          "slot": 1,
+          "node": "evt.proof.rider_claim",
+          "option": "opt.rider_claim.decline"
+        },
+        {
+          "week": 7,
+          "slot": 1,
+          "node": "var.rider_voice_followup.aggrieved",
+          "option": "opt.rider_voice.aggrieved.hold_line",
+          "via": "cb.rider_voice_followup"
+        },
+        {
+          "week": 10,
+          "slot": 1,
+          "node": "evt.proof.public_rider_dispute",
+          "option": "opt.crisis.announce_new_policy",
+          "via": "cb.public_rider_dispute"
+        }
       ],
-      "optionSequence": ["opt.rider_claim.decline", "opt.rider_voice.aggrieved.hold_line", "opt.crisis.announce_new_policy"],
+      "optionSequence": [
+        "opt.rider_claim.decline",
+        "opt.rider_voice.aggrieved.hold_line",
+        "opt.crisis.announce_new_policy"
+      ],
       "stateBeforeCrisis": {
         "policies": [],
         "memories": ["prec.rider_dispute.declined", "mem.rider_claim_on_record"],
@@ -77,19 +156,56 @@
         "recurringPolicyCost": 0
       },
       "callbackState": {
-        "cb.rider_voice_followup": { "deliveredWeek": 7, "resolution": "variant", "variant": "var.rider_voice_followup.aggrieved" },
-        "cb.public_rider_dispute": { "deliveredWeek": 10, "resolution": "event", "event": "evt.proof.public_rider_dispute" }
+        "cb.rider_voice_followup": {
+          "deliveredWeek": 7,
+          "resolution": "variant",
+          "variant": "var.rider_voice_followup.aggrieved"
+        },
+        "cb.public_rider_dispute": {
+          "deliveredWeek": 10,
+          "resolution": "event",
+          "event": "evt.proof.public_rider_dispute"
+        }
       },
-      "proofSlotsByWeek": { "3": ["evt.proof.rider_claim"], "7": ["var.rider_voice_followup.aggrieved"], "10": ["evt.proof.public_rider_dispute"] },
-      "crisisSelectableOptionIds": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"],
+      "proofSlotsByWeek": {
+        "3": ["evt.proof.rider_claim"],
+        "7": ["var.rider_voice_followup.aggrieved"],
+        "10": ["evt.proof.public_rider_dispute"]
+      },
+      "crisisSelectableOptionIds": [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.announce_new_policy",
+        "opt.crisis.quiet_settlement"
+      ],
       "crisisUnavailable": [
-        { "option": "opt.crisis.cite_policy", "reason": "has policies policy.rider_support_fund is false: there is no policy to cite." },
-        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false (the rider is resentful); has policies policy.rider_support_fund is also false." },
-        { "option": "opt.crisis.refer_to_review_panel", "reason": "has policies policy.rider_review_seat is false." }
+        {
+          "option": "opt.crisis.cite_policy",
+          "reason": "has policies policy.rider_support_fund is false: there is no policy to cite."
+        },
+        {
+          "option": "opt.crisis.joint_statement",
+          "reason": "eq npc.recurring_rider.status ally is false (the rider is resentful); has policies policy.rider_support_fund is also false."
+        },
+        {
+          "option": "opt.crisis.refer_to_review_panel",
+          "reason": "has policies policy.rider_review_seat is false."
+        }
       ],
       "paperCashAfterSettlementByWeek": [57, 64, 66, 68, 70, 72, 74, 76, 78, 66, 62, 58],
-      "paperSettlementWeek3": { "deliveries": 17, "rides": 11, "gross": 67, "cost": 65, "cashDelta": 2 },
-      "paperSettlementWeek10": { "deliveries": 17, "rides": 11, "gross": 67, "cost": 71, "cashDelta": -4 }
+      "paperSettlementWeek3": {
+        "deliveries": 17,
+        "rides": 11,
+        "gross": 67,
+        "cost": 65,
+        "cashDelta": 2
+      },
+      "paperSettlementWeek10": {
+        "deliveries": 17,
+        "rides": 11,
+        "gross": 67,
+        "cost": 71,
+        "cashDelta": -4
+      }
     },
 
     {
@@ -97,8 +213,20 @@
       "role": "changed-context probe (supplemental; not one of the two AC-06 demonstration histories)",
       "summary": "Closes the first claim with a private payment; the rider leaves. The follow-up callback's original context is gone and closes by report.",
       "decisions": [
-        { "week": 3, "slot": 1, "node": "evt.proof.rider_claim", "option": "opt.rider_claim.settle_and_part", "confirmation": "required" },
-        { "week": 10, "slot": 1, "node": "evt.proof.public_rider_dispute", "option": "opt.crisis.quiet_settlement", "via": "cb.public_rider_dispute" }
+        {
+          "week": 3,
+          "slot": 1,
+          "node": "evt.proof.rider_claim",
+          "option": "opt.rider_claim.settle_and_part",
+          "confirmation": "required"
+        },
+        {
+          "week": 10,
+          "slot": 1,
+          "node": "evt.proof.public_rider_dispute",
+          "option": "opt.crisis.quiet_settlement",
+          "via": "cb.public_rider_dispute"
+        }
       ],
       "optionSequence": ["opt.rider_claim.settle_and_part", "opt.crisis.quiet_settlement"],
       "stateBeforeCrisis": {
@@ -109,21 +237,58 @@
         "recurringPolicyCost": 0
       },
       "callbackState": {
-        "cb.rider_voice_followup": { "resolvedWeek": 7, "resolution": "reportClosure", "closure": "closure.rider_voice_followup.departed", "consumedEventSlot": false },
-        "cb.public_rider_dispute": { "deliveredWeek": 10, "resolution": "event", "event": "evt.proof.public_rider_dispute" }
+        "cb.rider_voice_followup": {
+          "resolvedWeek": 7,
+          "resolution": "reportClosure",
+          "closure": "closure.rider_voice_followup.departed",
+          "consumedEventSlot": false
+        },
+        "cb.public_rider_dispute": {
+          "deliveredWeek": 10,
+          "resolution": "event",
+          "event": "evt.proof.public_rider_dispute"
+        }
       },
-      "proofSlotsByWeek": { "3": ["evt.proof.rider_claim"], "10": ["evt.proof.public_rider_dispute"] },
+      "proofSlotsByWeek": {
+        "3": ["evt.proof.rider_claim"],
+        "10": ["evt.proof.public_rider_dispute"]
+      },
       "reportClosuresByWeek": { "7": ["closure.rider_voice_followup.departed"] },
       "freedSlotCoverage": "W7 keeps its full budget of 3 slots for ordinary or fallback events. evt.proof.fallback_shift_roster is the proof pack's own state-independent 2-option fallback if no other event is eligible.",
-      "crisisSelectableOptionIds": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"],
+      "crisisSelectableOptionIds": [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.announce_new_policy",
+        "opt.crisis.quiet_settlement"
+      ],
       "crisisUnavailable": [
-        { "option": "opt.crisis.cite_policy", "reason": "has policies policy.rider_support_fund is false." },
-        { "option": "opt.crisis.joint_statement", "reason": "eq npc.recurring_rider.status ally is false (the rider is departed); has policies policy.rider_support_fund is also false." },
-        { "option": "opt.crisis.refer_to_review_panel", "reason": "has policies policy.rider_review_seat is false." }
+        {
+          "option": "opt.crisis.cite_policy",
+          "reason": "has policies policy.rider_support_fund is false."
+        },
+        {
+          "option": "opt.crisis.joint_statement",
+          "reason": "eq npc.recurring_rider.status ally is false (the rider is departed); has policies policy.rider_support_fund is also false."
+        },
+        {
+          "option": "opt.crisis.refer_to_review_panel",
+          "reason": "has policies policy.rider_review_seat is false."
+        }
       ],
       "paperCashAfterSettlementByWeek": [57, 64, 63, 70, 77, 84, 91, 98, 105, 102, 109, 116],
-      "paperSettlementWeek3": { "deliveries": 18, "rides": 12, "gross": 72, "cost": 65, "cashDelta": 7 },
-      "paperSettlementWeek10": { "deliveries": 18, "rides": 12, "gross": 72, "cost": 65, "cashDelta": 7 }
+      "paperSettlementWeek3": {
+        "deliveries": 18,
+        "rides": 12,
+        "gross": 72,
+        "cost": 65,
+        "cashDelta": 7
+      },
+      "paperSettlementWeek10": {
+        "deliveries": 18,
+        "rides": 12,
+        "gross": 72,
+        "cost": 65,
+        "cashDelta": 7
+      }
     }
   ],
 
@@ -131,22 +296,50 @@
     "demonstrationHistories": ["history.a_rider_support", "history.b_decline"],
     "sharedCrisis": "evt.proof.public_rider_dispute",
     "optionSequences": {
-      "history.a_rider_support": ["opt.rider_claim.fund_policy", "opt.rider_voice.engaged.keep_informal", "opt.crisis.joint_statement"],
-      "history.b_decline": ["opt.rider_claim.decline", "opt.rider_voice.aggrieved.hold_line", "opt.crisis.announce_new_policy"]
+      "history.a_rider_support": [
+        "opt.rider_claim.fund_policy",
+        "opt.rider_voice.engaged.keep_informal",
+        "opt.crisis.joint_statement"
+      ],
+      "history.b_decline": [
+        "opt.rider_claim.decline",
+        "opt.rider_voice.aggrieved.hold_line",
+        "opt.crisis.announce_new_policy"
+      ]
     },
     "selectableAtCrisis": {
-      "history.a_rider_support": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy", "opt.crisis.joint_statement"],
-      "history.b_decline": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"]
+      "history.a_rider_support": [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.cite_policy",
+        "opt.crisis.joint_statement"
+      ],
+      "history.b_decline": [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.announce_new_policy",
+        "opt.crisis.quiet_settlement"
+      ]
     },
     "selectableCounts": { "history.a_rider_support": 3, "history.b_decline": 3 },
     "commonToBoth": ["opt.crisis.hold_and_review"],
     "onlyInA": [
-      { "option": "opt.crisis.cite_policy", "because": "A holds policy.rider_support_fund (policy created by opt.rider_claim.fund_policy)." },
-      { "option": "opt.crisis.joint_statement", "because": "A's recurring rider has status ally (set by opt.rider_claim.fund_policy, kept by opt.rider_voice.engaged.keep_informal) and A holds policy.rider_support_fund, which the joint commitment extends." }
+      {
+        "option": "opt.crisis.cite_policy",
+        "because": "A holds policy.rider_support_fund (policy created by opt.rider_claim.fund_policy)."
+      },
+      {
+        "option": "opt.crisis.joint_statement",
+        "because": "A's recurring rider has status ally (set by opt.rider_claim.fund_policy, kept by opt.rider_voice.engaged.keep_informal) and A holds policy.rider_support_fund, which the joint commitment extends."
+      }
     ],
     "onlyInB": [
-      { "option": "opt.crisis.announce_new_policy", "because": "B has no policy.rider_support_fund; the option requires notHas of that policy." },
-      { "option": "opt.crisis.quiet_settlement", "because": "B's setup precedent is prec.rider_dispute.declined, not prec.rider_dispute.negotiated; the option requires notHas of the negotiated precedent." }
+      {
+        "option": "opt.crisis.announce_new_policy",
+        "because": "B has no policy.rider_support_fund; the option requires notHas of that policy."
+      },
+      {
+        "option": "opt.crisis.quiet_settlement",
+        "because": "B's setup precedent is prec.rider_dispute.declined, not prec.rider_dispute.negotiated; the option requires notHas of the negotiated precedent."
+      }
     ],
     "differenceKinds": ["policy", "relationship", "precedent"],
     "notDialogueOnly": true,
@@ -156,13 +349,73 @@
   "reachableCrisisStates": {
     "note": "Complete enumeration of the proof pack's reachable setup/callback combinations: 3 setup options x callback outcome = 7 crisis states, 21 setup-callback-crisis paths. Counts were produced by applying the authored conditions and effects in an ad-hoc local script that is not committed.",
     "states": [
-      { "setup": "opt.rider_claim.fund_policy", "callback": "opt.rider_voice.engaged.grant_seat", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy", "opt.crisis.joint_statement", "opt.crisis.refer_to_review_panel"], "count": 4 },
-      { "setup": "opt.rider_claim.fund_policy", "callback": "opt.rider_voice.engaged.keep_informal", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy", "opt.crisis.joint_statement"], "count": 3 },
-      { "setup": "opt.rider_claim.fund_policy", "callback": "opt.rider_voice.engaged.defer_to_review", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy"], "count": 2 },
-      { "setup": "opt.rider_claim.decline", "callback": "opt.rider_voice.aggrieved.meet_and_listen", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"], "count": 3 },
-      { "setup": "opt.rider_claim.decline", "callback": "opt.rider_voice.aggrieved.hold_line", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"], "count": 3 },
-      { "setup": "opt.rider_claim.decline", "callback": "opt.rider_voice.aggrieved.route_to_ops", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"], "count": 3 },
-      { "setup": "opt.rider_claim.settle_and_part", "callback": "closure.rider_voice_followup.departed", "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.announce_new_policy", "opt.crisis.quiet_settlement"], "count": 3 }
+      {
+        "setup": "opt.rider_claim.fund_policy",
+        "callback": "opt.rider_voice.engaged.grant_seat",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.cite_policy",
+          "opt.crisis.joint_statement",
+          "opt.crisis.refer_to_review_panel"
+        ],
+        "count": 4
+      },
+      {
+        "setup": "opt.rider_claim.fund_policy",
+        "callback": "opt.rider_voice.engaged.keep_informal",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.cite_policy",
+          "opt.crisis.joint_statement"
+        ],
+        "count": 3
+      },
+      {
+        "setup": "opt.rider_claim.fund_policy",
+        "callback": "opt.rider_voice.engaged.defer_to_review",
+        "crisisSelectable": ["opt.crisis.hold_and_review", "opt.crisis.cite_policy"],
+        "count": 2
+      },
+      {
+        "setup": "opt.rider_claim.decline",
+        "callback": "opt.rider_voice.aggrieved.meet_and_listen",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.announce_new_policy",
+          "opt.crisis.quiet_settlement"
+        ],
+        "count": 3
+      },
+      {
+        "setup": "opt.rider_claim.decline",
+        "callback": "opt.rider_voice.aggrieved.hold_line",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.announce_new_policy",
+          "opt.crisis.quiet_settlement"
+        ],
+        "count": 3
+      },
+      {
+        "setup": "opt.rider_claim.decline",
+        "callback": "opt.rider_voice.aggrieved.route_to_ops",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.announce_new_policy",
+          "opt.crisis.quiet_settlement"
+        ],
+        "count": 3
+      },
+      {
+        "setup": "opt.rider_claim.settle_and_part",
+        "callback": "closure.rider_voice_followup.departed",
+        "crisisSelectable": [
+          "opt.crisis.hold_and_review",
+          "opt.crisis.announce_new_policy",
+          "opt.crisis.quiet_settlement"
+        ],
+        "count": 3
+      }
     ]
   }
 }

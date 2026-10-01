@@ -50,4 +50,4 @@ npm run test:e2e     # Playwright smoke tests, Chromium + WebKit (needs `npx pla
 
 ## Status
 
-Prototype scaffold (T07): a launchable portrait shell with PWA manifest, offline app shell and prompt-based updates. There is no gameplay, content runtime or save system yet; those follow in T08+ per [`tasks/todo.md`](tasks/todo.md).
+T08: the app loads the bundled T18 proof content through a Zod boundary, saves the first event as an IndexedDB checkpoint before showing it, and resumes that same unanswered event and option set after a reload or offline reopen. Choices are not resolved yet (T09), and there is no settlement or report. See [`tasks/todo.md`](tasks/todo.md) for task status and evidence.

@@ -49,7 +49,8 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
-    include: ["tests/unit/**/*.test.{ts,tsx}"],
+    include: ["tests/unit/**/*.test.{ts,tsx}", "tests/game/**/*.test.{ts,tsx}"],
+    setupFiles: ["./tests/setup.ts"],
     alias: {
       "virtual:pwa-register/react": fileURLToPath(
         new URL("./tests/stubs/pwa-register-react.ts", import.meta.url),
