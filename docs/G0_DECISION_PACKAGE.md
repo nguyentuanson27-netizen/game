@@ -144,6 +144,14 @@ cashDelta   = grossIncome - weeklyCost
 
 Initial baseline: 18 deliveries + 12 rides = gross 72, cost 65, cash +7 before authored effects. No random demand roll is required; pre-choice UI remains qualitative.
 
+### T04 paper check — contrasting policy histories
+
+Schema/tuning-only examples, not canonical story content:
+- **History A — rider-support policy:** assume an authored choice moves Rider Network from `50` to `60` and adds `recurringPolicyCost +6`. Settlement becomes 19 deliveries + 13 rides = gross 77, cost 71, cash `+6` before other authored effects.
+- **History B — austerity policy:** assume an authored choice moves Rider Network from `50` to `40` with no recurring policy cost. Settlement becomes 17 deliveries + 11 rides = gross 67, cost 65, cash `+2` before other authored effects.
+
+Both examples keep the authored weekly decision budget unchanged, settle exactly once after the week's choices, and remain comfortably above the prototype failure threshold after this sample week. Real T18/T19 proof histories may use different tuning values, but accepted content must keep both intended demonstration histories playable through week 12 and preserve the 2–4 decisions-per-week contract.
+
 Failure/end:
 - after committed settlement, Cash `< -25` → explicit `failed` state;
 - T18/T19 proof histories remain playable through W12;
