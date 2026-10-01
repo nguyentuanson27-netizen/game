@@ -36,9 +36,17 @@
       "set": { "op": "has|notHas", "set": "policies|memories", "id": "<semantic id>" }
     },
     "effectShapes": {
-      "metricAdjust": { "kind": "metricAdjust", "metric": "cash|riderNetwork|publicTrust", "delta": "<int>" },
+      "metricAdjust": {
+        "kind": "metricAdjust",
+        "metric": "cash|riderNetwork|publicTrust",
+        "delta": "<int>"
+      },
       "policyAdd": { "kind": "policyAdd", "id": "<policy id>" },
-      "recurringCostAdjust": { "kind": "recurringCostAdjust", "source": "<policy id>", "delta": "<int>" },
+      "recurringCostAdjust": {
+        "kind": "recurringCostAdjust",
+        "source": "<policy id>",
+        "delta": "<int>"
+      },
       "npcStatusSet": { "kind": "npcStatusSet", "npc": "<npc id>", "status": "<status>" },
       "memoryAdd": { "kind": "memoryAdd", "id": "<memory or precedent id>" },
       "callbackSchedule": { "kind": "callbackSchedule", "callback": "<callback id>" }
@@ -69,7 +77,11 @@
       "id": "policy.rider_support_fund",
       "label": "Rider accident-support fund",
       "createdBy": ["opt.rider_claim.fund_policy", "opt.crisis.announce_new_policy"],
-      "readBy": ["opt.crisis.cite_policy", "opt.crisis.announce_new_policy", "opt.crisis.joint_statement"]
+      "readBy": [
+        "opt.crisis.cite_policy",
+        "opt.crisis.announce_new_policy",
+        "opt.crisis.joint_statement"
+      ]
     },
     {
       "id": "policy.rider_review_seat",
@@ -178,7 +190,10 @@
       "stage": "street_startup",
       "speaker": "npc.recurring_rider",
       "category": "character",
-      "placement": { "proofWeek": 3, "note": "Ordinary event. The proof walk-through places it in W3; ordinary selection is T10's concern." },
+      "placement": {
+        "proofWeek": 3,
+        "note": "Ordinary event. The proof walk-through places it in W3; ordinary selection is T10's concern."
+      },
       "eligibility": [{ "op": "notHas", "set": "memories", "id": "mem.rider_claim_on_record" }],
       "whyNow": "Mưa lớn tuần này, và đây là tài xế bạn quen mặt nhất. Cả nhóm đang chờ xem bạn xử lý ra sao.",
       "situation": "Một tài xế quen mặt ngã xe trên đoạn đường ngập khi đang giao hàng. Xe hỏng và họ mất ba ca làm. Họ nhắn riêng hỏi công ty có hỗ trợ gì không. Các tài xế khác đang xem bạn trả lời thế nào.",
@@ -236,8 +251,15 @@
           "feedback": "Họ nhận khoản tiền và ngừng nhận đơn. Chuyện này tạm yên, nhưng không ai còn nói chuyện thẳng với họ."
         }
       ],
-      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three options, none conditional: always 3 selectable." },
-      "memoryCreated": ["mem.rider_claim_on_record", "prec.rider_dispute.negotiated | prec.rider_dispute.declined | prec.rider_dispute.suppressed"],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 4,
+        "reason": "Three options, none conditional: always 3 selectable."
+      },
+      "memoryCreated": [
+        "mem.rider_claim_on_record",
+        "prec.rider_dispute.negotiated | prec.rider_dispute.declined | prec.rider_dispute.suppressed"
+      ],
       "requiredCallbacksScheduled": ["cb.rider_voice_followup", "cb.public_rider_dispute"],
       "cooldownWeeks": null,
       "repeatable": false
@@ -274,9 +296,7 @@
           "hint": "Linh hoạt, nhưng không ràng buộc ai.",
           "requires": [],
           "confirmation": "none",
-          "effects": [
-            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": 2 }
-          ],
+          "effects": [{ "kind": "metricAdjust", "metric": "riderNetwork", "delta": 2 }],
           "feedback": "Họ gật đầu. Vẫn nhắn cho bạn trước khi nói với nhóm."
         },
         {
@@ -292,7 +312,11 @@
           "feedback": "Họ nói sẽ chờ. Giọng đã khác so với lần trước."
         }
       ],
-      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three unconditional options: always 3 selectable." },
+      "selectableCoverage": {
+        "min": 2,
+        "max": 4,
+        "reason": "Three unconditional options: always 3 selectable."
+      },
       "cooldownWeeks": null,
       "repeatable": false
     },
@@ -328,9 +352,7 @@
           "hint": "Giữ lập trường, nhưng bạn sẽ bị coi là cứng nhắc.",
           "requires": [],
           "confirmation": "none",
-          "effects": [
-            { "kind": "metricAdjust", "metric": "publicTrust", "delta": -5 }
-          ],
+          "effects": [{ "kind": "metricAdjust", "metric": "publicTrust", "delta": -5 }],
           "feedback": "Câu trả lời được chia sẻ nhiều hơn bài gốc. Không ai trong nhóm nhắn riêng cho bạn nữa."
         },
         {
@@ -339,13 +361,15 @@
           "hint": "Ít rủi ro ngay lúc này, nhưng nghe như né tránh.",
           "requires": [],
           "confirmation": "none",
-          "effects": [
-            { "kind": "metricAdjust", "metric": "riderNetwork", "delta": -3 }
-          ],
+          "effects": [{ "kind": "metricAdjust", "metric": "riderNetwork", "delta": -3 }],
           "feedback": "Bài đăng chìm dần, nhưng nhiều tài xế nhận xét công ty chỉ trả lời bằng mẫu soạn sẵn."
         }
       ],
-      "selectableCoverage": { "min": 2, "max": 4, "reason": "Three unconditional options: always 3 selectable." },
+      "selectableCoverage": {
+        "min": 2,
+        "max": 4,
+        "reason": "Three unconditional options: always 3 selectable."
+      },
       "cooldownWeeks": null,
       "repeatable": false
     },
@@ -463,7 +487,9 @@
           "id": "opt.crisis.quiet_settlement",
           "text": "Dàn xếp riêng với các tài xế liên quan, đề nghị gỡ bài",
           "hint": "Dập nhanh, nhưng bài viết có thể bị chụp lại.",
-          "requires": [{ "op": "notHas", "set": "memories", "id": "prec.rider_dispute.negotiated" }],
+          "requires": [
+            { "op": "notHas", "set": "memories", "id": "prec.rider_dispute.negotiated" }
+          ],
           "unavailableBecause": "Vụ trước đã được giải quyết công khai bằng chính sách; không còn khoản tồn đọng để dàn xếp riêng.",
           "confirmation": "none",
           "effects": [
@@ -535,7 +561,11 @@
           "feedback": "Cuối tuần đơn chờ lâu hơn. Vài khách để lại nhận xét không hài lòng."
         }
       ],
-      "selectableCoverage": { "min": 2, "max": 4, "reason": "Two unconditional options: always 2 selectable. Binary low-stakes fallback." },
+      "selectableCoverage": {
+        "min": 2,
+        "max": 4,
+        "reason": "Two unconditional options: always 2 selectable. Binary low-stakes fallback."
+      },
       "fallbackRules": {
         "usedOnlyWhen": "too few other events are eligible for a slot (SPEC section 21)",
         "stateIndependent": true,
@@ -551,7 +581,11 @@
       "chain": "chain.rider_dispute",
       "sourceDecision": {
         "event": "evt.proof.rider_claim",
-        "options": ["opt.rider_claim.fund_policy", "opt.rider_claim.decline", "opt.rider_claim.settle_and_part"],
+        "options": [
+          "opt.rider_claim.fund_policy",
+          "opt.rider_claim.decline",
+          "opt.rider_claim.settle_and_part"
+        ],
         "scheduledBy": "callbackSchedule effect on every source option"
       },
       "required": true,
@@ -594,7 +628,11 @@
       "chain": "chain.rider_dispute",
       "sourceDecision": {
         "event": "evt.proof.rider_claim",
-        "options": ["opt.rider_claim.fund_policy", "opt.rider_claim.decline", "opt.rider_claim.settle_and_part"],
+        "options": [
+          "opt.rider_claim.fund_policy",
+          "opt.rider_claim.decline",
+          "opt.rider_claim.settle_and_part"
+        ],
         "scheduledBy": "callbackSchedule effect on every source option"
       },
       "required": true,
@@ -602,9 +640,7 @@
       "tieOrder": 2,
       "eligibility": [{ "op": "has", "set": "memories", "id": "mem.rider_claim_on_record" }],
       "consumesEventSlot": "yes",
-      "variants": [
-        { "event": "evt.proof.public_rider_dispute", "when": [] }
-      ],
+      "variants": [{ "event": "evt.proof.public_rider_dispute", "when": [] }],
       "variantNote": "A single event with state-adaptive option availability, so no context can invalidate it. Reads current committed state at presentation time.",
       "changedContext": {
         "invalidWhen": "Cannot occur: the event has no precondition beyond the source memory.",
