@@ -23,7 +23,7 @@ The official pack name is **RPG Urban Pack** (not “RPG Urban Kit”).
 
 Recurring NPC portraits/character art are intentionally deferred to a later art pass.
 
-- No Kenney character becomes the canonical identity of Minh, executives, merchants, competitors or other recurring NPCs.
+- No Kenney character becomes the canonical identity of recurring riders, executives, merchants, competitors or other recurring NPCs.
 - The first runnable demo may use neutral avatar/silhouette placeholders if needed.
 - Character art can be replaced independently of event/state/content logic.
 
