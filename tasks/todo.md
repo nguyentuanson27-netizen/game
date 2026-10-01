@@ -2,7 +2,7 @@
 
 ## Execution rules
 
-Read [plan.md](plan.md). Source: PR #1 merged at `9382310fe6632b3758499b565b2d2c7b07f3d596`, including AC-01 through AC-07. T01-T06 are complete through the approved G0 decision package; implementation/content tasks remain unstarted. IDs are retained for existing review references: follow the displayed order/dependencies, not numeric order.
+Read [plan.md](plan.md). Source: PR #1 merged at `9382310fe6632b3758499b565b2d2c7b07f3d596`, including AC-01 through AC-07. T01-T06 are complete through the approved G0 decision package; T18 is complete as a paper/data draft only, and other implementation/content tasks remain unstarted. IDs are retained for existing review references: follow the displayed order/dependencies, not numeric order.
 
 T01-T06 prepare one decision package for G0, not six independent approval rounds. All code/content tasks require G0. Only the upcoming slice needs actual paths and commands; later tasks retain acceptance/dependency requirements and are detailed before they start. Update decision docs only when decisions change. Keep one evidence record per slice, but attach each task's revision, check results and limitations before checking that task off.
 
@@ -76,7 +76,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 ## Small proof and first playable loop
 
 ### T18 - Draft the converging proof chain early
-**Status:** [ ] Ready; not started.
+**Status:** [x] Complete (paper/data review only) — draft fixture in `content/prototype/proof-chain.json` and `proof-histories.json`; evidence, counts and limitations in [t18-proof-chain.md](evidence/t18-proof-chain.md). Proposed fixture shape, not runtime-validated; no gameplay, loader, scheduler or AC pass is claimed.
 **Description:** Draft the small story used as fixtures by the first playable loop, rather than waiting for a cross-chain validator.
 **Dependencies:** T06, T04, T05.
 **Files likely touched:** One proof-chain draft/content unit; minimal NPC/precedent data; expected-history fixture; shared content ledger/task record. **Scope:** M (3-5 files).
