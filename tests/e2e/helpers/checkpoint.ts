@@ -24,7 +24,9 @@ export function readSlot(
     ({ dbName, slot }) =>
       new Promise<StoredCheckpoint | null>((resolve, reject) => {
         const open = indexedDB.open(dbName);
-        open.onerror = () => reject(open.error);
+        // Peeking must never create the app's database: if it does not exist, abort the upgrade.
+        open.onupgradeneeded = () => open.transaction?.abort();
+        open.onerror = () => resolve(null);
         open.onsuccess = () => {
           const db = open.result;
           const get = db.transaction("checkpoints").objectStore("checkpoints").get(slot);

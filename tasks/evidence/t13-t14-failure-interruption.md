@@ -30,3 +30,40 @@ Screens: after a failed choice / settlement / Next Week there is no success feed
 ### Limits
 
 Injection happens through the `IDBObjectStore.put`/`delete` boundary of a simulated IndexedDB; a real browser's abort/quota behaviour is covered separately in T14 (Playwright, Chromium + WebKit) and a physical device not at all (`Not run`). The first-save boundary has no earlier state to resume. No AC is claimed as passing overall.
+
+## T14 - interruption matrix on the real persistence boundary (AC-04, AC-05, AC-07)
+
+Target: Chromium and WebKit through Playwright (CI) and Chromium locally (the pre-installed browser). The store is the real `idb` code on the browser's real IndexedDB; nothing is substituted. Physical devices were **not** used.
+
+### Exact injection boundaries
+
+Installed by `tests/e2e/helpers/interruption.ts` before the app loads, per page, and inert unless armed:
+
+| Interruption | Mechanism | State when the page is closed |
+|---|---|---|
+| `abort-before-commit` | the `put` of the `current` checkpoint aborts its own transaction after the writes were issued | the browser rolls the whole transaction back: only the complete OLD checkpoint exists |
+| `hold-after-commit` | the transaction's `complete` event is withheld from the app's listener | the browser has committed (the NEW checkpoint is durable and readable from IndexedDB) but the app was never told: no feedback, no next screen |
+
+Boundaries x both interruptions (10 scenarios per browser): first active-event save (interrupted while the app boots), ordinary choice, confirmed irreversible choice (AC-07), settlement, Next Week. After the interruption the page is closed without `beforeunload`, a new page opens in the same browser context, and the test asserts: abort -> exactly the old state, same slots, no alert, and the action then lands exactly once (`sequence + 1`, `previous` = the old checkpoint); hold -> the new state with no feedback replayed and slots identical to what was committed while the old page was still open. Each injector is proved to fire (abort -> the app shows its error; hold -> `heldCount > 0`).
+
+### Full browser restart, offline (`tests/e2e/restart.spec.ts`)
+
+One journey with a persistent browser profile: the whole browser process is closed, the static server is stopped for good after the first restart, and the browser is relaunched on the same profile with its clock set one more month ahead each time. 8 restarts, at: unanswered event (same option texts), AC-07 confirmation left open (restart = cancel, nothing committed), confirmed irreversible result (no feedback replayed), all decisions committed awaiting settlement, settled report (cash 46, settled once), after Next Week (week 2), week-7 report mid-run, and `Prototype Complete`. At every restart the stored slots are deep-equal to those before it, and the browser clock is asserted to have jumped, so "time away" is a real absence.
+
+Static guard (`tests/game/determinism.test.ts`): `src/game` contains no `Date`, `performance.now`, timers, `requestAnimationFrame` or randomness, so neither a week nor an event can depend on the wall clock or differ between opens.
+
+### DEVICE procedure (not run)
+
+To be run on a current Android browser and current iOS Safari when available; record device, OS and browser versions:
+1. Open the deployed PWA over HTTPS, wait for the offline-ready notice, then enable airplane mode.
+2. Force-close the app (app switcher), reopen: the same unanswered event and options must appear.
+3. Repeat the force-close/reopen at: after a choice, with the confirmation dialog open (must reopen unresolved), after confirming, at the settlement screen, on the report, after Next Week.
+4. Tap a choice and force-close within a moment of the tap: reopening must show a complete old or complete new state, never a mixture, and no feedback for an unacknowledged one.
+5. Set the device date forward several days and reopen: the week must be unchanged.
+
+### Limits
+
+- Interruptions are page-level (abort, withheld completion, page close, browser restart), not a power cut or OS kill; the hold interruption relies on the browser committing before it dispatches `complete`, which is the IndexedDB contract.
+- The first-save boundary has no earlier state, so its "old" state is "start over with the same first event".
+- WebKit's persistent-context and service-worker behaviour is exercised on CI only.
+- Everything marked DEVICE above is `Not run`. No AC is claimed as passing overall; C05 additionally needs the device run and owner sign-off.
