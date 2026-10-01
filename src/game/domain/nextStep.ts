@@ -11,7 +11,8 @@ export type NextStep =
 
 /**
  * Pick the next decision slot of the week from the authored plan, evaluated against `world`,
- * which callers pass as the state the checkpoint is about to commit (never a stale snapshot).
+ * which callers pass as the state the checkpoint is about to commit (never a stale snapshot),
+ * falling back to the authored fallback event when the planned one cannot be presented.
  * Deterministic: there is no random choice to reroll on resume.
  */
 export function nextStep(
@@ -23,11 +24,21 @@ export function nextStep(
   const slots = pack.plan[week - 1] ?? [];
   const eventId = slots[resolvedCount];
   if (eventId === undefined) return { ok: true, phase: "settlement" };
-  const result = presentEvent(pack, eventId, world);
-  if (!result.ok) return { ok: false, message: result.message };
+  let presented = presentEvent(pack, eventId, world);
+  // The planned event cannot be shown in the current state (ineligible, already used, or fewer
+  // than two selectable options): use the authored fallback instead. An invalid option is never
+  // switched back on to reach the minimum.
+  const fallbackId = pack.fallbackEventId;
+  if (!presented.ok && fallbackId !== null && fallbackId !== eventId) {
+    presented = presentEvent(pack, fallbackId, world);
+  }
+  if (!presented.ok) return { ok: false, message: presented.message };
   return {
     ok: true,
     phase: "event",
-    activeEvent: { eventId, optionIds: result.presented.options.map((o) => o.id) },
+    activeEvent: {
+      eventId: presented.presented.event.id,
+      optionIds: presented.presented.options.map((o) => o.id),
+    },
   };
 }

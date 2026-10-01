@@ -1,49 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
+import { readCurrent, readSlot, type StoredCheckpoint } from "./helpers/checkpoint.ts";
 import { startStaticServer } from "./helpers/static-server.ts";
 
 // Output of the `npm run build` that playwright.config.ts runs before the tests (sub-path /game/).
 const distDir = fileURLToPath(new URL("../../dist", import.meta.url));
 const basePath = "/game/";
 const EVENT_TITLE = "Chiếc xe hỏng sau ca mưa";
-
-interface StoredCheckpoint {
-  sequence: number;
-  parentSequence: number | null;
-  week: number;
-  phase: string;
-  activeEvent: { eventId: string; optionIds: string[] } | null;
-  metrics: { riderNetwork: number };
-  policies: string[];
-  recurringCosts: Record<string, number>;
-  npcStatus: Record<string, string>;
-  memories: string[];
-  pendingCallbacks: { callbackId: string }[];
-  weekDecisions: { slot: number; optionId: string }[];
-}
-
-/** Read a committed slot straight from IndexedDB, bypassing the app. */
-function readSlot(page: Page, key: "current" | "previous"): Promise<StoredCheckpoint | null> {
-  return page.evaluate(
-    ({ dbName, slot }) =>
-      new Promise<StoredCheckpoint | null>((resolve, reject) => {
-        const open = indexedDB.open(dbName);
-        open.onerror = () => reject(open.error);
-        open.onsuccess = () => {
-          const db = open.result;
-          const get = db.transaction("checkpoints").objectStore("checkpoints").get(slot);
-          get.onerror = () => reject(get.error);
-          get.onsuccess = () => {
-            db.close();
-            resolve((get.result as StoredCheckpoint | undefined) ?? null);
-          };
-        };
-      }),
-    { dbName: "bicycle-platform-prototype", slot: key },
-  );
-}
-
-const readCurrent = (page: Page) => readSlot(page, "current");
 
 const options = (page: Page) => page.getByRole("group", { name: "Phương án" }).getByRole("button");
 

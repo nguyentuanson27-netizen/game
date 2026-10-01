@@ -81,6 +81,9 @@ export function resolveChoice(
     policies: checkpoint.policies,
     memories: checkpoint.memories,
     npcStatus: checkpoint.npcStatus,
+    resolvedEventIds: checkpoint.resolvedEventIds.includes(eventId)
+      ? checkpoint.resolvedEventIds
+      : [...checkpoint.resolvedEventIds, eventId],
     recurringCosts: checkpoint.recurringCosts,
     pendingCallbacks: checkpoint.pendingCallbacks,
   };

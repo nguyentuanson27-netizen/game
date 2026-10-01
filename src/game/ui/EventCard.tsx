@@ -1,4 +1,7 @@
+import { useState } from "react";
+import type { EventOption } from "../content/schema.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 
 interface EventCardProps {
   week: number;
@@ -22,6 +25,8 @@ export function EventCard({
   onChoose,
 }: EventCardProps) {
   const { event, options, contextLines } = presented;
+  // Only options the content marks as major irreversible ask first; everything else commits on tap.
+  const [confirming, setConfirming] = useState<EventOption | null>(null);
 
   return (
     <section className="card event" aria-labelledby="event-title" aria-busy={busy}>
@@ -46,13 +51,26 @@ export function EventCard({
             type="button"
             className="button option"
             disabled={busy}
-            onClick={() => onChoose(option.id)}
+            onClick={() =>
+              option.confirmation === "required" ? setConfirming(option) : onChoose(option.id)
+            }
           >
             <span className="option__text">{option.text}</span>
             <span className="option__hint">{option.hint}</span>
           </button>
         ))}
       </fieldset>
+      {confirming ? (
+        <ConfirmDialog
+          action={confirming.text}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            const id = confirming.id;
+            setConfirming(null);
+            onChoose(id);
+          }}
+        />
+      ) : null}
       {error ? (
         <p role="alert" className="event__error">
           {error}
