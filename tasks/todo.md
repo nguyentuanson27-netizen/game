@@ -118,12 +118,21 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 - **Not run:** WebKit locally (covered by CI), real Android/iOS device smoke (DEVICE), interrupted-save interleaving beyond the injected failure (T13/T14), the deployed-update path (nothing deployed).
 
 ### T09 - Commit one choice coherently
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented; local gates pass (see evidence). Awaiting CI on Chromium + WebKit, real-device smoke (`Not run`) and owner review before checking off. C03 is not claimed until those are done.
 **Description:** Complete the first vertical path from tap through persistent effects to immediate feedback.
 **Dependencies:** T08, T04.
 **Files likely touched:** Choice resolution; checkpoint integration; feedback presenter; behavior tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Persist the choice, immediate visible/hidden effects, relationships/policies/precedents and pending consequences together before feedback. Failed writes block progression and retain the previous checkpoint; repeated activation/retry commits the action once.
 **Verification:** FOCUSED AC-01/AC-04 portions plus basic AC-05 at the choice write: fail, retry and reopen; compare the complete expected state and scheduled consequences, with no premature success feedback or duplicate effects.
+
+**T09 evidence (Node 24.21.0, npm 11.19.0):**
+- Code: `src/game/domain/resolveChoice.ts` (pure: option -> one complete checkpoint draft), `nextStep.ts` (next slot evaluated against the state being committed), `src/game/ui/session.ts` (`choose`), `GameScreen.tsx`/`EventCard.tsx` (busy lock, feedback after commit, retry).
+- A tap builds a single draft holding: the decision (`weekDecisions`), visible metrics (networks/trust clamped to 0..100, cash unclamped), policies, `recurringCosts`, NPC status, memories/precedents, `pendingCallbacks` (callback id, scheduled week, source event/option; metadata only, no delivery) and the next active event with its selectable option ids (or the `settlement` phase after the last slot). It is committed in one transaction; feedback and the next screen come only from the committed result.
+- Run locally: `npm run verify` passes (Vitest 7 files / 71 tests, includes pure-resolution, session-level and React-level tests). Playwright Chromium 9/9 (adds committed-choice reload, committed-choice offline reopen, double tap).
+- Covered: complete expected state for fund_policy/decline/settle_and_part; policy/precedent/relationship/callbacks committed with the choice (one `commit` call, `previous` = pre-choice checkpoint); failed save -> no feedback, previous checkpoint intact, retry applies once; repeated activation (disabled-while-saving, and a stale-parent rejection when a second tap reuses the old checkpoint); another tab winning -> reload prompt, no overwrite; reopen after a successful choice restores state, next event and pending callbacks; settlement-phase checkpoint after the last slot and its resume; an unreleased T08 checkpoint still reads (new fields default).
+- Checkpoint v1 widened with `recurringCosts`, `pendingCallbacks` and a `settlement` phase (`activeEvent: null`). The settlement phase only means "all decision slots resolved"; settlement itself is T11.
+- AC coverage is only started: AC-01 (state-derived next event in the same draft; the lost-contact scenario is T10), AC-04 (after a committed choice), AC-05 (failure at the choice write). No AC is claimed as passing overall.
+- **Not run:** WebKit locally (CI), real-device smoke, interruption interleavings beyond the injected failure (T13/T14).
 
 **Checkpoint C03:** Verify one durable choice, unanswered/answered resume and basic failed-write/retry behavior before extending the loop.
 

@@ -94,16 +94,131 @@ describe("the first event on screen", () => {
     const stored = await inner.load();
     expect(stored.status === "ready" && stored.checkpoint.sequence).toBe(1);
   });
+});
 
-  it("does not record a choice in this slice and writes nothing when an option is tapped", async () => {
-    const { store } = setup();
+describe("choosing an option", () => {
+  const tapFirstOption = () => fireEvent.click(optionButtons()[0] as HTMLElement);
+
+  it("shows feedback and the next event only after the choice is saved", async () => {
+    const { inner, store } = setup();
     render(<App store={store} loadPack={proofPack} />);
     await screen.findByRole("group", { name: "Phương án" });
+    const release = store.holdNextCommit();
 
-    fireEvent.click(optionButtons()[0] as HTMLElement);
+    tapFirstOption();
 
-    expect((await screen.findByRole("status")).textContent).toContain("chưa ghi nhận");
-    expect(store.commits).toHaveLength(1);
+    await waitFor(() => expect(store.commits).toHaveLength(2));
+    // Saving: nothing is acknowledged, the choices cannot be tapped again.
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Chiếc xe hỏng sau ca mưa" })).toBeTruthy();
+    for (const button of optionButtons()) expect((button as HTMLButtonElement).disabled).toBe(true);
+
+    await act(async () => release());
+
+    expect((await screen.findByRole("status")).textContent).toContain("Họ cảm ơn");
+    expect(screen.getByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" })).toBeTruthy();
+    expect(screen.getByText("Tuần 1 · Quyết định 2/2")).toBeTruthy();
+    expect(optionButtons()).toHaveLength(2);
+    const stored = await inner.load();
+    expect(stored.status === "ready" && stored.checkpoint.sequence).toBe(2);
+  });
+
+  it("shows an error and no feedback when the save fails, and applies the choice once on retry", async () => {
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    store.failNextCommits(1);
+
+    tapFirstOption();
+
+    expect((await screen.findByRole("alert")).textContent).toContain("Không lưu được lựa chọn");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Chiếc xe hỏng sau ca mưa" })).toBeTruthy();
+    expect((await inner.load()) as unknown).toMatchObject({ checkpoint: { sequence: 1 } });
+
+    tapFirstOption();
+
+    expect((await screen.findByRole("status")).textContent).toContain("Họ cảm ơn");
+    expect(screen.queryByRole("alert")).toBeNull();
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint.sequence).toBe(2);
+    expect(stored.checkpoint.metrics.riderNetwork).toBe(60);
+    expect(stored.checkpoint.weekDecisions).toHaveLength(1);
+  });
+
+  it("commits once when the same option is activated twice in a row", async () => {
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    const button = optionButtons()[0] as HTMLElement;
+
+    fireEvent.click(button);
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await screen.findByRole("status");
+    expect(store.commits).toHaveLength(2);
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint.sequence).toBe(2);
+    expect(stored.checkpoint.metrics.riderNetwork).toBe(60);
+    expect(stored.checkpoint.recurringCosts).toEqual({ "policy.rider_support_fund": 6 });
+  });
+
+  it("keeps the committed result and next event after reopening, without repeating feedback", async () => {
+    const { store } = setup();
+    const first = render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    tapFirstOption();
+    await screen.findByRole("status");
+    const options = optionButtons().map((b) => b.textContent);
+    first.unmount();
+
+    render(<App store={store} loadPack={proofPack} />);
+
+    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    expect(optionButtons().map((b) => b.textContent)).toEqual(options);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(store.commits).toHaveLength(2);
+  });
+
+  it("reaches the end-of-decisions screen after the last slot and resumes on it", async () => {
+    const { store } = setup();
+    const first = render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    tapFirstOption();
+    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    tapFirstOption();
+
+    await screen.findByRole("heading", { name: "Tuần 1: đã xong các quyết định" });
+    expect(screen.queryByRole("group", { name: "Phương án" })).toBeNull();
+    first.unmount();
+
+    render(<App store={store} loadPack={proofPack} />);
+    await screen.findByRole("heading", { name: "Tuần 1: đã xong các quyết định" });
+  });
+
+  it("asks to reload instead of overwriting when another tab already saved a decision", async () => {
+    const ctx = setup();
+    render(<App store={ctx.store} loadPack={proofPack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    // Another tab commits the same decision first.
+    const other = createIdbCheckpointStore(ctx.name);
+    const current = await other.load();
+    if (current.status !== "ready" || current.checkpoint.phase !== "event") throw new Error("x");
+    const { resolveChoice } = await import("../../../src/game/domain/resolveChoice.ts");
+    const resolved = resolveChoice(proofPack(), current.checkpoint, "opt.rider_claim.decline");
+    if (!resolved.ok) throw new Error("x");
+    await other.commit(resolved.draft);
+
+    tapFirstOption();
+
+    expect((await screen.findByRole("alert")).textContent).toContain("đã thay đổi ở tab");
+    const stored = await ctx.inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint.metrics.riderNetwork).toBe(40);
+    await other.close();
   });
 });
 

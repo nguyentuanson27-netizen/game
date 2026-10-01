@@ -1,7 +1,7 @@
 import { openDB } from "idb";
 import { afterEach, describe, expect, it } from "vitest";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
-import { bootstrap, recover, resetCampaign } from "../../../src/game/ui/session.ts";
+import { bootstrap, choose, recover, resetCampaign } from "../../../src/game/ui/session.ts";
 import { firstDraft, nextDraft, proofPack, spyOn, uniqueDbName } from "../helpers.ts";
 
 const open: Array<{ close(): Promise<void> }> = [];
@@ -204,3 +204,148 @@ describe("recovery and protection at the session level", () => {
     expect(store.commits).toHaveLength(0);
   });
 });
+
+describe("committing one choice", () => {
+  async function started() {
+    const ctx = setup();
+    const state = await bootstrap(ctx.store, ctx.pack);
+    if (state.kind !== "event") throw new Error("setup failed");
+    return { ...ctx, checkpoint: state.checkpoint };
+  }
+
+  it("writes the whole decision in one commit and offers feedback only afterwards", async () => {
+    const { store, inner, pack, checkpoint } = await started();
+    const commitsBefore = store.commits.length;
+    const release = store.holdNextCommit();
+
+    let finished = false;
+    const choosing = choose(store, pack, checkpoint, "opt.rider_claim.fund_policy").then((r) => {
+      finished = true;
+      return r;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(finished).toBe(false);
+    expect(((await inner.load()) as { checkpoint: { sequence: number } }).checkpoint.sequence).toBe(
+      1,
+    );
+
+    release();
+    const result = await choosing;
+
+    expect(store.commits).toHaveLength(commitsBefore + 1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.feedback).toContain("Họ cảm ơn");
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint).toMatchObject({
+      sequence: 2,
+      parentSequence: 1,
+      policies: ["policy.rider_support_fund"],
+      recurringCosts: { "policy.rider_support_fund": 6 },
+      npcStatus: { "npc.recurring_rider": "ally" },
+      metrics: { riderNetwork: 60 },
+      activeEvent: { eventId: "evt.proof.fallback_shift_roster" },
+    });
+    expect(stored.checkpoint.pendingCallbacks).toHaveLength(2);
+    expect(result.state).toMatchObject({ kind: "event", checkpoint: stored.checkpoint });
+  });
+
+  it("keeps the previous checkpoint and shows no feedback when the save fails, then applies once on retry", async () => {
+    const { store, inner, pack, checkpoint } = await started();
+    store.failNextCommits(1);
+
+    const failed = await choose(store, pack, checkpoint, "opt.rider_claim.fund_policy");
+
+    expect(failed).toMatchObject({ ok: false, error: "write-failed" });
+    expect(await inner.load()).toEqual({ status: "ready", checkpoint });
+
+    const retried = await choose(store, pack, checkpoint, "opt.rider_claim.fund_policy");
+
+    expect(retried.ok).toBe(true);
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    // One decision, one rider-network bump, one recurring cost: nothing doubled.
+    expect(stored.checkpoint.sequence).toBe(2);
+    expect(stored.checkpoint.metrics.riderNetwork).toBe(60);
+    expect(stored.checkpoint.recurringCosts).toEqual({ "policy.rider_support_fund": 6 });
+    expect(stored.checkpoint.weekDecisions).toHaveLength(1);
+  });
+
+  it("cannot apply the same decision twice even if the tap is repeated against the old checkpoint", async () => {
+    const { store, inner, pack, checkpoint } = await started();
+
+    const first = await choose(store, pack, checkpoint, "opt.rider_claim.decline");
+    const repeated = await choose(store, pack, checkpoint, "opt.rider_claim.decline");
+
+    expect(first.ok).toBe(true);
+    expect(repeated).toMatchObject({ ok: false, error: "stale" });
+    const stored = await inner.load();
+    if (stored.status !== "ready") throw new Error("expected ready");
+    expect(stored.checkpoint.sequence).toBe(2);
+    expect(stored.checkpoint.metrics.riderNetwork).toBe(40);
+    expect(stored.checkpoint.weekDecisions).toHaveLength(1);
+  });
+
+  it("keeps the committed result after reopening, including the next event and pending callbacks", async () => {
+    const { name, store, pack, checkpoint } = await started();
+    const result = await choose(store, pack, checkpoint, "opt.rider_claim.settle_and_part");
+    if (!result.ok) throw new Error("setup failed");
+
+    const reloaded = createIdbCheckpointStore(name);
+    open.push(reloaded);
+    const resumed = await bootstrap(reloaded, pack);
+
+    expect(resumed).toEqual(result.state);
+    if (resumed.kind !== "event") throw new Error("expected event");
+    expect(resumed.checkpoint.npcStatus).toEqual({ "npc.recurring_rider": "departed" });
+    expect(resumed.checkpoint.pendingCallbacks).toHaveLength(2);
+    expect(resumed.presented.event.id).toBe("evt.proof.fallback_shift_roster");
+  });
+
+  it("reaches settlement after the last slot of the week and resumes there", async () => {
+    const { name, store, pack, checkpoint } = await started();
+    const first = await choose(store, pack, checkpoint, "opt.rider_claim.decline");
+    if (!first.ok || first.state.kind !== "event") throw new Error("setup failed");
+
+    const second = await choose(
+      store,
+      pack,
+      first.state.checkpoint,
+      "opt.fallback.arrange_extra_shift",
+    );
+
+    expect(second.ok && second.state.kind).toBe("settlement");
+    const reloaded = createIdbCheckpointStore(name);
+    open.push(reloaded);
+    const resumed = await bootstrap(reloaded, pack);
+    expect(resumed.kind).toBe("settlement");
+    if (resumed.kind !== "settlement") return;
+    expect(resumed.checkpoint).toMatchObject({
+      phase: "settlement",
+      weekDecisions: [{ slot: 1 }, { slot: 2 }],
+      metrics: { cash: 47, riderNetwork: 42 },
+    });
+  });
+
+  it("reads an unreleased T08 checkpoint that lacks the later fields", async () => {
+    const { name, store, pack, checkpoint } = await started();
+    const { recurringCosts, pendingCallbacks, ...older } = checkpoint;
+    expect(recurringCosts).toEqual({});
+    expect(pendingCallbacks).toEqual([]);
+    await corrupt(name, older);
+
+    const state = await bootstrap(store, pack);
+
+    expect(state).toMatchObject({
+      kind: "event",
+      checkpoint: { recurringCosts: {}, pendingCallbacks: [] },
+    });
+  });
+});
+
+async function corrupt(name: string, value: unknown) {
+  const db = await openDB(name, 1);
+  await db.put("checkpoints", value, "current");
+  db.close();
+}

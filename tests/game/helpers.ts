@@ -12,7 +12,7 @@ export const rawChain = (): Raw => structuredClone(proofChain);
 export const rawLoop = (): Raw => structuredClone(proofLoop);
 export const proofPack = () => loadContentPack(rawChain(), rawLoop());
 
-export const firstDraft = (): CheckpointDraft => startCampaign(proofPack());
+export const firstDraft = () => startCampaign(proofPack());
 
 /** The draft that follows `checkpoint` unchanged (a stand-in for a later save). */
 export function nextDraft(checkpoint: Checkpoint): CheckpointDraft {

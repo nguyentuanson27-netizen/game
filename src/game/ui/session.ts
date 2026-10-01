@@ -1,12 +1,15 @@
 import type { ContentPack } from "../content/loader.ts";
 import { resumeCheckpoint, startCampaign } from "../domain/campaign.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
-import type { Checkpoint } from "../persistence/checkpoint.ts";
+import { resolveChoice } from "../domain/resolveChoice.ts";
+import type { Checkpoint, EventCheckpoint } from "../persistence/checkpoint.ts";
 import type { CheckpointStore, StoreErrorCode } from "../persistence/store.ts";
 
 /** What the screen shows. `event` is only ever produced for a checkpoint that is already saved. */
 export type SessionState =
-  | { kind: "event"; checkpoint: Checkpoint; presented: PresentedEvent }
+  | { kind: "event"; checkpoint: EventCheckpoint; presented: PresentedEvent }
+  /** Every decision slot of the week is committed; settlement is T11. */
+  | { kind: "settlement"; checkpoint: Checkpoint }
   | { kind: "recover"; previous: Checkpoint }
   | { kind: "unsupported"; schemaVersion: number }
   | { kind: "unusable" }
@@ -20,9 +23,11 @@ function describe(error: unknown): string {
 
 function fromCheckpoint(pack: ContentPack, checkpoint: Checkpoint): SessionState {
   const resumed = resumeCheckpoint(pack, checkpoint);
-  return resumed.ok
-    ? { kind: "event", checkpoint, presented: resumed.presented }
-    : { kind: "invalid-checkpoint", issues: resumed.issues };
+  if (!resumed.ok) return { kind: "invalid-checkpoint", issues: resumed.issues };
+  if (checkpoint.phase === "event" && resumed.presented) {
+    return { kind: "event", checkpoint, presented: resumed.presented };
+  }
+  return { kind: "settlement", checkpoint };
 }
 
 /**
@@ -81,4 +86,30 @@ export async function resetCampaign(
   const result = await store.reset();
   if (result.ok || result.error === "stale") return bootstrap(store, pack);
   return { kind: "save-error", error: result.error, message: result.message };
+}
+
+export type ChooseResult =
+  | { ok: true; state: SessionState; feedback: string }
+  | { ok: false; error: StoreErrorCode | "not-selectable" | "no-next-event"; message: string };
+
+/**
+ * One tap: build the whole decision as a single checkpoint and commit it. Feedback and the next
+ * state are returned only after the commit transaction completed; on any failure nothing was
+ * written, so the same tap can simply be repeated.
+ */
+export async function choose(
+  store: CheckpointStore,
+  pack: ContentPack,
+  checkpoint: EventCheckpoint,
+  optionId: string,
+): Promise<ChooseResult> {
+  const resolved = resolveChoice(pack, checkpoint, optionId);
+  if (!resolved.ok) return { ok: false, error: resolved.reason, message: resolved.message };
+  const committed = await store.commit(resolved.draft);
+  if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
+  return {
+    ok: true,
+    state: fromCheckpoint(pack, committed.value),
+    feedback: resolved.option.feedback,
+  };
 }

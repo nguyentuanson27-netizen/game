@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ContentPack } from "../content/loader.ts";
+import type { EventCheckpoint } from "../persistence/checkpoint.ts";
 import type { CheckpointStore } from "../persistence/store.ts";
 import { EventCard } from "./EventCard.tsx";
-import { bootstrap, recover, resetCampaign, type SessionState } from "./session.ts";
+import { bootstrap, choose, recover, resetCampaign, type SessionState } from "./session.ts";
 
 interface GameScreenProps {
   store: CheckpointStore;
@@ -15,6 +16,11 @@ export function GameScreen({ store, pack }: GameScreenProps) {
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  // Feedback exists only after a successful commit; a tap that is repeated while one is being
+  // saved is ignored (ref, not state, so two taps in the same frame cannot both pass).
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [choiceError, setChoiceError] = useState<string | null>(null);
+  const choosing = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +42,33 @@ export function GameScreen({ store, pack }: GameScreenProps) {
     }
   }, []);
 
+  const onChoose = useCallback(
+    async (checkpoint: EventCheckpoint, optionId: string) => {
+      if (choosing.current) return;
+      choosing.current = true;
+      setBusy(true);
+      setChoiceError(null);
+      try {
+        const result = await choose(store, pack, checkpoint, optionId);
+        if (result.ok) {
+          setFeedback(result.feedback);
+          setScreen(result.state);
+        } else if (result.error === "stale") {
+          setFeedback(null);
+          setScreen({ kind: "save-error", error: "stale", message: result.message });
+        } else {
+          setChoiceError(
+            "Không lưu được lựa chọn. Chưa có thay đổi nào được ghi nhận; hãy chạm lại để thử.",
+          );
+        }
+      } finally {
+        choosing.current = false;
+        setBusy(false);
+      }
+    },
+    [store, pack],
+  );
+
   switch (screen.kind) {
     case "loading":
       return (
@@ -47,16 +80,35 @@ export function GameScreen({ store, pack }: GameScreenProps) {
     case "event": {
       const { checkpoint, presented } = screen;
       return (
-        <EventCard
-          // A new key per checkpoint so per-event UI state never leaks across events.
-          key={`${checkpoint.sequence}:${checkpoint.activeEvent.eventId}`}
-          week={checkpoint.week}
-          slot={checkpoint.weekDecisions.length + 1}
-          slotCount={pack.plan[checkpoint.week - 1]?.length ?? 0}
-          presented={presented}
-        />
+        <>
+          {feedback ? <Feedback text={feedback} /> : null}
+          <EventCard
+            // A new key per checkpoint so per-event UI state never leaks across events.
+            key={`${checkpoint.sequence}:${checkpoint.activeEvent.eventId}`}
+            week={checkpoint.week}
+            slot={checkpoint.weekDecisions.length + 1}
+            slotCount={pack.plan[checkpoint.week - 1]?.length ?? 0}
+            presented={presented}
+            busy={busy}
+            error={choiceError}
+            onChoose={(optionId) => void onChoose(checkpoint, optionId)}
+          />
+        </>
       );
     }
+
+    case "settlement":
+      return (
+        <>
+          {feedback ? <Feedback text={feedback} /> : null}
+          <section className="card" aria-labelledby="settlement-title">
+            <h2 id="settlement-title" className="card__title">
+              Tuần {screen.checkpoint.week}: đã xong các quyết định
+            </h2>
+            <p>Mọi quyết định của tuần đã được lưu. Phần tổng kết tuần sẽ có ở bước sau.</p>
+          </section>
+        </>
+      );
 
     case "save-error": {
       const stale = screen.error === "stale";
@@ -176,4 +228,12 @@ export function GameScreen({ store, pack }: GameScreenProps) {
         </section>
       );
   }
+}
+
+function Feedback({ text }: { text: string }) {
+  return (
+    <p role="status" className="feedback">
+      {text}
+    </p>
+  );
 }

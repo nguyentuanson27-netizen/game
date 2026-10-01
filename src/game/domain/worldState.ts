@@ -4,6 +4,9 @@ import type { Checkpoint } from "../persistence/checkpoint.ts";
 /** The part of a checkpoint that conditions read. */
 export type WorldState = Pick<Checkpoint, "metrics" | "policies" | "memories" | "npcStatus">;
 
+/** Everything a choice can change; checkpoints carry exactly this plus week/phase bookkeeping. */
+export type CampaignState = WorldState & Pick<Checkpoint, "recurringCosts" | "pendingCallbacks">;
+
 /** D4 initial visible state. Hidden values start neutral only when used, so none exist yet. */
 export const INITIAL_METRICS: Checkpoint["metrics"] = {
   cash: 50,
@@ -12,10 +15,17 @@ export const INITIAL_METRICS: Checkpoint["metrics"] = {
   publicTrust: 50,
 };
 
-export function initialWorldState(pack: ContentPack): WorldState {
+export function initialCampaignState(pack: ContentPack): CampaignState {
   const npcStatus: Record<string, string> = {};
   for (const npc of pack.npcs.values()) {
     if (npc.initialStatus !== null) npcStatus[npc.id] = npc.initialStatus;
   }
-  return { metrics: { ...INITIAL_METRICS }, policies: [], memories: [], npcStatus };
+  return {
+    metrics: { ...INITIAL_METRICS },
+    policies: [],
+    memories: [],
+    npcStatus,
+    recurringCosts: {},
+    pendingCallbacks: [],
+  };
 }
