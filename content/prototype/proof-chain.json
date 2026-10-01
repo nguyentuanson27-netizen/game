@@ -539,7 +539,6 @@
       "fallbackRules": {
         "usedOnlyWhen": "too few other events are eligible for a slot (SPEC section 21)",
         "stateIndependent": true,
-        "cooldownWeeks": 4,
         "note": "Does not read or write chain state; it cannot bypass any option condition or cooldown of another event."
       },
       "repeatable": false

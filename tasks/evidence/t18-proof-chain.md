@@ -144,7 +144,7 @@ No crisis option condition reads a metric, and the situation text variants in `c
 | Callback context changed (rider `resentful` vs `ally`) | A/B, W7 | Authored variants `engaged` / `aggrieved` | 3 selectable each |
 | Rider relationship cooled before crisis | A + `defer_to_review` (status `neutral`) | `joint_statement` becomes unavailable | Crisis offers 2: `hold_and_review`, `cite_policy` |
 | Option invalidated by history | Crisis, all histories | Each conditional option has `unavailableBecause`; none is revived to fill the quota | 2–4 in all 7 reachable states |
-| Too few ordinary events / freed slot | e.g. W7 in C | `evt.proof.fallback_shift_roster`: state-independent, 2 options, cooldown 4 weeks | 2 selectable; cannot bypass other events' conditions |
+| Too few ordinary events / freed slot | e.g. W7 in C | `evt.proof.fallback_shift_roster`: state-independent, 2 options, non-repeatable (`cooldownWeeks: null`, like the other one-shot events) | 2 selectable; cannot bypass other events' conditions |
 | Crisis cannot be closed by report | `cb.public_rider_dispute` | `reportClosureAllowed: false`; event adapts through option filtering | always at least `hold_and_review` plus one policy option |
 
 ## Reachable proof-state enumeration
@@ -168,11 +168,12 @@ All run locally on this branch, 2026-10-01. The first was a plain JSON parse; th
 | Weekly budget equals D4 (sum 34); proof slots ≤ budget every week | pass |
 | History JSON numbers (selectable ids, unavailable lists, cash trace, W3/W10 settlements, pre-crisis state) equal recomputation from the authored effects with D4 settlement | pass |
 | W3 settlement for A/B equals G0 T04 A/B paper checks | pass |
+| No one-shot (`repeatable: false`) event carries a non-null cooldown | pass |
 | Every event node has a `whyNow`; `joint_statement` requires both `ally` and the fund it extends, with the 7 reachable crisis states unchanged | pass |
 | Event-node count 5, report closure 1 tracked separately, 1 chain; every `stage` is `street_startup`, `local_platform` or `city_player` | pass |
 | 12-week proof-only replay of all 21 paths never fails or goes below 0 cash | pass |
 
-The 96 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
+The 97 `PASS` lines came from a throwaway script that applies the authored conditions/effects. They check the data against its own semantics, not against a runtime implementation.
 
 ## Review against CONTENT_GUIDE, D2, D4, D5
 
