@@ -84,12 +84,19 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** Walk the draft against CONTENT_GUIDE and D2/D4/D5 on paper; no runtime pass is implied. T08-T12/T15 use it as fixtures; T19 validates the playable proof, and T17 later checks combined content. T17 is not a drafting prerequisite.
 
 ### T07 - Minimal runnable scaffold
-**Status:** [ ] Ready; not started.
+**Status:** [~] Implemented; CI green on Chromium + WebKit. Awaiting real-device smoke (`Not run`) and owner review before checking off.
 **Description:** Establish only the approved runtime/tooling and a launchable portrait shell for the first decision slice.
 **Dependencies:** T06.
 **Files likely touched:** Chosen runtime entry; dependency/build configuration and lockfile if applicable; smoke test; setup instructions/task record. **Scope:** M target; coherent generated scaffold may need a documented exception.
 **Acceptance:** Pinned approved toolchain launches the shell on the chosen prototype target; actual setup/test/build commands are documented and executable; no unapproved services or dependencies are added.
 **Verification:** Run initial FOCUSED, STATIC and BUILD; perform DEVICE launch smoke check. Review dependencies/install behavior before installation. Keep necessary generated/config/lock files together when that preserves a runnable scaffold; explain a larger diff instead of mechanically splitting it.
+
+**T07 evidence (Node 24.21.0, npm 11.19.0):**
+- Run locally from a clean `npm ci`: `npm run check`, `typecheck`, `test` (2 files / 6 tests) and `build` (`npm run verify`) pass; `npm audit` reports 0 vulnerabilities.
+- Playwright smoke (4 tests: launch, no horizontal overflow at 390x844, manifest/icons under sub-path `/game/`, offline reload after service-worker control) passes locally on Chromium using the pre-installed Chromium via an uncommitted config. The offline test stops a test-owned static server before reloading; with service workers blocked the reload fails, so the test depends on the service worker.
+- GitHub Actions `verify` (run #4) on head `5da179a`, after the review fixes: `npm run verify` + `npm run test:e2e` pass, 8/8 browser tests on Chromium and WebKit (Playwright WebKit 26.6, emulated 390x844). The first CI run failed only on WebKit offline reload because `context.setOffline()` makes WebKit error on reload; fixed by the stopped-server approach. A later change only bumps the workflow's first-party actions to Node 24 majors (`checkout`/`setup-node`/`upload-artifact` v7); its own CI result is shown on the PR checks, not recorded here.
+- **Not run:** WebKit locally (Playwright browser download blocked by sandbox network policy; covered by CI), real Android/iOS device smoke (DEVICE), and the deployed-update path (no deployment exists yet). Emulation does not replace device smoke.
+- Scope notes: `zod@4.6.5` and `idb@8.0.3` are pinned as direct dependencies per D1 but are not imported or used yet (no schemas, adapters or checkpoint code); T08 is the first task that uses them. No GitHub Pages deploy workflow in T07 (sub-path support only, via `BASE_PATH`). Transitive `glob@11.1.0` (via `workbox-build`, build-time only) prints an npm deprecation notice.
 
 **Checkpoint C02:** Draft and scaffold are ready for the first event; paper content review and actual launch evidence remain distinct.
 
