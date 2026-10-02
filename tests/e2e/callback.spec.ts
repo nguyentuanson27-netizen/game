@@ -81,3 +81,50 @@ test.describe("a required callback returns through the real loop (AC-02, AC-04)"
     expect(await readCurrent(page)).toEqual(resolved);
   });
 });
+
+test.describe("a callback whose context changed is closed in the report (AC-03)", () => {
+  test("the departed rider's follow-up is closed in the week-7 report and stays closed after reloads", async ({
+    page,
+  }) => {
+    await page.goto("./");
+
+    // Week 1: the confirmed irreversible option makes the rider leave the network.
+    await page.getByRole("button", { name: /Trả một lần để họ rút phản ánh/ }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Xác nhận" }).click();
+    await expect(heading(page, "Ca làm cuối tuần chưa đủ người")).toBeVisible();
+    await options(page).first().click();
+    await closeWeek(page, 1);
+
+    for (let week = 2; week <= 7; week++) {
+      await expect(page.getByText(`Tuần ${week} · Quyết định 1/2`)).toBeVisible();
+      // The follow-up is never offered: its original context is gone.
+      await expect(heading(page, "Người tài xế ấy giờ nói thay cả nhóm")).toHaveCount(0);
+      await options(page).first().click();
+      await expect(page.getByText(`Tuần ${week} · Quyết định 2/2`)).toBeVisible();
+      await options(page).first().click();
+      if (week < 7) await closeWeek(page, week);
+    }
+
+    // Settling week 7 closes the callback in the same checkpoint, shown as authored report text.
+    const before = await readCurrent(page);
+    expect(before?.pendingCallbacks.map((p) => p.callbackId)).toContain("cb.rider_voice_followup");
+    await page.getByRole("button", { name: "Tổng kết tuần" }).click();
+    await expect(heading(page, "Báo cáo tuần 7")).toBeVisible();
+    await expect(page.getByText(/đã rời mạng lưới sau thỏa thuận/)).toBeVisible();
+    const closed = await readCurrent(page);
+    expect(closed?.pendingCallbacks.map((p) => p.callbackId)).toEqual(["cb.public_rider_dispute"]);
+    expect(closed?.resolvedCallbacks).toEqual([
+      {
+        callbackId: "cb.rider_voice_followup",
+        week: 7,
+        resolvedBy: "closure.rider_voice_followup.departed",
+      },
+    ]);
+
+    // Reload: the same report and closure text, nothing written, nothing emitted again.
+    await page.reload();
+    await expect(heading(page, "Báo cáo tuần 7")).toBeVisible();
+    await expect(page.getByText(/đã rời mạng lưới sau thỏa thuận/)).toHaveCount(1);
+    expect(await readCurrent(page)).toEqual(closed);
+  });
+});

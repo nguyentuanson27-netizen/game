@@ -52,3 +52,26 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 - The capacity check is conservative (every callback assumed pending when its window opens, each taking one slot) and works on a given set; enumerating which sets can really be pending together over reachable histories, and applying it to the actual pack, is T17.
 - Cooldowns are not implemented; no authored event uses one.
 - **Not run:** WebKit locally (CI), real Android/iOS device (DEVICE).
+
+## T16 — changed-context and fallback coverage
+
+**Status:** implemented on branch; CI and owner review pending (see `tasks/todo.md`).
+
+### What changed
+
+- Callback context: a pending callback is *invalid* when its window is open and either its eligibility fails or no authored variant can be shown (variant `when` holds and the event has 2-4 selectable options). Variants are evaluated against the latest committed state in authored order, so a resumed save selects the same variant (resume refuses a save showing a different event).
+- Report closure (`settleWeekClosingCallbacks`, used by `session.settle`): an invalid callback whose authored resolution is a `reportClosure` is closed in the **same checkpoint as the week's settlement**, in the first week its window is open. It leaves `pendingCallbacks`, is recorded in `resolvedCallbacks` with the closure id, consumes no decision slot, has no choice and applies no effect (closure `effects` are schema-limited to empty). Evaluated against the state the week's decisions committed, before the cash delta. The weekly report prints the authored closure text from the committed record, so a reload shows the same report and nothing is emitted again; the settlement phase cannot run twice.
+- A callback with no closure (`resolution.type: "none"`, like the shared crisis) stays pending when invalid, is never dropped, and blocks Next Week at its deadline (`overdue-callbacks`).
+- Resume: a closure resolution must be the callback's own authored closure and not precede its window; a `report`/`failed` save that still lists a closable callback as pending is refused.
+- Loader: a closure must be named by its callback; a fallback event must have no eligibility, 2-4 unconditional options and no `deliveredBy`; an authored `cooldownWeeks` is rejected (the runtime does not track cooldowns, so it would be silently ignored; none is authored today).
+- Fallback behaviour is unchanged from T10 and now covered as AC-03 evidence: used only when the planned event cannot be presented, takes that slot (counts toward the weekly budget and the decisions), is non-repeatable (a second gap is refused explicitly as `no-next-event` / `invalid-content`, writing nothing, never an invented event), never revives a locked option.
+
+### Verification actually run
+
+- `npm run verify`: Vitest 19 files / 257 tests, Biome, tsc, build — pass. Playwright Chromium (local): 29/29, including the History-C journey in `callback.spec.ts` (confirmed settle-and-part in week 1, follow-up never offered, week-7 report shows the authored closure, reload shows the same report with one closure and no write). WebKit via CI. Mutation check: disabling closure detection fails 7 of the 23 new domain tests.
+- `changedContext.test.ts`: normal context (engaged/aggrieved), invalidated context (rider departed at setup; rider leaves after setup in both histories), authored alternate variant, closure (no slot, no effect, no hidden choice, text only in the report), closure when eligibility fails, closure absent -> pending, resume of variants and closures, fallback chosen / locked options / 2-4 options on all three proof histories, uncovered gap surfaced, fallback/cooldown/closure content rules. `callbackSession.test.ts`: closure through the real store — failed settlement save keeps the callback pending, retry closes once, a repeat is stale, reload restores the closed report with no write, crisis still has its 3 options.
+
+### AC-03 coverage and limits
+
+- Covers: invalid original context -> variant or closure by the deadline; too few ordinary events -> fallback without bypassing options; locked options; resume before/after resolution; 2-4 options in every event shown on the three proof histories.
+- Limits: the fallback is a single non-repeatable event, so it covers one gap per campaign; reachable gaps over the whole pack are for T17 to prove absent or covered. The closure is evaluated at settlement, not at the instant a context changes mid-week. Cooldowns remain unimplemented (rejected if authored). **Not run:** WebKit locally (CI), real device.

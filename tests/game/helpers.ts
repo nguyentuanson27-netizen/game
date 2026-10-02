@@ -6,7 +6,7 @@ import { advanceWeek } from "../../src/game/domain/advanceWeek.ts";
 import { startCampaign } from "../../src/game/domain/campaign.ts";
 import { nextStep } from "../../src/game/domain/nextStep.ts";
 import { resolveChoice } from "../../src/game/domain/resolveChoice.ts";
-import { settleWeek } from "../../src/game/domain/settlement.ts";
+import { settleWeek, settleWeekClosingCallbacks } from "../../src/game/domain/settlement.ts";
 import { initialCampaignState } from "../../src/game/domain/worldState.ts";
 import type {
   Checkpoint,
@@ -307,8 +307,14 @@ export interface LabCallback {
   earliest: number;
   latest: number;
   tieOrder: number;
-  /** Extra eligibility conditions; the variant itself is always valid. */
+  /** Extra eligibility conditions. */
   eligibility?: Raw[];
+  /** Conditions of the main variant `evt.lab.<name>`; empty (always valid) by default. */
+  variantWhen?: Raw[];
+  /** A second variant `evt.lab.<name>_alt`, tried after the main one. */
+  alt?: { when: Raw[] };
+  /** Resolve an invalid context by a report closure (`closure.lab.<name>`) instead of staying pending. */
+  closure?: boolean;
 }
 
 export const labEvent = (id: string) => `evt.lab.${id}`;
@@ -353,6 +359,26 @@ export function labPack(
           { role: "callbackVariant", deliveredBy: cb.id },
         ),
       );
+      if (cb.alt) {
+        chain.events.push(
+          testEvent(
+            `${labEvent(name)}_alt`,
+            [testOption(`${labOption(name, 1)}_alt`), testOption(`${labOption(name, 2)}_alt`)],
+            { role: "callbackVariant", deliveredBy: cb.id },
+          ),
+        );
+      }
+      if (cb.closure) {
+        chain.closures.push({
+          id: `closure.lab.${name}`,
+          type: "reportClosure",
+          callback: cb.id,
+          consumesEventSlot: false,
+          playerChoice: false,
+          reportText: `Hậu quả ${name} đã được khép lại trong báo cáo tuần.`,
+          effects: [],
+        });
+      }
       chain.callbacks.push({
         id: cb.id,
         chain: "chain.rider_dispute",
@@ -366,14 +392,23 @@ export function labPack(
         tieOrder: cb.tieOrder,
         eligibility: cb.eligibility ?? [],
         consumesEventSlot: "yes",
-        variants: [{ event: labEvent(name), when: [] }],
+        variants: [
+          { event: labEvent(name), when: cb.variantWhen ?? [] },
+          ...(cb.alt ? [{ event: `${labEvent(name)}_alt`, when: cb.alt.when }] : []),
+        ],
         changedContext: {
-          invalidWhen: "never in this lab",
-          resolution: {
-            type: "none",
-            reportClosureAllowed: false,
-            reason: "lab callbacks are always deliverable",
-          },
+          invalidWhen: "no variant is valid",
+          resolution: cb.closure
+            ? {
+                type: "reportClosure",
+                closure: `closure.lab.${name}`,
+                closedInReportOfWeek: "the first week of the window",
+              }
+            : {
+                type: "none",
+                reportClosureAllowed: false,
+                reason: "this lab callback has no closure",
+              },
           appliesUnchosenOption: false,
           slotShortageCancels: false,
         },
@@ -428,7 +463,7 @@ export function walk(
         break;
       }
       case "settlement":
-        commit(settleWeek(checkpoint));
+        commit(settleWeekClosingCallbacks(pack, checkpoint));
         break;
       case "report": {
         const advanced = advanceWeek(pack, checkpoint);

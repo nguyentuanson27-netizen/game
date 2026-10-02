@@ -4,6 +4,7 @@ import {
   type EventCheckpointDraft,
   SCHEMA_VERSION,
 } from "../persistence/checkpoint.ts";
+import { closableCallbacks } from "./callbacks.ts";
 import { nextStep } from "./nextStep.ts";
 import { type PresentedEvent, presentEvent } from "./presentation.ts";
 import { computeSettlement, FAILURE_CASH_THRESHOLD } from "./settlement.ts";
@@ -79,6 +80,15 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
     const callback = pack.callbacks.get(resolved.callbackId);
     if (!callback) {
       issues.push(`unknown resolved callback ${resolved.callbackId}`);
+    } else if (pack.closures.has(resolved.resolvedBy)) {
+      // A report closure: it must be this callback's authored closure, in a week its window had
+      // opened. It is not a decision, so no event had to be resolved.
+      if (pack.closures.get(resolved.resolvedBy)?.callback !== resolved.callbackId) {
+        issues.push(`callback ${resolved.callbackId} was closed by another callback's closure`);
+      }
+      if (resolved.week < callback.window.earliestWeek) {
+        issues.push(`callback ${resolved.callbackId} was closed before its window opened`);
+      }
     } else if (!callback.variants.some((v) => v.event === resolved.resolvedBy)) {
       issues.push(
         `callback ${resolved.callbackId} was resolved by an event that is not its variant`,
@@ -130,6 +140,10 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
         if (checkpoint.settlement[key] !== expected[key]) {
           issues.push(`settlement ${key} does not match the committed state`);
         }
+      }
+      // The report closes every callback whose context is invalid; none may still be pending.
+      for (const closable of closableCallbacks(pack, checkpoint.week, checkpoint)) {
+        issues.push(`callback ${closable.callbackId} should have been closed in this report`);
       }
       const failed = checkpoint.metrics.cash < FAILURE_CASH_THRESHOLD;
       if (failed !== (checkpoint.phase === "failed")) {

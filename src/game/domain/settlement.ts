@@ -1,9 +1,11 @@
+import type { ContentPack } from "../content/loader.ts";
 import type {
   Checkpoint,
   CheckpointDraft,
   SettlementCheckpoint,
   SettlementResult,
 } from "../persistence/checkpoint.ts";
+import { closableCallbacks } from "./callbacks.ts";
 
 // G0 D4 weekly settlement. These are prototype tuning constants; the model is the contract.
 const BASE_DELIVERIES = 18;
@@ -67,5 +69,34 @@ export function settleWeek(checkpoint: SettlementCheckpoint): CheckpointDraft {
     phase: cash < FAILURE_CASH_THRESHOLD ? "failed" : "report",
     activeEvent: null,
     settlement,
+  };
+}
+
+/**
+ * `settleWeek` plus the week's report closures: a pending callback whose context is no longer
+ * valid and whose authored resolution is a report closure is closed in this same checkpoint. It
+ * leaves `pendingCallbacks`, is recorded in `resolvedCallbacks` with its closure id, takes no
+ * decision slot and applies no effect (closures carry none). Evaluated against the state the
+ * week's decisions committed, before the cash delta.
+ */
+export function settleWeekClosingCallbacks(
+  pack: ContentPack,
+  checkpoint: SettlementCheckpoint,
+): CheckpointDraft {
+  const draft = settleWeek(checkpoint);
+  const closing = closableCallbacks(pack, checkpoint.week, checkpoint);
+  if (closing.length === 0) return draft;
+  const closed = new Set(closing.map((c) => c.callbackId));
+  return {
+    ...draft,
+    pendingCallbacks: draft.pendingCallbacks.filter((p) => !closed.has(p.callbackId)),
+    resolvedCallbacks: [
+      ...draft.resolvedCallbacks,
+      ...closing.map((c) => ({
+        callbackId: c.callbackId,
+        week: checkpoint.week,
+        resolvedBy: c.closureId,
+      })),
+    ],
   };
 }
