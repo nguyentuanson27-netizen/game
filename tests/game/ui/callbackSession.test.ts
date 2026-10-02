@@ -1,14 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { ContentPack } from "../../../src/game/content/loader.ts";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
-import {
-  bootstrap,
-  choose,
-  nextWeek,
-  type SessionState,
-  settle,
-} from "../../../src/game/ui/session.ts";
-import { proofPack, type SpyStore, spyOn, uniqueDbName } from "../helpers.ts";
+import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/session.ts";
+import { proofPack, spyOn, uniqueDbName } from "../helpers.ts";
+import { atSlot, playUntil } from "../sessionPlay.ts";
 
 const open: Array<{ close(): Promise<void> }> = [];
 afterEach(async () => {
@@ -21,42 +16,6 @@ function setup(pack: ContentPack = proofPack()) {
   open.push(inner);
   return { name, inner, store: spyOn(inner), pack };
 }
-
-/** Play the real route (always the first option) until `stop` holds for the session state. */
-async function playUntil(
-  store: SpyStore,
-  pack: ContentPack,
-  state: SessionState,
-  stop: (state: SessionState) => boolean,
-): Promise<SessionState> {
-  let current = state;
-  for (let guard = 0; guard < 200; guard++) {
-    if (stop(current)) return current;
-    let result: Awaited<ReturnType<typeof choose>> | Awaited<ReturnType<typeof settle>>;
-    if (current.kind === "event") {
-      result = await choose(
-        store,
-        pack,
-        current.checkpoint,
-        current.checkpoint.activeEvent.optionIds[0] ?? "",
-      );
-    } else if (current.kind === "settlement") {
-      result = await settle(store, pack, current.checkpoint);
-    } else if (current.kind === "report") {
-      result = await nextWeek(store, pack, current.checkpoint);
-    } else {
-      throw new Error(`cannot play from ${current.kind}`);
-    }
-    if (!result.ok) throw new Error(result.message);
-    current = result.state;
-  }
-  throw new Error("did not reach the stop state");
-}
-
-const atSlot = (week: number, decided: number) => (state: SessionState) =>
-  state.kind === "event" &&
-  state.checkpoint.week === week &&
-  state.checkpoint.weekDecisions.length === decided;
 
 const VOICE = "var.rider_voice_followup.engaged";
 const CRISIS = "evt.proof.public_rider_dispute";

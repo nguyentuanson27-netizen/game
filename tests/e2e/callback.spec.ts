@@ -1,15 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { readCurrent } from "./helpers/checkpoint.ts";
-
-const options = (page: Page) => page.getByRole("group", { name: "Phương án" }).getByRole("button");
-const heading = (page: Page, name: string) => page.getByRole("heading", { level: 2, name });
-
-/** Settle the finished week and move on, waiting for each step to be committed. */
-async function closeWeek(page: Page, week: number) {
-  await page.getByRole("button", { name: "Tổng kết tuần" }).click();
-  await expect(heading(page, `Báo cáo tuần ${week}`)).toBeVisible();
-  await page.getByRole("button", { name: "Tuần tiếp theo" }).click();
-}
+import { closeWeek, heading, options } from "./helpers/journey.ts";
 
 test.describe("a required callback returns through the real loop (AC-02, AC-04)", () => {
   test("is delivered in week 7, resolves once and stays resolved after reloads", async ({

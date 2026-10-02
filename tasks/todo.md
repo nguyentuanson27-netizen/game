@@ -202,7 +202,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** FOCUSED AC-02 with early, equal-deadline, competing and infeasible small schedules; DEVICE callback/resume walkthrough including failed resolution-save/retry. Retain the original deadline and apply callback resolution once. Do not build a general scheduler framework.
 
 ### T19 - Play both histories to different options
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Chromium locally (WebKit via CI); DEVICE both histories `Not run`, so not checked off. Evidence and limits: [t19-playable-proof.md](evidence/t19-playable-proof.md).
 **Description:** Integrate the draft into a small valid playable proof and exercise two histories through real choices, checkpoints and the shared crisis.
 **Dependencies:** T15, T10, T18.
 **Files likely touched:** History integration tests; minimal content/resolution fixes if needed; evidence/task record. **Scope:** M (3-5 files).
@@ -244,7 +244,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 *C05 status:* automated T13/T14 evidence exists on Chromium + WebKit; the real-device runs were not performed and the owner has not signed it off, so C05 is not checked.
 
 ### T16 - Changed-context and fallback coverage
-**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Chromium locally, WebKit via CI; real-device walkthrough `Not run`, so not checked off. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
+**Status:** [~] Implemented and merged (PR #17); CI `verify` green on Chromium + WebKit at merge. Real-device walkthrough `Not run`; not checked off until owner review. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
 **Description:** Keep the loop valid when a scheduled story no longer fits or ordinary events are insufficient.
 **Dependencies:** T15.
 **Files likely touched:** Event/context resolution; fallback content; report closure; behavior tests; task record. **Scope:** M (3-5 files).
