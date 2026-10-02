@@ -107,7 +107,7 @@ test.describe("Next Week and the end of the prototype (AC-04, AC-05)", () => {
     expect(await readSlots(page)).toEqual(saved);
   });
 
-  test("closes the prototype from a seeded week-12 report, once, and restores it after a reload", async ({
+  test("closes the prototype from a seeded week-12 report with nothing pending, once, and restores it after a reload", async ({
     page,
   }) => {
     await settleWeekOne(page);
@@ -127,14 +127,34 @@ test.describe("Next Week and the end of the prototype (AC-04, AC-05)", () => {
       week: 12,
       metrics: { cash: 53 },
     });
-    expect(done?.pendingCallbacks.map((p) => p.callbackId)).toEqual([
-      "cb.rider_voice_followup",
-      "cb.public_rider_dispute",
-    ]);
+    expect(done?.pendingCallbacks).toEqual([]);
 
     await page.reload();
 
     await expect(page.getByRole("heading", { level: 2, name: "Prototype Complete" })).toBeVisible();
     expect(await readCurrent(page)).toEqual(done);
+  });
+
+  test("will not close the prototype from week 12 while required callbacks are pending", async ({
+    page,
+  }) => {
+    await settleWeekOne(page);
+    // Keep the two callbacks that the week-1 choice scheduled: nothing delivers them yet.
+    await seedWeekTwelveReport(page, { keepPendingCallbacks: true });
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Báo cáo tuần 12" })).toBeVisible();
+    const saved = await readSlots(page);
+    expect(saved.current?.pendingCallbacks).toHaveLength(2);
+
+    await page.getByRole("button", { name: "Kết thúc bản nguyên mẫu" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("Vẫn còn hậu quả cần xử lý");
+    await expect(page.getByRole("heading", { level: 2, name: "Prototype Complete" })).toHaveCount(
+      0,
+    );
+    expect(await readSlots(page)).toEqual(saved);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Báo cáo tuần 12" })).toBeVisible();
+    expect(await readSlots(page)).toEqual(saved);
   });
 });

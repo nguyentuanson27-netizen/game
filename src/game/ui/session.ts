@@ -1,5 +1,5 @@
 import type { ContentPack } from "../content/loader.ts";
-import { advanceWeek } from "../domain/advanceWeek.ts";
+import { type AdvanceFailure, advanceWeek } from "../domain/advanceWeek.ts";
 import { resumeCheckpoint, startCampaign } from "../domain/campaign.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
 import { resolveChoice } from "../domain/resolveChoice.ts";
@@ -137,7 +137,7 @@ export async function choose(
 
 export type SettleResult =
   | { ok: true; state: SessionState }
-  | { ok: false; error: StoreErrorCode | "no-content"; message: string };
+  | { ok: false; error: StoreErrorCode | AdvanceFailure; message: string };
 
 /**
  * Settle the week once: one checkpoint holds the settled cash, the result and the new phase. The
@@ -163,7 +163,7 @@ export async function nextWeek(
   checkpoint: ReportCheckpoint,
 ): Promise<SettleResult> {
   const advanced = advanceWeek(pack, checkpoint);
-  if (!advanced.ok) return { ok: false, error: "no-content", message: advanced.message };
+  if (!advanced.ok) return { ok: false, error: advanced.reason, message: advanced.message };
   const committed = await store.commit(advanced.draft);
   if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
   return { ok: true, state: fromCheckpoint(pack, committed.value) };

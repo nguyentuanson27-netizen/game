@@ -34,7 +34,7 @@ describe("Next Week into a week the content has not authored", () => {
 
     const result = advanceWeek(pack, report);
 
-    expect(result).toMatchObject({ ok: false });
+    expect(result).toMatchObject({ ok: false, reason: "no-content" });
     expect(!result.ok && result.message).toContain("week 2");
   });
 
@@ -44,7 +44,10 @@ describe("Next Week into a week the content has not authored", () => {
       const draft = settleWeek(settlementAt(pack, week));
       if (draft.phase !== "report") throw new Error("expected a report");
 
-      expect(advanceWeek(pack, { ...draft, sequence: 2 })).toMatchObject({ ok: false });
+      expect(advanceWeek(pack, { ...draft, sequence: 2 })).toMatchObject({
+        ok: false,
+        reason: "no-content",
+      });
     }
   });
 });
@@ -128,15 +131,18 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
       "opt.rider_claim.decline",
       "opt.fallback.arrange_extra_shift",
     ]);
-    expect(advanceWeek(pack, noFund)).toMatchObject({ ok: false });
+    const refused = advanceWeek(pack, noFund);
+    expect(refused).toMatchObject({ ok: false, reason: "invalid-content" });
+    // An authored week that cannot be presented is a different state from an unauthored week.
+    expect(!refused.ok && refused.reason).not.toBe("no-content");
   });
 
-  it("finishes with Prototype Complete after a seeded week-12 report and never creates week 13", () => {
+  it("finishes with Prototype Complete after a seeded week-12 report with nothing pending, and never creates week 13", () => {
     const pack = proofPack();
     const draft = settleWeek(settlementAt(pack, 12));
     if (draft.phase !== "report") throw new Error("expected a report");
 
-    const done = advanced({ ...draft, sequence: 2 }, pack);
+    const done = advanced({ ...draft, sequence: 2, pendingCallbacks: [] }, pack);
 
     expect(done).toMatchObject({
       phase: "complete",
@@ -144,6 +150,22 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
       weekDecisions: [],
       activeEvent: null,
     });
+  });
+
+  it("refuses to complete the prototype while required callbacks are still pending", () => {
+    const pack = proofPack();
+    const draft = settleWeek(settlementAt(pack, 12));
+    if (draft.phase !== "report") throw new Error("expected a report");
+    const pending = {
+      callbackId: "cb.public_rider_dispute",
+      scheduledWeek: 1,
+      sourceEventId: "evt.proof.rider_claim",
+      sourceOptionId: "opt.rider_claim.fund_policy",
+    };
+
+    const result = advanceWeek(pack, { ...draft, sequence: 2, pendingCallbacks: [pending] });
+
+    expect(result).toMatchObject({ ok: false, reason: "pending-callbacks" });
   });
 
   it("is pure", () => {

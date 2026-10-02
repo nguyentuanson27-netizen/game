@@ -140,46 +140,77 @@ describe("Next Week through the checkpoint store", () => {
     expect(reopenedStore.commits).toHaveLength(0);
   });
 
-  it("walks weeks 1-12 on test-only content with a decision every week: none skipped, none settled twice, callbacks preserved", async () => {
+  it("walks weeks 1-12 on test-only content with a decision every week: none skipped, none settled twice, and week 12 will not close while callbacks are pending", async () => {
     const pack = playablePack([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     const { store, inner, report } = await atReport(pack);
     const weeks: number[] = [report.week];
-    let state = await nextWeek(store, pack, report).then((r) => {
-      if (!r.ok) throw new Error(r.message);
-      return r.state;
-    });
+    let current = report;
 
-    while (state.kind === "event") {
-      const decided = await choose(store, pack, state.checkpoint, "opt.test.week_beat.steady");
+    while (current.week < 12) {
+      const advanced = await nextWeek(store, pack, current);
+      if (!advanced.ok || advanced.state.kind !== "event") throw new Error("advance failed");
+      const decided = await choose(
+        store,
+        pack,
+        advanced.state.checkpoint,
+        "opt.test.week_beat.steady",
+      );
       if (!decided.ok || decided.state.kind !== "settlement") throw new Error("choice failed");
       const settled = await settle(store, pack, decided.state.checkpoint);
       if (!settled.ok || settled.state.kind !== "report") throw new Error("settlement failed");
-      weeks.push(settled.state.checkpoint.week);
-      const next = await nextWeek(store, pack, settled.state.checkpoint);
-      if (!next.ok) throw new Error(next.message);
-      state = next.state;
+      current = settled.state.checkpoint;
+      weeks.push(current.week);
     }
 
     expect(weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-    expect(state.kind).toBe("complete");
+    // The two required callbacks scheduled in week 1 are still pending (T15 delivers them), so
+    // the prototype cannot be closed from this report.
+    expect(current.pendingCallbacks.map((p) => p.callbackId)).toEqual([
+      "cb.rider_voice_followup",
+      "cb.public_rider_dispute",
+    ]);
+    const commits = store.commits.length;
+    expect(await nextWeek(store, pack, current)).toMatchObject({
+      ok: false,
+      error: "pending-callbacks",
+    });
+    expect(store.commits).toHaveLength(commits);
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
-    // 1 start + 2 choices + settle/advance of week 1 + (choice, settle, advance) for weeks 2-12.
-    expect(stored.checkpoint.sequence).toBe(1 + 2 + 2 + 3 * 11);
+    // 1 start + 2 choices + settle/advance of week 1 + (advance, choice, settle) for weeks 2-12,
+    // minus the refused final advance.
+    expect(stored.checkpoint.sequence).toBe(1 + 2 + 2 + 3 * 11 - 1);
     expect(stored.checkpoint).toMatchObject({
-      phase: "complete",
+      phase: "report",
       week: 12,
       // Week 1 ended on 53 and each later week settles +6 once (62 riders, fund cost 71).
       metrics: { cash: 53 + 11 * 6 },
     });
-    expect(stored.checkpoint.pendingCallbacks.map((p) => p.callbackId)).toEqual([
-      "cb.rider_voice_followup",
-      "cb.public_rider_dispute",
-    ]);
-    // Reopening the endpoint neither advances nor saves.
-    const commits = store.commits.length;
-    expect((await bootstrap(store, pack)).kind).toBe("complete");
-    expect(store.commits).toHaveLength(commits);
+  });
+
+  it("does not complete the prototype while required callbacks are pending: the report stays and nothing is saved", async () => {
+    const ctx = newStore();
+    const pending = {
+      callbackId: "cb.public_rider_dispute",
+      scheduledWeek: 1,
+      sourceEventId: "evt.proof.rider_claim",
+      sourceOptionId: "opt.rider_claim.fund_policy",
+    };
+    const seeded = await ctx.inner.commit(
+      seedDraft(settlementAt(ctx.pack, 12, { pendingCallbacks: [pending] })),
+    );
+    if (!seeded.ok || seeded.value.phase !== "settlement") throw new Error("setup failed");
+    const settled = await settle(ctx.store, ctx.pack, seeded.value);
+    if (!settled.ok || settled.state.kind !== "report") throw new Error("settlement failed");
+    const before = await ctx.inner.load();
+    const commits = ctx.store.commits.length;
+
+    const refused = await nextWeek(ctx.store, ctx.pack, settled.state.checkpoint);
+
+    expect(refused).toMatchObject({ ok: false, error: "pending-callbacks" });
+    expect(ctx.store.commits).toHaveLength(commits);
+    expect(await ctx.inner.load()).toEqual(before);
+    expect(before).toMatchObject({ status: "ready", checkpoint: { phase: "report", week: 12 } });
   });
 
   it("settles week 12 and then closes the prototype instead of opening week 13", async () => {

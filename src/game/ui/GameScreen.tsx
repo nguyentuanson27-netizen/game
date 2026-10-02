@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ContentPack } from "../content/loader.ts";
+import type { AdvanceFailure } from "../domain/advanceWeek.ts";
 import { reportLines } from "../domain/reportLines.ts";
 import type {
   EventCheckpoint,
@@ -23,6 +24,14 @@ interface GameScreenProps {
   store: CheckpointStore;
   pack: ContentPack;
 }
+
+const NEXT_WEEK_REFUSALS: Record<AdvanceFailure, string> = {
+  "no-content": "Tuần tiếp theo chưa có nội dung. Bản nguyên mẫu dừng ở báo cáo này.",
+  "invalid-content":
+    "Nội dung của tuần tiếp theo không hợp lệ nên chưa thể sang tuần mới. Bản nguyên mẫu dừng ở báo cáo này.",
+  "pending-callbacks":
+    "Vẫn còn hậu quả cần xử lý từ các quyết định trước, nên chưa thể kết thúc bản nguyên mẫu.",
+};
 
 type Screen = { kind: "loading" } | SessionState;
 type ActionResult =
@@ -81,9 +90,9 @@ export function GameScreen({ store, pack }: GameScreenProps) {
           // playing and show the blocking recovery/unsupported screen from what is really stored.
           setFeedback(null);
           setScreen(await bootstrap(store, pack));
-        } else if (result.error === "no-content") {
-          // Nothing failed to save: the next week simply is not authored yet, so the report stays.
-          setChoiceError("Tuần tiếp theo chưa có nội dung. Bản nguyên mẫu dừng ở báo cáo này.");
+        } else if (Object.hasOwn(NEXT_WEEK_REFUSALS, result.error)) {
+          // Nothing failed to save: Next Week was refused on purpose and the report stays.
+          setChoiceError(NEXT_WEEK_REFUSALS[result.error as AdvanceFailure]);
         } else {
           setChoiceError(failure);
         }

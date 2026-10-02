@@ -50,9 +50,12 @@ export const readCurrent = (page: Page) => readSlot(page, "current");
  * run cannot reach week 12; this exercises the `report -> Prototype Complete` boundary only.
  * Reload the page afterwards so the app resumes from it.
  */
-export function seedWeekTwelveReport(page: Page): Promise<void> {
+export function seedWeekTwelveReport(
+  page: Page,
+  { keepPendingCallbacks = false }: { keepPendingCallbacks?: boolean } = {},
+): Promise<void> {
   return page.evaluate(
-    (dbName) =>
+    ({ dbName, keep }) =>
       new Promise<void>((resolve, reject) => {
         const open = indexedDB.open(dbName);
         open.onerror = () => reject(open.error);
@@ -76,6 +79,9 @@ export function seedWeekTwelveReport(page: Page): Promise<void> {
                 parentSequence: current.sequence,
                 week: 12,
                 weekDecisions: [],
+                // Closing the prototype needs every required callback resolved; seed that state
+                // unless a test wants the unresolved one.
+                pendingCallbacks: keep ? current.pendingCallbacks : [],
                 settlement: { ...current.settlement, week: 12 },
               },
               "current",
@@ -88,6 +94,6 @@ export function seedWeekTwelveReport(page: Page): Promise<void> {
           tx.onabort = () => reject(tx.error ?? new Error("seed aborted"));
         };
       }),
-    "bicycle-platform-prototype",
+    { dbName: "bicycle-platform-prototype", keep: keepPendingCallbacks },
   );
 }

@@ -15,6 +15,8 @@ import {
   seedDraft,
   settlementAt,
   spyOn,
+  testEvent,
+  testOption,
   uniqueDbName,
 } from "../helpers.ts";
 
@@ -515,6 +517,43 @@ describe("weekly report and Next Week", () => {
     expect(await inner.load()).toEqual(saved);
   });
 
+  it("keeps an authored-content dead end distinct from unauthored content", async () => {
+    // Week 2 is authored but needs the rider-support fund; declining week 1 means it cannot be shown.
+    const needsFund = testEvent(
+      "evt.test.needs_fund",
+      ["a", "b"].map((n) =>
+        testOption(
+          `opt.test.needs_fund.${n}`,
+          [],
+          [{ op: "has", set: "policies", id: "policy.rider_support_fund" }],
+        ),
+      ),
+    );
+    const pack = packFrom((chain, loop) => {
+      chain.events.push(needsFund);
+      loop.weeks[1].slots = ["evt.test.needs_fund"];
+    });
+    const { inner, store } = setup();
+    render(<App store={store} loadPack={() => pack} />);
+    await screen.findByRole("group", { name: "Phương án" });
+    fireEvent.click(screen.getByRole("button", { name: /Từ chối/ }));
+    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    fireEvent.click(optionButtons()[0] as HTMLElement);
+    fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
+    const next = await screen.findByRole("button", { name: "Tuần tiếp theo" });
+    const saved = await inner.load();
+    const commits = store.commits.length;
+
+    fireEvent.click(next);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Nội dung của tuần tiếp theo không hợp lệ");
+    expect(alert.textContent).not.toContain("chưa có nội dung");
+    expect(screen.getByRole("heading", { name: "Báo cáo tuần 1" })).toBeTruthy();
+    expect(store.commits).toHaveLength(commits);
+    expect(await inner.load()).toEqual(saved);
+  });
+
   it("advances one week on tap, only after the save, and a double tap advances once", async () => {
     const { inner, store } = setup();
     const next = await reachReport(store);
@@ -593,6 +632,39 @@ describe("weekly report and Next Week", () => {
       phase: "complete",
       week: 12,
     });
+  });
+
+  it("will not close the prototype from week 12 while required callbacks are pending", async () => {
+    const pack = proofPack();
+    const { inner, store } = setup();
+    await inner.commit(
+      seedDraft(
+        settlementAt(pack, 12, {
+          pendingCallbacks: [
+            {
+              callbackId: "cb.public_rider_dispute",
+              scheduledWeek: 1,
+              sourceEventId: "evt.proof.rider_claim",
+              sourceOptionId: "opt.rider_claim.fund_policy",
+            },
+          ],
+        }),
+      ),
+    );
+    render(<App store={store} loadPack={() => pack} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
+    await screen.findByRole("heading", { name: "Báo cáo tuần 12" });
+    const saved = await inner.load();
+    const commits = store.commits.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Kết thúc bản nguyên mẫu" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Vẫn còn hậu quả cần xử lý");
+    expect(screen.getByRole("heading", { name: "Báo cáo tuần 12" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Prototype Complete" })).toBeNull();
+    expect(store.commits).toHaveLength(commits);
+    expect(await inner.load()).toEqual(saved);
   });
 
   it("offers no Next Week after the explicit failed state", async () => {
