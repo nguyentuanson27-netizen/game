@@ -151,6 +151,8 @@ export const closureSchema = z.strictObject({
   effectsNote: z.string().optional(),
 });
 
+export type ClosureDef = z.infer<typeof closureSchema>;
+
 const npcSchema = z.strictObject({
   id: idSchema,
   role: z.string().min(1),

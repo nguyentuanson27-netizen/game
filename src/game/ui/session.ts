@@ -3,7 +3,7 @@ import { type AdvanceFailure, advanceWeek } from "../domain/advanceWeek.ts";
 import { resumeCheckpoint, startCampaign } from "../domain/campaign.ts";
 import type { PresentedEvent } from "../domain/presentation.ts";
 import { resolveChoice } from "../domain/resolveChoice.ts";
-import { settleWeek } from "../domain/settlement.ts";
+import { settleWeekClosingCallbacks } from "../domain/settlement.ts";
 import type {
   Checkpoint,
   CompleteCheckpoint,
@@ -148,7 +148,7 @@ export async function settle(
   pack: ContentPack,
   checkpoint: SettlementCheckpoint,
 ): Promise<SettleResult> {
-  const committed = await store.commit(settleWeek(checkpoint));
+  const committed = await store.commit(settleWeekClosingCallbacks(pack, checkpoint));
   if (!committed.ok) return { ok: false, error: committed.error, message: committed.message };
   return { ok: true, state: fromCheckpoint(pack, committed.value) };
 }

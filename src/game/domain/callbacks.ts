@@ -73,3 +73,29 @@ export function overdueCallbacks(
     .filter((p) => (pack.callbacks.get(p.callbackId)?.window.latestWeek ?? Infinity) <= week)
     .map((p) => p.callbackId);
 }
+
+/**
+ * Pending callbacks the weekly report must close now: their window is open, their original
+ * context is no longer valid (eligibility fails or no authored variant can be shown) and the
+ * authored resolution is a report closure. Callbacks without a closure are left pending, so an
+ * undeliverable one is never silently dropped. Delivery order, one closure per callback.
+ */
+export function closableCallbacks(
+  pack: ContentPack,
+  week: number,
+  world: CallbackWorld,
+): Array<{ callbackId: string; closureId: string }> {
+  const closable: Array<{ callbackId: string; closureId: string }> = [];
+  const pending = world.pendingCallbacks
+    .map((p) => pack.callbacks.get(p.callbackId))
+    .filter((callback): callback is CallbackDef => callback !== undefined)
+    .sort(byDeliveryOrder);
+  for (const callback of pending) {
+    const { resolution } = callback.changedContext;
+    if (resolution.type !== "reportClosure" || week < callback.window.earliestWeek) continue;
+    if (deliverableEvent(pack, callback, week, world) === null) {
+      closable.push({ callbackId: callback.id, closureId: resolution.closure });
+    }
+  }
+  return closable;
+}

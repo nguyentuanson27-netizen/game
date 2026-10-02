@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import {
   type CallbackDef,
+  type ClosureDef,
   type Condition,
   type Effect,
   type GameEvent,
@@ -24,6 +25,8 @@ export class ContentError extends Error {
 export interface ContentPack {
   events: ReadonlyMap<string, GameEvent>;
   callbacks: ReadonlyMap<string, CallbackDef>;
+  /** Report-only closures by id (no decision slot, no choice, no effects). */
+  closures: ReadonlyMap<string, ClosureDef>;
   npcs: ReadonlyMap<string, NpcDef>;
   policyIds: ReadonlySet<string>;
   memoryIds: ReadonlySet<string>;
@@ -187,8 +190,13 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
     }
   }
   for (const closure of chain.closures) {
-    if (!callbacks.has(closure.callback)) {
-      issues.push(`${closure.id}: unknown callback ${closure.callback}`);
+    const owner = callbacks.get(closure.callback);
+    if (!owner) issues.push(`${closure.id}: unknown callback ${closure.callback}`);
+    else if (
+      owner.changedContext.resolution.type !== "reportClosure" ||
+      owner.changedContext.resolution.closure !== closure.id
+    ) {
+      issues.push(`${closure.id}: ${owner.id} does not name it as its report closure`);
     }
   }
   for (const npc of chain.npcs) {
@@ -197,8 +205,30 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
     }
   }
 
+  for (const event of chain.events) {
+    // Cooldowns are not tracked by the runtime yet; an authored one would be silently ignored.
+    if (typeof event.cooldownWeeks === "number") {
+      issues.push(
+        `${event.id}: cooldownWeeks is not supported yet; remove it or implement tracking`,
+      );
+    }
+  }
+
   const fallbacks = chain.events.filter((e) => e.role === "fallback");
   if (fallbacks.length > 1) issues.push("more than one fallback event; only one is supported");
+  for (const fallback of fallbacks) {
+    // A fallback exists to cover a gap, so it must itself always be presentable: no eligibility
+    // and unconditional options (2-4), never a way to hide a dead end behind another dead end.
+    const unconditional = fallback.options.filter((o) => o.requires.length === 0).length;
+    if ((fallback.eligibility ?? []).length > 0) {
+      issues.push(`${fallback.id}: a fallback event must not have eligibility conditions`);
+    }
+    if (unconditional !== fallback.options.length || unconditional > 4) {
+      issues.push(`${fallback.id}: a fallback event needs 2-4 unconditional options`);
+    }
+    if (fallback.deliveredBy)
+      issues.push(`${fallback.id}: a fallback event cannot be a callback variant`);
+  }
 
   const plan = checkPlan(loop, events, chain.fixture.weeklyBudget, issues);
 
@@ -207,6 +237,7 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
   return {
     events,
     callbacks,
+    closures,
     npcs,
     policyIds: new Set(policies.keys()),
     memoryIds: new Set(memories.keys()),

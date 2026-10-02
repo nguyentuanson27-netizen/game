@@ -201,3 +201,91 @@ describe("the shipped route to Prototype Complete", () => {
     expect(done.ok && done.state.kind).toBe("complete");
   });
 });
+
+describe("a report closure through the real store (AC-03, AC-04, AC-05)", () => {
+  const CLOSURE = "closure.rider_voice_followup.departed";
+
+  /** History C: the rider departs in week 1, so the week-7 follow-up has no valid variant. */
+  async function atWeekSevenSettlement() {
+    const ctx = setup();
+    let state = await bootstrap(ctx.store, ctx.pack);
+    if (state.kind !== "event") throw new Error("expected the first event");
+    const first = await choose(
+      ctx.store,
+      ctx.pack,
+      state.checkpoint,
+      "opt.rider_claim.settle_and_part",
+    );
+    if (!first.ok) throw new Error(first.message);
+    state = await playUntil(
+      ctx.store,
+      ctx.pack,
+      first.state,
+      (s) => s.kind === "settlement" && s.checkpoint.week === 7,
+    );
+    if (state.kind !== "settlement") throw new Error("expected the week-7 settlement");
+    return { ...ctx, settlement: state.checkpoint };
+  }
+
+  it("closes the follow-up once in the settlement commit; a failed save leaves it pending and a retry closes it once", async () => {
+    const { inner, store, pack, settlement } = await atWeekSevenSettlement();
+    // Both of the week's decisions were ordinary events and the callback is still pending.
+    expect(settlement.weekDecisions).toHaveLength(2);
+    expect(settlement.pendingCallbacks.map((p) => p.callbackId)).toContain(
+      "cb.rider_voice_followup",
+    );
+    const before = await inner.load();
+
+    store.failNextCommits(1);
+    const failed = await settle(store, pack, settlement);
+    expect(failed.ok).toBe(false);
+    expect(await inner.load()).toEqual(before);
+
+    const retried = await settle(store, pack, settlement);
+    if (!retried.ok || retried.state.kind !== "report") throw new Error("retry failed");
+    const report = retried.state.checkpoint;
+    expect(report.resolvedCallbacks).toEqual([
+      { callbackId: "cb.rider_voice_followup", week: 7, resolvedBy: CLOSURE },
+    ]);
+    expect(report.pendingCallbacks.map((p) => p.callbackId)).toEqual(["cb.public_rider_dispute"]);
+
+    // Settling the same checkpoint again is a stale write: nothing is closed or settled twice.
+    const again = await settle(store, pack, settlement);
+    expect(again.ok).toBe(false);
+    expect(await inner.load()).toMatchObject({ status: "ready", checkpoint: report });
+  });
+
+  it("restores the closed report after a reload without a new write and without a second closure", async () => {
+    const { name, store, pack, settlement } = await atWeekSevenSettlement();
+    const settled = await settle(store, pack, settlement);
+    if (!settled.ok) throw new Error("settlement failed");
+
+    const reloaded = createIdbCheckpointStore(name);
+    open.push(reloaded);
+    const reopened = spyOn(reloaded);
+    const resumed = await bootstrap(reopened, pack);
+
+    expect(resumed).toEqual(settled.state);
+    expect(reopened.commits).toHaveLength(0);
+    if (resumed.kind !== "report") throw new Error("expected the report");
+    expect(resumed.checkpoint.resolvedCallbacks).toHaveLength(1);
+  });
+
+  it("still reaches the shared crisis, with its three options, after the closure", async () => {
+    const { store, pack, settlement } = await atWeekSevenSettlement();
+    const settled = await settle(store, pack, settlement);
+    if (!settled.ok) throw new Error("settlement failed");
+
+    const crisis = await playUntil(store, pack, settled.state, atSlot(10, 0));
+
+    if (crisis.kind !== "event") throw new Error("expected the crisis");
+    expect(crisis.checkpoint.activeEvent).toEqual({
+      eventId: CRISIS,
+      optionIds: [
+        "opt.crisis.hold_and_review",
+        "opt.crisis.announce_new_policy",
+        "opt.crisis.quiet_settlement",
+      ],
+    });
+  });
+});

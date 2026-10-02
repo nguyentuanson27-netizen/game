@@ -194,7 +194,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 ## Early observation, then broader hardening
 
 ### T15 - Deliver required callbacks
-**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Browser-tested on Chromium locally (WebKit via CI); real-device callback/resume walkthrough `Not run`, so not checked off. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
+**Status:** [~] Implemented and merged (PR #16); CI `verify` green on Chromium + WebKit at merge. Real-device callback/resume walkthrough `Not run`; not checked off until owner review. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
 **Description:** Bring the drafted consequence back into the existing loop using only the scheduling rules its content and explicit test cases require.
 **Dependencies:** T12, T18.
 **Files likely touched:** Event selection; pending callback state; contention fixtures; scheduler tests; task record. **Scope:** M (3-5 files).
@@ -244,7 +244,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 *C05 status:* automated T13/T14 evidence exists on Chromium + WebKit; the real-device runs were not performed and the owner has not signed it off, so C05 is not checked.
 
 ### T16 - Changed-context and fallback coverage
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Chromium locally, WebKit via CI; real-device walkthrough `Not run`, so not checked off. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
 **Description:** Keep the loop valid when a scheduled story no longer fits or ordinary events are insufficient.
 **Dependencies:** T15.
 **Files likely touched:** Event/context resolution; fallback content; report closure; behavior tests; task record. **Scope:** M (3-5 files).
