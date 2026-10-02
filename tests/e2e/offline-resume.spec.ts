@@ -73,7 +73,7 @@ test.describe("unanswered event resume (AC-04)", () => {
   });
 
   test.describe("after a committed choice (AC-04)", () => {
-    const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+    const FALLBACK_TITLE = "Tuần mưa kéo dài";
 
     async function chooseFundPolicy(page: Page) {
       await page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }).click();
@@ -92,7 +92,7 @@ test.describe("unanswered event resume (AC-04)", () => {
         recurringCosts: { "policy.rider_support_fund": 6 },
         npcStatus: { "npc.recurring_rider": "ally" },
         weekDecisions: [{ slot: 1, optionId: "opt.rider_claim.fund_policy" }],
-        activeEvent: { eventId: "evt.proof.fallback_shift_roster" },
+        activeEvent: { eventId: "evt.routine.rainy_week" },
       });
       expect(saved?.memories).toContain("prec.rider_dispute.negotiated");
       expect(saved?.pendingCallbacks.map((p) => p.callbackId)).toEqual([

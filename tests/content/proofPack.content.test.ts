@@ -47,7 +47,7 @@ describe("the actual prototype pack", () => {
       callbacks: 2,
       closures: 1,
       states: 361,
-      transitions: 630,
+      transitions: 633,
       completedEndings: 18,
       fallbackSubstitutions: 0,
     });
@@ -64,8 +64,13 @@ describe("the actual prototype pack", () => {
     ).toEqual([2, 3, 3, 4]);
   });
 
-  it("uses no fallback on any reachable history: the plan has no gap to hide", () => {
+  it("never plans the fallback directly, and uses it on no reachable history: the plan has no gap to hide", () => {
+    const fallbackId = pack.fallbackEventId;
+    expect(fallbackId).toBe("evt.proof.fallback_shift_roster");
+    expect(pack.plan.flat()).not.toContain(fallbackId);
+    // Zero substitutions means no reachable authored gap needed the fallback, and it is still unspent.
     expect(result.enumeration?.substitutions).toEqual([]);
+    expect(result.enumeration?.presentedWeeks.has(fallbackId ?? "")).toBe(false);
   });
 });
 
@@ -306,6 +311,38 @@ describe("fallback, repeat and option-count validation", () => {
     const dead = validateContentPack(twice).issues.find((i) => i.code === "dead-end");
     expect(dead?.message).toContain("no-next-event");
     expect(dead?.path?.length).toBeGreaterThan(0);
+  });
+
+  it("rejects a fallback planned directly as an ordinary slot", () => {
+    const pack = packFrom((_, loop) => {
+      loop.weeks[0].slots = ["evt.proof.rider_claim", "evt.proof.fallback_shift_roster"];
+    });
+
+    expect(validateContentPack(pack).issues).toContainEqual(
+      expect.objectContaining({
+        code: "planned-fallback",
+        message: "evt.proof.fallback_shift_roster is a fallback and must not be planned directly",
+      }),
+    );
+  });
+
+  it("uses the fallback only as a substitution for a planned event that cannot be presented", () => {
+    const pack = labPack([], {}, (chain, loop) => {
+      chain.events.push(needsSeat);
+      loop.weeks[1].slots = ["evt.test.needs_seat", "evt.test.week_beat"];
+    });
+
+    const { enumeration, issues } = validateContentPack(pack);
+
+    // The substitution names the planned event it replaced, in the week of the gap.
+    expect(enumeration?.substitutions).toContainEqual(
+      expect.objectContaining({ week: 2, planned: "evt.test.needs_seat" }),
+    );
+    expect(enumeration?.presentedWeeks.get("evt.proof.fallback_shift_roster")).toEqual(
+      new Set([2]),
+    );
+    // It was never planned, so the validator does not flag it as an authored placement.
+    expect(codes(issues)).not.toContain("planned-fallback");
   });
 
   it("does not let the fallback hide an event that can never be presented (5 unconditional options)", () => {

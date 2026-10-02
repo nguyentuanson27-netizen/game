@@ -81,14 +81,14 @@ describe("a save whose pending callback provenance is wrong is not resumed", () 
   it("blocks a valid callback id with a source event it does not belong to", async () => {
     await expectBlockedAndUntouched({
       ...startAt(pack, 1),
-      pendingCallbacks: [pending({ sourceEventId: "evt.proof.fallback_shift_roster" })],
+      pendingCallbacks: [pending({ sourceEventId: "evt.routine.rainy_week" })],
     });
   });
 
   it("blocks a valid callback id with an option that is not one of its sources", async () => {
     await expectBlockedAndUntouched({
       ...startAt(pack, 1),
-      pendingCallbacks: [pending({ sourceOptionId: "opt.fallback.arrange_extra_shift" })],
+      pendingCallbacks: [pending({ sourceOptionId: "opt.routine.rainy_week.rain_gear" })],
     });
   });
 
@@ -158,7 +158,7 @@ describe("a report whose stored settlement was tampered with is not resumed", ()
   it("blocks a tampered settlement in the failed state too", async () => {
     const week = replayToSettlement(pack, 1, [
       "opt.rider_claim.decline",
-      "opt.fallback.leave_roster_as_is",
+      "opt.routine.rainy_week.rain_fee",
     ]);
     const draft = settleWeek({ ...week, metrics: { ...week.metrics, cash: -90 } });
     if (draft.phase !== "failed") throw new Error("expected the failed state");

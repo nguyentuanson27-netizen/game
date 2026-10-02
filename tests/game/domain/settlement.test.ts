@@ -151,7 +151,7 @@ describe("contrasting policy histories from G0 and the T18 fixture", () => {
 
 describe("settling a committed week", () => {
   const pack = proofPack();
-  const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"];
+  const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.routine.rainy_week.rain_gear"];
   const settlementCheckpoint = () => replayToSettlement(pack, 1, FUND_THEN_SHIFT);
 
   it("adds the cash delta once and leaves every other committed effect alone", () => {

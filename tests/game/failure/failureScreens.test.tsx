@@ -27,7 +27,7 @@ async function toSettlement(ctx: Ctx) {
   render(<App store={ctx.store} loadPack={proofPack} />);
   await screen.findByRole("group", { name: "Phương án" });
   tapFirst();
-  await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+  await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
   tapFirst();
   return screen.findByRole("button", { name: "Tổng kết tuần" });
 }
@@ -38,7 +38,7 @@ async function toReport(ctx: Ctx) {
 }
 
 const noMoreProgress = {
-  nextEvent: () => screen.queryByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" }),
+  nextEvent: () => screen.queryByRole("heading", { name: "Tuần mưa kéo dài" }),
   settle: () => screen.queryByRole("button", { name: "Tổng kết tuần" }),
   report: () => screen.queryByRole("heading", { name: "Báo cáo tuần 1" }),
   nextWeek: () => screen.queryByRole("button", { name: "Tuần tiếp theo" }),
@@ -133,7 +133,7 @@ describe("a committed write whose acknowledgement was lost (AC-05)", () => {
     expect(stale.textContent).toContain("đã thay đổi ở tab");
     fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
 
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     const slots = await rawSlots(ctx.name);
     expect(slots.current).toMatchObject({
       sequence: 2,
@@ -181,7 +181,7 @@ describe("the stored save changes under a running game (D3)", () => {
     render(<App store={ctx.store} loadPack={proofPack} />);
     await screen.findByRole("group", { name: "Phương án" });
     tapFirst();
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
   }
 
   it("a corrupt current: the next tap shows the recovery prompt instead of a retry loop, and writes nothing", async () => {
@@ -203,7 +203,7 @@ describe("the stored save changes under a running game (D3)", () => {
     // The recovered checkpoint is the first event again, and saving works from it.
     await screen.findByRole("heading", { name: "Chiếc xe hỏng sau ca mưa" });
     tapFirst();
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     expect((await rawSlots(ctx.name)).current).toMatchObject({ sequence: 2, parentSequence: 1 });
   });
 

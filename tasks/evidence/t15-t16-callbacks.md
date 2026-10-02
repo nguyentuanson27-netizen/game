@@ -4,7 +4,7 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 
 ## T15 — deliver required callbacks
 
-**Status:** implemented on branch; CI and owner review pending (see `tasks/todo.md`).
+**Status:** merged (PR #16); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`).
 
 ### What changed
 
@@ -16,7 +16,7 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 - Checkpoint v1 gains `resolvedCallbacks` (`.default([])`, so a v1 save written before T15 still reads). Window and deadline stay in content; the checkpoint stores only identity and origin.
 - Resume (`campaign.ts`) now also rejects: a pending callback scheduled in a later week, listed twice, or both pending and resolved; a resolution recorded by an event that is not the callback's variant or that was never resolved; and an active event that differs from what the selection rules pick from the committed state (a save that skips a due callback is blocked, not repaired).
 - Loader: `required` must be `true` (an optional follow-up is just an ordinary event); `tieOrder` must be unique; a variant event must be marked `deliveredBy` its callback and vice versa; a plan may not list a callback's own event.
-- Content: `proof-loop.json` now walks all 12 weeks. Week 1 is unchanged (setup + fallback). Weeks 2-12 carry two placeholder routine beats each (`evt.routine.rainy_week`, `merchant_packaging`, `bike_checkup`, `customer_feedback`; neutral, state-independent, repeatable, 2-3 options, small trade-offs), added so a player can reach the callbacks. They are not part of the proof chain, read and write no chain state, and are to be replaced by campaign content (T21+). The T18 walk-through places the setup in week 3; the playable route keeps it in week 1 (existing tests depend on it) with the callback windows (7-8, 10-11) unchanged.
+- Content: `proof-loop.json` now walks all 12 weeks. Week 1 is the setup plus `evt.routine.rainy_week` (this PR originally planned the fallback event here, which was wrong: a fallback is only a substitution for a gap, and being non-repeatable it was spent in week 1; corrected in the follow-up fix, which also made the validator reject a planned fallback). Weeks 2-12 carry two placeholder routine beats each (`evt.routine.rainy_week`, `merchant_packaging`, `bike_checkup`, `customer_feedback`; neutral, state-independent, repeatable, 2-3 options, small trade-offs), added so a player can reach the callbacks. They are not part of the proof chain, read and write no chain state, and are to be replaced by campaign content (T21+). The T18 walk-through places the setup in week 3; the playable route keeps it in week 1 (existing tests depend on it) with the callback windows (7-8, 10-11) unchanged.
 
 ### Decisions to review
 
@@ -55,7 +55,7 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 
 ## T16 — changed-context and fallback coverage
 
-**Status:** implemented on branch; CI and owner review pending (see `tasks/todo.md`).
+**Status:** merged (PR #17); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`).
 
 ### What changed
 

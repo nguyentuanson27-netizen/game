@@ -2,7 +2,7 @@
 
 Environment: Node 24.21.0, npm 11.19.0, Linux; Playwright 1.63 on the sandbox's pre-installed Chromium (uncommitted local config). WebKit runs in CI only. Real devices: **Not run**.
 
-**Status:** implemented on branch; exact-head CI and owner review pending. This is the runtime proof for AC-06; it does not mark the prototype complete, and G1/T20 still needs a real player.
+**Status:** merged (PR #18); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`). This is the runtime proof for AC-06; it does not mark the prototype complete, and G1/T20 still needs a real player.
 
 ## What was proven, with the T18 fixture as authority
 
@@ -19,7 +19,7 @@ Environment: Node 24.21.0, npm 11.19.0, Linux; Playwright 1.63 on the sandbox's 
 
 `tests/game/proof/enumerate.ts` explores every structural state reachable by any choices from the start of the shipped route with the real transitions. States are keyed on what the selection rules read (week, phase, decided events, policies, memories, relationships, resolved events/callbacks, pending callbacks, recurring costs) and **not on the four metrics**; that is only sound while no authored condition reads a metric, which the test asserts (`assertNoMetricConditions`).
 
-Result on the shipped pack: **361 structural states, 630 transitions, 9 events presented, 18 distinct completed endings, 0 refused transitions (no dead end).** Every presented event offered 2-4 options in every reachable state. The crisis was offered exactly the 4 documented option sets (4, 3, 2, 3 options). The 7 documented crisis states collapse to 6 structural states (B + `hold_line` and B + `route_to_ops` differ only in a metric), so the documented 21 paths are 18 structurally distinct endings; the 21 documented paths are also replayed one by one under the real rules and each reaches the week-12 report with no pending callback and both callbacks resolved once. Both callbacks resolve inside their authored windows on every reachable path.
+Result on the shipped pack: **361 structural states, 633 transitions, 8 events presented (the fallback is never planned and no gap needs it), 18 distinct completed endings, 0 refused transitions (no dead end).** Every presented event offered 2-4 options in every reachable state. The crisis was offered exactly the 4 documented option sets (4, 3, 2, 3 options). The 7 documented crisis states collapse to 6 structural states (B + `hold_line` and B + `route_to_ops` differ only in a metric), so the documented 21 paths are 18 structurally distinct endings; the 21 documented paths are also replayed one by one under the real rules and each reaches the week-12 report with no pending callback and both callbacks resolved once. Both callbacks resolve inside their authored windows on every reachable path.
 
 **Economy is not enumerated.** A settlement that D4 would end as `failed` is continued as a report during the structural walk (0 such settlements on the first-reached paths) and failure is checked separately with 18 extreme-play runs (first/last option, most/least cash, most/least network+trust, for each of the 3 setups): none reaches `failed` or goes below -25 cash. A one-off exhaustive run (Pareto-minimal metric vectors, 4 minutes, not committed) found 0 failed states over the whole route, but a result that is not reproducible from the repository is not claimed as evidence.
 

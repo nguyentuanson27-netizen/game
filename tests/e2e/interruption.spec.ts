@@ -16,7 +16,7 @@ import {
 //    closed before any feedback; the complete new checkpoint must survive and no feedback shows.
 
 const EVENT_TITLE = "Chiếc xe hỏng sau ca mưa";
-const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+const FALLBACK_TITLE = "Tuần mưa kéo dài";
 
 const heading = (page: Page, name: string) => page.getByRole("heading", { level: 2, name });
 const button = (page: Page, name: string | RegExp) => page.getByRole("button", { name });
@@ -37,7 +37,7 @@ const slots = async (page: Page): Promise<Slots> => ({
 async function playToSettlement(page: Page) {
   await button(page, /Lập quỹ hỗ trợ sửa xe/).click();
   await expect(heading(page, FALLBACK_TITLE)).toBeVisible();
-  await button(page, /Thưởng nhẹ để có thêm người nhận ca tối/).click();
+  await button(page, /Phát áo mưa cho tài xế/).click();
   await expect(button(page, "Tổng kết tuần")).toBeVisible();
 }
 

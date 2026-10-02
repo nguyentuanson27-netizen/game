@@ -208,7 +208,7 @@ export function weekOneReport(pack: ContentPack = proofPack()): ReportCheckpoint
   const draft = settleWeek(
     replayToSettlement(pack, 1, [
       "opt.rider_claim.fund_policy",
-      "opt.fallback.arrange_extra_shift",
+      "opt.routine.rainy_week.rain_gear",
     ]),
   );
   if (draft.phase !== "report") throw new Error("expected a report");

@@ -3,7 +3,7 @@ import { activateTwice } from "./helpers/actions.ts";
 import { readCurrent } from "./helpers/checkpoint.ts";
 
 const EVENT_TITLE = "Chiếc xe hỏng sau ca mưa";
-const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+const FALLBACK_TITLE = "Tuần mưa kéo dài";
 const options = (page: Page) => page.getByRole("group", { name: "Phương án" }).getByRole("button");
 const settle = (page: Page) => page.getByRole("button", { name: /Trả một lần để họ rút phản ánh/ });
 
