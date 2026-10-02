@@ -210,7 +210,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** FOCUSED AC-06 and DEVICE both histories, with basic save failure/retry and committed-boundary reopen evidence. Enumerate the small finite pack and replay relevant transitions under the actual selection rules; document coverage/limits, not an exhaustive claim from two paths. Required changed-context handling must work for any reachable proof case; no known unsafe path goes to T20.
 
 ### T20 - Review the core hook before scaling
-**Status:** [ ] Blocked by dependencies.
+**Status:** [ ] Not complete. The proof is playable and the technical evidence exists (T15/T16/T17/T19, see their evidence files); the observation protocol and checklist are prepared in [t20-observation-protocol.md](evidence/t20-observation-protocol.md). **No player observation has been made or recorded and G1 is not approved**; browser automation is not a player observation. Needs a real participant per the D6 method, then owner review.
 **Description:** Observe the small safe proof as soon as it is playable, without waiting for the broader interruption matrix or cross-chain tooling.
 **Dependencies:** T19.
 **Files likely touched:** Focused playtest/verification record; tasks/todo.md. **Scope:** S (1-2 files).
@@ -252,7 +252,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** FOCUSED AC-03 for empty eligibility, invalidated context and locked options; check both original and resumed histories, including 2-4 valid choices per presented event.
 
 ### T17 - Cross-chain content validation
-**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Bounded to the actual 9-event proof pack; rerun with every later content batch. Evidence and limits: [t17-content-validation.md](evidence/t17-content-validation.md).
+**Status:** [~] Implemented and merged (PR #19); CI `verify` green on Chromium + WebKit at merge. Owner review pending. Bounded to the actual 9-event proof pack; rerun with every later content batch. Evidence and limits: [t17-content-validation.md](evidence/t17-content-validation.md).
 **Description:** Extend existing content checks to combined chains in the actual pack; a reusable general solver or editor is not a prerequisite.
 **Dependencies:** T16, T18.
 **Files likely touched:** Existing content checks; bounded fixtures/history cases; coverage/evidence record. **Scope:** M (3-5 files); split independent work if needed.
