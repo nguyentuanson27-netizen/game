@@ -2,7 +2,7 @@
 
 Environment: Node 24.21.0, npm 11.19.0, Linux; Playwright 1.63 on the sandbox's pre-installed Chromium (uncommitted local config). WebKit runs in CI only. Real devices: **Not run**.
 
-**Status:** implemented on branch; exact-head CI and owner review pending. This is the runtime proof for AC-06; it does not mark the prototype complete, and G1/T20 still needs a real player.
+**Status:** merged (PR #18); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`). This is the runtime proof for AC-06; it does not mark the prototype complete, and G1/T20 still needs a real player.
 
 ## What was proven, with the T18 fixture as authority
 

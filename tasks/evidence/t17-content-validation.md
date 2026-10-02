@@ -2,7 +2,7 @@
 
 Environment: Node 24.21.0, npm 11.19.0. Run with `npm run test:content` (also part of `npm run test` / `npm run verify`, and a named step in CI).
 
-**Status:** implemented on branch; exact-head CI and owner review pending. It validates the actual prototype pack only; it is not a general solver, editor or rules engine.
+**Status:** merged (PR #19); GitHub Actions `verify` green on its head at merge, including the named T17 content-validation step and Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`). It validates the actual prototype pack only; it is not a general solver, editor or rules engine.
 
 ## What is checked, and how
 

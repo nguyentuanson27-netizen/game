@@ -4,7 +4,7 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 
 ## T15 — deliver required callbacks
 
-**Status:** implemented on branch; CI and owner review pending (see `tasks/todo.md`).
+**Status:** merged (PR #16); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`).
 
 ### What changed
 
@@ -55,7 +55,7 @@ Environment: Node 24.21.0, npm 11.19.0 (the pinned G0 versions, installed outsid
 
 ## T16 — changed-context and fallback coverage
 
-**Status:** implemented on branch; CI and owner review pending (see `tasks/todo.md`).
+**Status:** merged (PR #17); GitHub Actions `verify` green on its head at merge, Chromium + WebKit; re-verified green on the follow-up fix PR #21 head `f83b583`. Owner review and real-device checks remain pending (DEVICE `Not run`).
 
 ### What changed
 
