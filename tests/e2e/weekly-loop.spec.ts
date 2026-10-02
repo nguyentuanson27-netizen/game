@@ -89,22 +89,28 @@ test.describe("Next Week and the end of the prototype (AC-04, AC-05)", () => {
     await expectWeekOneReport(page);
   }
 
-  test("refuses Next Week into a week the proof loop has not authored, and keeps the report", async ({
-    page,
-  }) => {
+  test("advances to week 2 once and restores it after a reload", async ({ page }) => {
     await settleWeekOne(page);
-    const saved = await readSlots(page);
+    const report = await readCurrent(page);
 
-    await page.getByRole("button", { name: "Tuần tiếp theo" }).click();
+    await activateTwice(page.getByRole("button", { name: "Tuần tiếp theo" }));
 
-    await expect(page.getByRole("alert")).toContainText("Tuần tiếp theo chưa có nội dung");
-    await expectWeekOneReport(page);
-    await expect(page.getByText(/Tuần 2/)).toHaveCount(0);
-    // Nothing was written and nothing can be skipped into: a reload shows the same report.
-    expect(await readSlots(page)).toEqual(saved);
+    await expect(page.getByRole("heading", { level: 2, name: "Tuần mưa kéo dài" })).toBeVisible();
+    await expect(page.getByText("Tuần 2 · Quyết định 1/2")).toBeVisible();
+    // One checkpoint for the whole advance: the week-1 report was not settled again.
+    const advanced = await readCurrent(page);
+    expect(advanced).toMatchObject({
+      sequence: (report?.sequence ?? 0) + 1,
+      week: 2,
+      phase: "event",
+      weekDecisions: [],
+      metrics: { cash: 53 },
+    });
+
     await page.reload();
-    await expectWeekOneReport(page);
-    expect(await readSlots(page)).toEqual(saved);
+
+    await expect(page.getByRole("heading", { level: 2, name: "Tuần mưa kéo dài" })).toBeVisible();
+    expect(await readCurrent(page)).toEqual(advanced);
   });
 
   test("closes the prototype from a seeded week-12 report with nothing pending, once, and restores it after a reload", async ({

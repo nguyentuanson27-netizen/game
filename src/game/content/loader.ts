@@ -159,13 +159,31 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
     }
     for (const c of cb.eligibility) checkCondition(cb.id, c);
     for (const variant of cb.variants) {
-      if (!events.has(variant.event))
-        issues.push(`${cb.id}: unknown variant event ${variant.event}`);
+      const variantEvent = events.get(variant.event);
+      if (!variantEvent) issues.push(`${cb.id}: unknown variant event ${variant.event}`);
+      else if (variantEvent.deliveredBy !== cb.id) {
+        // Resolving a delivered event resolves the callback named by `deliveredBy`.
+        issues.push(`${cb.id}: variant event ${variant.event} is not marked deliveredBy ${cb.id}`);
+      }
       for (const c of variant.when) checkCondition(cb.id, c);
     }
     const resolution = cb.changedContext.resolution;
     if (resolution.type === "reportClosure" && !closures.has(resolution.closure)) {
       issues.push(`${cb.id}: unknown closure ${resolution.closure}`);
+    }
+  }
+  // The authored tie order is what makes equal deadlines deterministic, so it must be unique.
+  const tieOrders = new Map<number, string>();
+  for (const cb of chain.callbacks) {
+    const other = tieOrders.get(cb.tieOrder);
+    if (other !== undefined)
+      issues.push(`${cb.id}: tieOrder ${cb.tieOrder} is also used by ${other}`);
+    tieOrders.set(cb.tieOrder, cb.id);
+  }
+  for (const event of chain.events) {
+    const owners = chain.callbacks.filter((cb) => cb.variants.some((v) => v.event === event.id));
+    if (event.deliveredBy && !owners.some((cb) => cb.id === event.deliveredBy)) {
+      issues.push(`${event.id}: deliveredBy ${event.deliveredBy} does not list it as a variant`);
     }
   }
   for (const closure of chain.closures) {
@@ -214,7 +232,15 @@ function checkPlan(
       );
     }
     for (const id of entry.slots) {
-      if (!events.has(id)) issues.push(`proof-loop: week ${entry.week} names unknown event ${id}`);
+      const event = events.get(id);
+      if (!event) issues.push(`proof-loop: week ${entry.week} names unknown event ${id}`);
+      else if (event.deliveredBy) {
+        // A callback event is only ever delivered by its callback; planning it would bypass the
+        // window, the priority rules and the resolution of the callback.
+        issues.push(
+          `proof-loop: week ${entry.week} plans ${id}, which ${event.deliveredBy} delivers`,
+        );
+      }
     }
     plan.push([...entry.slots]);
   });

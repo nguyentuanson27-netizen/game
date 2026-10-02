@@ -67,7 +67,7 @@ const note = z.unknown().optional();
 export const eventSchema = z.strictObject({
   id: idSchema,
   chain: idSchema.nullable(),
-  role: z.enum(["setup", "callbackVariant", "sharedCrisis", "fallback"]),
+  role: z.enum(["setup", "ordinary", "callbackVariant", "sharedCrisis", "fallback"]),
   title: z.string().min(1),
   stage: z.enum(["street_startup", "local_platform", "city_player"]),
   speaker: idSchema,
@@ -107,8 +107,8 @@ const callbackResolutionSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-// Callback metadata is validated and kept intact so T15 can schedule from it. T08-T12 only
-// persist which callbacks were scheduled; they never deliver one.
+// Callback metadata: a choice schedules a callback, and the delivery rules (window, tie order,
+// eligibility, variants, changed context) live here, never in the save.
 export const callbackSchema = z.strictObject({
   id: idSchema,
   chain: idSchema,
@@ -117,7 +117,8 @@ export const callbackSchema = z.strictObject({
     options: z.array(idSchema).min(1),
     scheduledBy: z.string().min(1),
   }),
-  required: z.boolean(),
+  // Only required callbacks exist: an optional follow-up is just an ordinary event.
+  required: z.literal(true),
   window: z.strictObject({
     earliestWeek: z.number().int().min(1).max(12),
     latestWeek: z.number().int().min(1).max(12),

@@ -9,7 +9,7 @@ export type WorldState = Pick<
 
 /** Everything a choice can change; checkpoints carry exactly this plus week/phase bookkeeping. */
 export type CampaignState = WorldState &
-  Pick<Checkpoint, "recurringCosts" | "pendingCallbacks" | "demandModifiers">;
+  Pick<Checkpoint, "recurringCosts" | "pendingCallbacks" | "resolvedCallbacks" | "demandModifiers">;
 
 /** D4 initial visible state. Hidden values start neutral only when used, so none exist yet. */
 export const INITIAL_METRICS: Checkpoint["metrics"] = {
@@ -33,5 +33,6 @@ export function initialCampaignState(pack: ContentPack): CampaignState {
     demandModifiers: { delivery: 0, ride: 0 },
     recurringCosts: {},
     pendingCallbacks: [],
+    resolvedCallbacks: [],
   };
 }

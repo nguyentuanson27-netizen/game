@@ -4,14 +4,16 @@ import { reportLines } from "../../../src/game/domain/reportLines.ts";
 import { settleWeek } from "../../../src/game/domain/settlement.ts";
 import type { ReportCheckpoint } from "../../../src/game/persistence/checkpoint.ts";
 import {
+  PROBE_HISTORY_A,
   packFrom,
   playablePack,
-  proofPack,
+  probeChainPack,
   replayToSettlement,
   resolvedSettlementAt,
   settlementAt,
   testEvent,
   testOption,
+  unauthoredPack,
   weekTwelvePack,
 } from "../helpers.ts";
 
@@ -30,8 +32,8 @@ function advanced(report: ReportCheckpoint, pack = playablePack()) {
 }
 
 describe("Next Week into a week the content has not authored", () => {
-  it("is refused for the shipped proof pack: week 2 has no playable slot", () => {
-    const pack = proofPack();
+  it("is refused while week 2 is unauthored: it has no playable slot", () => {
+    const pack = unauthoredPack();
     const report = reportAfter(pack);
 
     const result = advanceWeek(pack, report);
@@ -41,7 +43,7 @@ describe("Next Week into a week the content has not authored", () => {
   });
 
   it("is refused for every week while the plan has no decisions, never producing a zero-decision week", () => {
-    const pack = proofPack();
+    const pack = unauthoredPack();
     for (const week of [1, 5, 11]) {
       const draft = settleWeek(settlementAt(pack, week));
       if (draft.phase !== "report") throw new Error("expected a report");
@@ -200,18 +202,8 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
 
 describe("weekly report lines", () => {
   it("lists only the authored report lines of this week's committed decisions", () => {
-    const pack = packFrom((_, loop) => {
-      loop.weeks[2].slots = [
-        "evt.proof.rider_claim",
-        "var.rider_voice_followup.engaged",
-        "evt.proof.public_rider_dispute",
-      ];
-    });
-    const settlement = replayToSettlement(pack, 3, [
-      "opt.rider_claim.fund_policy",
-      "opt.rider_voice.engaged.keep_informal",
-      "opt.crisis.joint_statement",
-    ]);
+    const pack = probeChainPack();
+    const settlement = replayToSettlement(pack, 3, PROBE_HISTORY_A);
 
     expect(reportLines(pack, settlement)).toEqual([
       "Tài xế quen mặt đứng cạnh công ty trong thông báo chung; họ ghi nhận và chờ quỹ được mở rộng.",

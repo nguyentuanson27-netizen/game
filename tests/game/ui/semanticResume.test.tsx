@@ -7,7 +7,8 @@ import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore
 import { bootstrap } from "../../../src/game/ui/session.ts";
 import { rawSlots } from "../failure/faults.ts";
 import {
-  packFrom,
+  PROBE_HISTORY_A,
+  probeChainPack,
   proofPack,
   replayToSettlement,
   seedDraft,
@@ -172,18 +173,8 @@ describe("a report whose stored settlement was tampered with is not resumed", ()
 describe("a failed week keeps its authored consequence lines", () => {
   it("shows the report line, the failure message and no hidden state", async () => {
     const lineFor = "Tài xế quen mặt đứng cạnh công ty trong thông báo chung";
-    const crisisPack = packFrom((_, loop) => {
-      loop.weeks[2].slots = [
-        "evt.proof.rider_claim",
-        "var.rider_voice_followup.engaged",
-        "evt.proof.public_rider_dispute",
-      ];
-    });
-    const week = replayToSettlement(crisisPack, 3, [
-      "opt.rider_claim.fund_policy",
-      "opt.rider_voice.engaged.keep_informal",
-      "opt.crisis.joint_statement",
-    ]);
+    const crisisPack = probeChainPack();
+    const week = replayToSettlement(crisisPack, 3, PROBE_HISTORY_A);
     const draft = settleWeek({ ...week, metrics: { ...week.metrics, cash: -90 } });
     if (draft.phase !== "failed") throw new Error("expected the failed state");
     const name = uniqueDbName();

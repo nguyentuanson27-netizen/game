@@ -194,7 +194,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 ## Early observation, then broader hardening
 
 ### T15 - Deliver required callbacks
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Browser-tested on Chromium locally (WebKit via CI); real-device callback/resume walkthrough `Not run`, so not checked off. Evidence: [t15-t16-callbacks.md](evidence/t15-t16-callbacks.md).
 **Description:** Bring the drafted consequence back into the existing loop using only the scheduling rules its content and explicit test cases require.
 **Dependencies:** T12, T18.
 **Files likely touched:** Event selection; pending callback state; contention fixtures; scheduler tests; task record. **Scope:** M (3-5 files).

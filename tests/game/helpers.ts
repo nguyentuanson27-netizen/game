@@ -2,6 +2,7 @@ import { openDB } from "idb";
 import proofChain from "../../content/prototype/proof-chain.json";
 import proofLoop from "../../content/prototype/proof-loop.json";
 import { type ContentPack, loadContentPack } from "../../src/game/content/loader.ts";
+import { advanceWeek } from "../../src/game/domain/advanceWeek.ts";
 import { startCampaign } from "../../src/game/domain/campaign.ts";
 import { nextStep } from "../../src/game/domain/nextStep.ts";
 import { resolveChoice } from "../../src/game/domain/resolveChoice.ts";
@@ -97,10 +98,19 @@ export function packFrom(mutate: (chain: Raw, loop: Raw) => void): ContentPack {
   return loadContentPack(chain, loop);
 }
 
+/**
+ * The proof pack with weeks 2-12 left unauthored, as the shipped loop was before the playable
+ * route existed: incomplete content still loads, but `Next Week` into those weeks is refused.
+ */
+export const unauthoredPack = () =>
+  packFrom((_, loop) => {
+    for (const entry of loop.weeks) if (entry.week > 1) entry.slots = [];
+  });
+
 /** A first checkpoint positioned at `week`, as if earlier weeks had been played without effect. */
 export function startAt(pack: ContentPack, week: number): EventCheckpoint {
   const state = initialCampaignState(pack);
-  const next = nextStep(pack, week as EventCheckpoint["week"], 0, state);
+  const next = nextStep(pack, week as EventCheckpoint["week"], [], state);
   if (!next.ok || next.phase !== "event") throw new Error("nothing to present");
   return {
     schemaVersion: 1,
@@ -249,3 +259,192 @@ export function resolvedSettlementAt(
     ...over,
   });
 }
+
+/**
+ * A plain copy of an authored callback event, for tests that read its effects, option rules or
+ * report lines through ordinary planning. The loader refuses to plan a callback's own event (only
+ * its callback delivers it), so the copy gets a new id, `.probe` option ids and no `deliveredBy`.
+ * Returns the copy's id; option ids are the originals plus `.probe`.
+ */
+export function addProbeCopy(chain: Raw, eventId: string): string {
+  const original = chain.events.find((e: Raw) => e.id === eventId);
+  if (!original) throw new Error(`no event ${eventId}`);
+  const copy = structuredClone(original);
+  copy.id = `${eventId}.probe`;
+  copy.role = "setup";
+  delete copy.deliveredBy;
+  for (const option of copy.options) option.id = `${option.id}.probe`;
+  chain.events.push(copy);
+  return copy.id;
+}
+
+/**
+ * The three authored chain nodes (setup, follow-up variant, shared crisis) planned into week 3 as
+ * plain `.probe` copies, so effects, report lines and paper settlements of a whole history can be
+ * checked in one week without callback delivery. Option ids carry `.probe` after the first.
+ */
+export function probeChainPack(variant: "engaged" | "aggrieved" = "engaged"): ContentPack {
+  return packFrom((chain, loop) => {
+    const follow = addProbeCopy(chain, `var.rider_voice_followup.${variant}`);
+    const crisis = addProbeCopy(chain, "evt.proof.public_rider_dispute");
+    loop.weeks[2].slots = ["evt.proof.rider_claim", follow, crisis];
+  });
+}
+
+export const PROBE_HISTORY_A = [
+  "opt.rider_claim.fund_policy",
+  "opt.rider_voice.engaged.keep_informal.probe",
+  "opt.crisis.joint_statement.probe",
+];
+export const PROBE_HISTORY_B = [
+  "opt.rider_claim.decline",
+  "opt.rider_voice.aggrieved.hold_line.probe",
+  "opt.crisis.announce_new_policy.probe",
+];
+
+export interface LabCallback {
+  id: string;
+  earliest: number;
+  latest: number;
+  tieOrder: number;
+  /** Extra eligibility conditions; the variant itself is always valid. */
+  eligibility?: Raw[];
+}
+
+export const labEvent = (id: string) => `evt.lab.${id}`;
+export const labOption = (id: string, n: 1 | 2 = 1) => `opt.lab.${id}.o${n}`;
+
+/**
+ * A synthetic pack for callback scheduling: a week-1 setup whose one option schedules every given
+ * callback, `evt.test.week_beat` filling the other slots (2 a week unless `slots` overrides a
+ * week), and one two-option variant event per callback. Test-only; no canonical story is added.
+ * It goes through the real loader, so windows, tie orders and references are validated.
+ */
+export function labPack(
+  callbacks: LabCallback[],
+  slots: Record<number, number> = {},
+  mutate: (chain: Raw, loop: Raw) => void = () => {},
+): ContentPack {
+  return packFrom((chain, loop) => {
+    chain.events.push(
+      testEvent(
+        "evt.test.week_beat",
+        [testOption("opt.test.week_beat.steady"), testOption("opt.test.week_beat.push")],
+        { repeatable: true },
+      ),
+      testEvent(
+        "evt.lab.setup",
+        [
+          testOption(
+            "opt.lab.setup.go",
+            callbacks.map((cb) => ({ kind: "callbackSchedule", callback: cb.id })),
+          ),
+          testOption("opt.lab.setup.wait"),
+        ],
+        { role: "setup" },
+      ),
+    );
+    for (const cb of callbacks) {
+      const name = cb.id.replace("cb.lab.", "");
+      chain.events.push(
+        testEvent(
+          labEvent(name),
+          [testOption(labOption(name, 1)), testOption(labOption(name, 2))],
+          { role: "callbackVariant", deliveredBy: cb.id },
+        ),
+      );
+      chain.callbacks.push({
+        id: cb.id,
+        chain: "chain.rider_dispute",
+        sourceDecision: {
+          event: "evt.lab.setup",
+          options: ["opt.lab.setup.go"],
+          scheduledBy: "callbackSchedule effect",
+        },
+        required: true,
+        window: { earliestWeek: cb.earliest, latestWeek: cb.latest, weekBasis: "absolute" },
+        tieOrder: cb.tieOrder,
+        eligibility: cb.eligibility ?? [],
+        consumesEventSlot: "yes",
+        variants: [{ event: labEvent(name), when: [] }],
+        changedContext: {
+          invalidWhen: "never in this lab",
+          resolution: {
+            type: "none",
+            reportClosureAllowed: false,
+            reason: "lab callbacks are always deliverable",
+          },
+          appliesUnchosenOption: false,
+          slotShortageCancels: false,
+        },
+      });
+    }
+    for (const entry of loop.weeks) {
+      entry.slots =
+        entry.week === 1
+          ? ["evt.lab.setup", "evt.test.week_beat"]
+          : Array.from({ length: slots[entry.week] ?? 2 }, () => "evt.test.week_beat");
+    }
+    mutate(chain, loop);
+  });
+}
+
+export interface Walk {
+  checkpoint: Checkpoint;
+  /** Event ids shown, per week, in slot order. */
+  shown: Record<number, string[]>;
+  /** Every committed checkpoint in order, numbered like the store. */
+  history: Checkpoint[];
+}
+
+/**
+ * Play a campaign through the real pure transitions (choice, settlement, Next Week) without a
+ * store. `pick` chooses an option for the active event; the walk stops before the first step whose
+ * checkpoint satisfies `stop`. Failing settlement or a refused step throws, so a walk that returns
+ * is a legal play.
+ */
+export function walk(
+  pack: ContentPack,
+  pick: (checkpoint: EventCheckpoint) => string,
+  stop: (checkpoint: Checkpoint) => boolean,
+  from?: Checkpoint,
+): Walk {
+  let checkpoint: Checkpoint = from ?? { ...startCampaign(pack), sequence: 1 };
+  const history: Checkpoint[] = [checkpoint];
+  const shown: Record<number, string[]> = {};
+  const commit = (draft: CheckpointDraft) => {
+    checkpoint = { ...draft, sequence: checkpoint.sequence + 1 } as Checkpoint;
+    history.push(checkpoint);
+  };
+  for (let guard = 0; guard < 400; guard++) {
+    if (stop(checkpoint)) return { checkpoint, shown, history };
+    switch (checkpoint.phase) {
+      case "event": {
+        const week = checkpoint.week;
+        shown[week] = [...(shown[week] ?? []), checkpoint.activeEvent.eventId];
+        const resolved = resolveChoice(pack, checkpoint, pick(checkpoint));
+        if (!resolved.ok) throw new Error(resolved.message);
+        commit(resolved.draft);
+        break;
+      }
+      case "settlement":
+        commit(settleWeek(checkpoint));
+        break;
+      case "report": {
+        const advanced = advanceWeek(pack, checkpoint);
+        if (!advanced.ok) throw new Error(`${advanced.reason}: ${advanced.message}`);
+        commit(advanced.draft);
+        break;
+      }
+      default:
+        throw new Error(`walk cannot continue from ${checkpoint.phase}`);
+    }
+  }
+  throw new Error("walk did not stop");
+}
+
+/** Always the first selectable option, except for the options named in `choices` by event id. */
+export const pickFirst =
+  (choices: Record<string, string> = {}) =>
+  (checkpoint: EventCheckpoint): string =>
+    choices[checkpoint.activeEvent.eventId] ?? checkpoint.activeEvent.optionIds[0] ?? "";

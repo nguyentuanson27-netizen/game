@@ -7,7 +7,14 @@ import {
   settleWeek,
 } from "../../../src/game/domain/settlement.ts";
 import { INITIAL_METRICS, initialCampaignState } from "../../../src/game/domain/worldState.ts";
-import { packFrom, proofPack, replayToSettlement, startAt } from "../helpers.ts";
+import {
+  PROBE_HISTORY_A,
+  PROBE_HISTORY_B,
+  probeChainPack,
+  proofPack,
+  replayToSettlement,
+  startAt,
+} from "../helpers.ts";
 
 const base = () => initialCampaignState(proofPack());
 const settle = (over: Partial<ReturnType<typeof base>> = {}) =>
@@ -119,32 +126,12 @@ describe("contrasting policy histories from G0 and the T18 fixture", () => {
   });
 
   it("matches the fixture's week-10 paper settlement after the full A and B paths", () => {
-    // Replays setup -> follow-up variant -> shared crisis inside one week by planning the three
-    // authored nodes into week 3; the fixture's numbers depend only on the effects applied.
-    const paths = packFrom((_, loop) => {
-      loop.weeks[2].slots = [
-        "evt.proof.rider_claim",
-        "var.rider_voice_followup.engaged",
-        "evt.proof.public_rider_dispute",
-      ];
-    });
-    const pathsB = packFrom((_, loop) => {
-      loop.weeks[2].slots = [
-        "evt.proof.rider_claim",
-        "var.rider_voice_followup.aggrieved",
-        "evt.proof.public_rider_dispute",
-      ];
-    });
-    const a = replayToSettlement(paths, 3, [
-      "opt.rider_claim.fund_policy",
-      "opt.rider_voice.engaged.keep_informal",
-      "opt.crisis.joint_statement",
-    ]);
-    const b = replayToSettlement(pathsB, 3, [
-      "opt.rider_claim.decline",
-      "opt.rider_voice.aggrieved.hold_line",
-      "opt.crisis.announce_new_policy",
-    ]);
+    // Replays setup -> follow-up variant -> shared crisis inside one week by planning plain copies
+    // of the three authored nodes into week 3; the fixture's numbers depend only on the effects.
+    const paths = probeChainPack("engaged");
+    const pathsB = probeChainPack("aggrieved");
+    const a = replayToSettlement(paths, 3, PROBE_HISTORY_A);
+    const b = replayToSettlement(pathsB, 3, PROBE_HISTORY_B);
 
     const toPaper = (s: ReturnType<typeof computeSettlement>) => ({
       deliveries: s.deliveryJobs,
