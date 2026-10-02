@@ -15,6 +15,7 @@
     "check": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:content": "vitest run tests/content",
     "build": "vite build",
     "test:e2e": "playwright test",
     "verify": "npm run check && npm run typecheck && npm run test && npm run build"

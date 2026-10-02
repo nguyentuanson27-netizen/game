@@ -1,9 +1,11 @@
-import type { ContentPack } from "../../../src/game/content/loader.ts";
-import { advanceWeek } from "../../../src/game/domain/advanceWeek.ts";
-import { startCampaign } from "../../../src/game/domain/campaign.ts";
-import { resolveChoice } from "../../../src/game/domain/resolveChoice.ts";
-import { settleWeekClosingCallbacks } from "../../../src/game/domain/settlement.ts";
-import type { Checkpoint, CheckpointDraft } from "../../../src/game/persistence/checkpoint.ts";
+import type { ContentPack } from "../content/loader.ts";
+import { advanceWeek } from "../domain/advanceWeek.ts";
+import { startCampaign } from "../domain/campaign.ts";
+import { resolveChoice } from "../domain/resolveChoice.ts";
+import { settleWeekClosingCallbacks } from "../domain/settlement.ts";
+import type { Checkpoint, CheckpointDraft } from "../persistence/checkpoint.ts";
+
+// Content validation helper (T17), not part of the playable app: nothing in src/game/ui imports it.
 
 /**
  * Bounded enumeration of every structural state reachable by any sequence of choices from the
@@ -33,6 +35,14 @@ export interface Enumeration {
   wouldFail: number;
   /** Every presented event with the distinct option sets it offered (comma-joined ids). */
   presented: Map<string, Set<string>>;
+  /** The weeks each event was presented in, over every reachable state. */
+  presentedWeeks: Map<string, Set<number>>;
+  /**
+   * Slots where the planned ordinary event could not be shown and the authored fallback was shown
+   * instead, with a path that reproduces it. Not an error by itself: it is the fallback doing its
+   * job, listed so a gap is never hidden.
+   */
+  substitutions: Array<{ week: number; planned: string; path: string[] }>;
   /** Refused transitions: the content dead ends (empty means none reachable). */
   refusals: Array<{ path: string[]; reason: string }>;
   complete: Reached[];
@@ -71,10 +81,19 @@ export function assertNoMetricConditions(pack: ContentPack): void {
   if (bad.length > 0) throw new Error(`conditions read metrics: ${JSON.stringify(bad)}`);
 }
 
+/** The ordinary event the plan has for this slot, or null when a callback event is on screen. */
+function plannedEventId(pack: ContentPack, c: Extract<Checkpoint, { phase: "event" }>) {
+  if (pack.events.get(c.activeEvent.eventId)?.deliveredBy) return null;
+  const delivered = c.weekDecisions.filter((d) => pack.events.get(d.eventId)?.deliveredBy).length;
+  return pack.plan[c.week - 1]?.[c.weekDecisions.length - delivered] ?? null;
+}
+
 export function enumerate(pack: ContentPack, limit = 100_000): Enumeration {
   assertNoMetricConditions(pack);
   const states = new Map<string, Reached>();
   const presented = new Map<string, Set<string>>();
+  const presentedWeeks = new Map<string, Set<number>>();
+  const substitutions: Enumeration["substitutions"] = [];
   const refusals: Enumeration["refusals"] = [];
   const complete: Reached[] = [];
   let transitions = 0;
@@ -105,10 +124,21 @@ export function enumerate(pack: ContentPack, limit = 100_000): Enumeration {
         const set = presented.get(c.activeEvent.eventId) ?? new Set<string>();
         set.add(c.activeEvent.optionIds.join(","));
         presented.set(c.activeEvent.eventId, set);
+        presentedWeeks.set(
+          c.activeEvent.eventId,
+          (presentedWeeks.get(c.activeEvent.eventId) ?? new Set<number>()).add(c.week),
+        );
+        const planned = plannedEventId(pack, c);
+        if (planned !== null && planned !== c.activeEvent.eventId) {
+          substitutions.push({ week: c.week, planned, path: node.path });
+        }
         for (const optionId of c.activeEvent.optionIds) {
           const resolved = resolveChoice(pack, c, optionId);
           if (!resolved.ok) {
-            refusals.push({ path: [...node.path, optionId], reason: resolved.message });
+            refusals.push({
+              path: [...node.path, optionId],
+              reason: `${resolved.reason}: ${resolved.message}`,
+            });
           } else visit(node, resolved.draft, optionId);
         }
         break;
@@ -135,5 +165,14 @@ export function enumerate(pack: ContentPack, limit = 100_000): Enumeration {
         break;
     }
   }
-  return { states, wouldFail, presented, refusals, complete, transitions };
+  return {
+    states,
+    wouldFail,
+    presented,
+    presentedWeeks,
+    substitutions,
+    refusals,
+    complete,
+    transitions,
+  };
 }

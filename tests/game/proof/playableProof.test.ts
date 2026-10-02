@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import histories from "../../../content/prototype/proof-histories.json";
 import { allHold } from "../../../src/game/domain/conditions.ts";
 import type { Checkpoint, EventCheckpoint } from "../../../src/game/persistence/checkpoint.ts";
+import { assertNoMetricConditions, enumerate } from "../../../src/game/validation/enumerate.ts";
 import { proofPack, type Raw, walk } from "../helpers.ts";
-import { assertNoMetricConditions, enumerate } from "./enumerate.ts";
 
 // T19: the shared-crisis proof played by the real rules (selection, callbacks, settlement, Next
 // Week) from real choices, with the T18 fixture as the authority for what must happen.

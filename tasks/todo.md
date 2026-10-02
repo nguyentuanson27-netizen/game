@@ -202,7 +202,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** FOCUSED AC-02 with early, equal-deadline, competing and infeasible small schedules; DEVICE callback/resume walkthrough including failed resolution-save/retry. Retain the original deadline and apply callback resolution once. Do not build a general scheduler framework.
 
 ### T19 - Play both histories to different options
-**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Chromium locally (WebKit via CI); DEVICE both histories `Not run`, so not checked off. Evidence and limits: [t19-playable-proof.md](evidence/t19-playable-proof.md).
+**Status:** [~] Implemented and merged (PR #18); CI `verify` green on Chromium + WebKit at merge. DEVICE both histories `Not run`; not checked off until owner review. Evidence and limits: [t19-playable-proof.md](evidence/t19-playable-proof.md).
 **Description:** Integrate the draft into a small valid playable proof and exercise two histories through real choices, checkpoints and the shared crisis.
 **Dependencies:** T15, T10, T18.
 **Files likely touched:** History integration tests; minimal content/resolution fixes if needed; evidence/task record. **Scope:** M (3-5 files).
@@ -252,7 +252,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Verification:** FOCUSED AC-03 for empty eligibility, invalidated context and locked options; check both original and resumed histories, including 2-4 valid choices per presented event.
 
 ### T17 - Cross-chain content validation
-**Status:** [ ] Blocked by dependencies.
+**Status:** [~] Implemented on branch; exact-head CI and owner review pending. Bounded to the actual 9-event proof pack; rerun with every later content batch. Evidence and limits: [t17-content-validation.md](evidence/t17-content-validation.md).
 **Description:** Extend existing content checks to combined chains in the actual pack; a reusable general solver or editor is not a prerequisite.
 **Dependencies:** T16, T18.
 **Files likely touched:** Existing content checks; bounded fixtures/history cases; coverage/evidence record. **Scope:** M (3-5 files); split independent work if needed.

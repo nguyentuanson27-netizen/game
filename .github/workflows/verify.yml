@@ -32,6 +32,9 @@ jobs:
       - name: Static checks, unit tests and build
         run: npm run verify
 
+      - name: Content validation of the prototype pack (T17)
+        run: npm run test:content
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit
 
