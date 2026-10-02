@@ -3,10 +3,10 @@ import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore
 import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/session.ts";
 import {
   playablePack,
-  proofPack,
   resolvedSettlementAt,
   seedDraft,
   spyOn,
+  unauthoredPack,
   uniqueDbName,
   weekTwelvePack,
 } from "../helpers.ts";
@@ -44,9 +44,9 @@ async function atReport(pack = playablePack()) {
   return { ...ctx, report: settled.state.checkpoint };
 }
 
-describe("Next Week with the shipped proof pack", () => {
+describe("Next Week into unauthored content", () => {
   it("is refused: the report stays the current checkpoint and nothing is saved", async () => {
-    const pack = proofPack();
+    const pack = unauthoredPack();
     const { store, inner, report } = await atReport(pack);
     const before = await inner.load();
     const commits = store.commits.length;
@@ -158,60 +158,51 @@ describe("Next Week through the checkpoint store", () => {
     expect(reopenedStore.commits).toHaveLength(0);
   });
 
-  it("walks weeks 1-12 on test-only content with two decisions every week: none skipped, none settled twice, and week 12 will not close while callbacks are pending", async () => {
+  it("walks weeks 1-12 on test-only content with two decisions every week: none skipped, none settled twice, the required callbacks are delivered in their windows and the prototype then closes", async () => {
     const pack = playablePack([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     const { store, inner, report } = await atReport(pack);
     const weeks: number[] = [report.week];
+    const shown: Record<number, string[]> = {};
     let current = report;
 
     while (current.week < 12) {
       const advanced = await nextWeek(store, pack, current);
-      if (!advanced.ok || advanced.state.kind !== "event") throw new Error("advance failed");
-      // Two authored decisions a week: the first leads to the second, the second to settlement.
-      const first = await choose(
-        store,
-        pack,
-        advanced.state.checkpoint,
-        "opt.test.week_beat.steady",
-      );
-      if (!first.ok || first.state.kind !== "event") throw new Error("first choice failed");
-      const decided = await choose(
-        store,
-        pack,
-        first.state.checkpoint,
-        "opt.test.week_beat.steady",
-      );
-      if (!decided.ok || decided.state.kind !== "settlement") throw new Error("choice failed");
-      const settled = await settle(store, pack, decided.state.checkpoint);
+      if (!advanced.ok) throw new Error("advance failed");
+      let state = advanced.state;
+      // Two authored decisions a week; a due callback takes one of them. Always the first option.
+      while (state.kind === "event") {
+        const week = state.checkpoint.week;
+        const { eventId, optionIds } = state.checkpoint.activeEvent;
+        shown[week] = [...(shown[week] ?? []), eventId];
+        const decided = await choose(store, pack, state.checkpoint, optionIds[0] ?? "");
+        if (!decided.ok) throw new Error("choice failed");
+        state = decided.state;
+      }
+      if (state.kind !== "settlement") throw new Error("expected settlement");
+      const settled = await settle(store, pack, state.checkpoint);
       if (!settled.ok || settled.state.kind !== "report") throw new Error("settlement failed");
       current = settled.state.checkpoint;
       weeks.push(current.week);
     }
 
     expect(weeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-    // The two required callbacks scheduled in week 1 are still pending (T15 delivers them), so
-    // the prototype cannot be closed from this report.
-    expect(current.pendingCallbacks.map((p) => p.callbackId)).toEqual([
-      "cb.rider_voice_followup",
-      "cb.public_rider_dispute",
+    // Fund policy in week 1 made the rider an ally: the follow-up opens in week 7 and the shared
+    // crisis in week 10, each taking one of that week's two slots.
+    expect(shown[7]).toEqual(["var.rider_voice_followup.engaged", "evt.test.week_beat"]);
+    expect(shown[10]).toEqual(["evt.proof.public_rider_dispute", "evt.test.week_beat"]);
+    expect(shown[6]).toEqual(["evt.test.week_beat", "evt.test.week_beat"]);
+    expect(current.pendingCallbacks).toEqual([]);
+    expect(current.resolvedCallbacks.map((r) => [r.callbackId, r.week])).toEqual([
+      ["cb.rider_voice_followup", 7],
+      ["cb.public_rider_dispute", 10],
     ]);
-    const commits = store.commits.length;
-    expect(await nextWeek(store, pack, current)).toMatchObject({
-      ok: false,
-      error: "pending-callbacks",
-    });
-    expect(store.commits).toHaveLength(commits);
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
-    // 1 start + 2 choices + settle of week 1, then (advance, 2 choices, settle) for weeks 2-12;
-    // the final advance out of week 12 is refused and writes nothing.
+    // 1 start + 2 choices + settle of week 1, then (advance, 2 choices, settle) for weeks 2-12.
     expect(stored.checkpoint.sequence).toBe(1 + 2 + 1 + 4 * 11);
-    expect(stored.checkpoint).toMatchObject({
-      phase: "report",
-      week: 12,
-      // Week 1 ended on 53 and each later week settles +6 once (62 riders, fund cost 71).
-      metrics: { cash: 53 + 11 * 6 },
-    });
+
+    const done = await nextWeek(store, pack, current);
+    expect(done.ok && done.state.kind).toBe("complete");
   });
 
   it("does not complete the prototype while required callbacks are pending: the report stays and nothing is saved", async () => {

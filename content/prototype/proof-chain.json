@@ -20,7 +20,9 @@
       "reportClosureNote": "Report-only closure: no decision, no event slot. Tracked separately; not counted in the event-node budget.",
       "chains": 1,
       "chainNote": "The fallback node is not attached to the chain. Count each event node once toward the 50-70 node / 8-10 chain prototype budget.",
-      "newNpcRoles": 2
+      "newNpcRoles": 2,
+      "routineBeats": 4,
+      "routineBeatNote": "T15 added four neutral, state-independent, repeatable placeholder events (evt.routine.*) so the shipped route has the 2 decisions a week it needs to be walked to the callbacks. They are not proof nodes: they read and write no chain state and are counted separately here until T21-T24 replace them with campaign content. With them the pack holds 9 event nodes (5 proof + 4 routine)."
     },
     "weeklyBudget": [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2]
   },
@@ -524,6 +526,314 @@
       "repeatable": false
     },
 
+    {
+      "id": "evt.routine.rainy_week",
+      "chain": null,
+      "role": "ordinary",
+      "title": "Tuần mưa kéo dài",
+      "stage": "street_startup",
+      "whyNow": "Dự báo cho thấy cả tuần sẽ mưa.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "eligibility": [],
+      "situation": "Quản lý vận hành báo tuần này mưa liên tục. Tài xế ngại ra đường, còn khách thì đặt nhiều hơn thường lệ.",
+      "options": [
+        {
+          "id": "opt.routine.rainy_week.rain_gear",
+          "text": "Phát áo mưa cho tài xế",
+          "hint": "Tốn một chút, tài xế đỡ ngại chạy.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -3
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "riderNetwork",
+              "delta": 2
+            }
+          ],
+          "feedback": "Tài xế nhận áo mưa. Đơn vẫn chạy đều dù trời xấu."
+        },
+        {
+          "id": "opt.routine.rainy_week.rain_fee",
+          "text": "Thu thêm phụ phí ngày mưa",
+          "hint": "Có thêm tiền, nhưng khách có thể khó chịu.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": 2
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "publicTrust",
+              "delta": -2
+            }
+          ],
+          "feedback": "Phụ phí được áp dụng. Vài khách phàn nàn trong ứng dụng."
+        },
+        {
+          "id": "opt.routine.rainy_week.leave_it",
+          "text": "Để tài xế tự quyết định có chạy không",
+          "hint": "Không tốn gì, nhưng tài xế thấy bị bỏ mặc.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": 1
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "riderNetwork",
+              "delta": -2
+            }
+          ],
+          "feedback": "Có tài xế nghỉ, có người chạy. Không ai hỏi thêm."
+        }
+      ],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 3,
+        "reason": "Three unconditional options: always 3 selectable."
+      },
+      "placement": "Placeholder routine beat for the playable proof route (T15). Neutral and state-independent: it reads and writes no chain state, so it can neither create nor remove an option of the proof chain. Replaced by authored campaign content from T21.",
+      "cooldownWeeks": null,
+      "repeatable": true
+    },
+    {
+      "id": "evt.routine.merchant_packaging",
+      "chain": null,
+      "role": "ordinary",
+      "title": "Hộp đựng bị móp",
+      "stage": "street_startup",
+      "whyNow": "Một cửa hàng quen vừa nhắn lại về đơn hôm qua.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "eligibility": [],
+      "situation": "Một cửa hàng quen nhắn rằng hộp đồ ăn đến tay khách bị móp. Họ không giận, chỉ muốn biết công ty định làm gì.",
+      "options": [
+        {
+          "id": "opt.routine.merchant_packaging.hard_boxes",
+          "text": "Tặng hộp cứng cho các cửa hàng quen",
+          "hint": "Tốn tiền, nhưng cửa hàng thấy được quan tâm.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -3
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "merchantNetwork",
+              "delta": 3
+            }
+          ],
+          "feedback": "Cửa hàng nhận hộp mới và nhắn lại cảm ơn."
+        },
+        {
+          "id": "opt.routine.merchant_packaging.remind_riders",
+          "text": "Nhắc tài xế xếp hàng cẩn thận hơn",
+          "hint": "Không tốn tiền, nhưng thêm việc cho tài xế.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "riderNetwork",
+              "delta": -1
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "merchantNetwork",
+              "delta": 1
+            }
+          ],
+          "feedback": "Tài xế nhận lời nhắc, có người càu nhàu."
+        },
+        {
+          "id": "opt.routine.merchant_packaging.shop_decides",
+          "text": "Để cửa hàng tự lo đóng gói",
+          "hint": "Giữ tiền mặt, cửa hàng có thể thất vọng.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": 2
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "merchantNetwork",
+              "delta": -2
+            }
+          ],
+          "feedback": "Cửa hàng không nói gì thêm, nhưng tin nhắn sau đó ngắn hẳn đi."
+        }
+      ],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 3,
+        "reason": "Three unconditional options: always 3 selectable."
+      },
+      "placement": "Placeholder routine beat for the playable proof route (T15). Neutral and state-independent: it reads and writes no chain state, so it can neither create nor remove an option of the proof chain. Replaced by authored campaign content from T21.",
+      "cooldownWeeks": null,
+      "repeatable": true
+    },
+    {
+      "id": "evt.routine.bike_checkup",
+      "chain": null,
+      "role": "ordinary",
+      "title": "Xe đạp cần bảo dưỡng",
+      "stage": "street_startup",
+      "whyNow": "Nhiều xe đạp cho thuê đã chạy khá lâu.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "eligibility": [],
+      "situation": "Tiệm sửa xe gần bãi đậu nói phanh và xích của nhiều chiếc xe công ty đã mòn. Chưa chiếc nào hỏng hẳn.",
+      "options": [
+        {
+          "id": "opt.routine.bike_checkup.full_service",
+          "text": "Hẹn tiệm bảo dưỡng cả loạt xe",
+          "hint": "Tốn nhiều, nhưng tài xế an tâm hơn.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -4
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "riderNetwork",
+              "delta": 2
+            }
+          ],
+          "feedback": "Cả loạt xe được kiểm tra. Tài xế nhận xe êm hơn rõ rệt."
+        },
+        {
+          "id": "opt.routine.bike_checkup.fix_broken",
+          "text": "Chỉ sửa chiếc nào hỏng hẳn",
+          "hint": "Rẻ hơn, nhưng dễ có sự cố nhỏ trên đường.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -1
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "publicTrust",
+              "delta": -1
+            }
+          ],
+          "feedback": "Vài chiếc được sửa. Hai chuyến bị trễ vì xe dở chừng."
+        }
+      ],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 2,
+        "reason": "Two unconditional options: always 2 selectable."
+      },
+      "placement": "Placeholder routine beat for the playable proof route (T15). Neutral and state-independent: it reads and writes no chain state, so it can neither create nor remove an option of the proof chain. Replaced by authored campaign content from T21.",
+      "cooldownWeeks": null,
+      "repeatable": true
+    },
+    {
+      "id": "evt.routine.customer_feedback",
+      "chain": null,
+      "role": "ordinary",
+      "title": "Tin nhắn xác nhận đến chậm",
+      "stage": "street_startup",
+      "whyNow": "Khách để lại nhiều nhận xét về tin nhắn xác nhận đơn.",
+      "speaker": "npc.ops_contact",
+      "category": "operational",
+      "eligibility": [],
+      "situation": "Vài khách phàn nàn rằng tin nhắn xác nhận đơn đến muộn nên họ không biết đơn đã được nhận chưa.",
+      "options": [
+        {
+          "id": "opt.routine.customer_feedback.evening_desk",
+          "text": "Cử một người trực tin nhắn buổi tối",
+          "hint": "Tốn công, nhưng khách thấy được trả lời.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -3
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "publicTrust",
+              "delta": 3
+            }
+          ],
+          "feedback": "Từ tối nay có người trả lời khách. Nhận xét dịu đi thấy rõ."
+        },
+        {
+          "id": "opt.routine.customer_feedback.auto_apology",
+          "text": "Gửi lời xin lỗi tự động kèm mã giảm nhỏ",
+          "hint": "Rẻ, nhưng chỉ làm dịu tạm thời.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": -1
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "publicTrust",
+              "delta": 1
+            }
+          ],
+          "feedback": "Khách nhận mã giảm giá. Vài người vẫn hỏi lại."
+        },
+        {
+          "id": "opt.routine.customer_feedback.note_it",
+          "text": "Ghi nhận và để sau",
+          "hint": "Không tốn gì, nhưng khách thấy bị bỏ qua.",
+          "requires": [],
+          "confirmation": "none",
+          "effects": [
+            {
+              "kind": "metricAdjust",
+              "metric": "cash",
+              "delta": 1
+            },
+            {
+              "kind": "metricAdjust",
+              "metric": "publicTrust",
+              "delta": -2
+            }
+          ],
+          "feedback": "Nhận xét tiếp tục đến. Chưa ai trả lời."
+        }
+      ],
+      "selectableCoverage": {
+        "min": 2,
+        "max": 3,
+        "reason": "Three unconditional options: always 3 selectable."
+      },
+      "placement": "Placeholder routine beat for the playable proof route (T15). Neutral and state-independent: it reads and writes no chain state, so it can neither create nor remove an option of the proof chain. Replaced by authored campaign content from T21.",
+      "cooldownWeeks": null,
+      "repeatable": true
+    },
     {
       "id": "evt.proof.fallback_shift_roster",
       "chain": null,

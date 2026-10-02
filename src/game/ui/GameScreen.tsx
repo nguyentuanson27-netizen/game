@@ -31,6 +31,8 @@ const NEXT_WEEK_REFUSALS: Record<AdvanceFailure, string> = {
     "Nội dung của tuần tiếp theo không hợp lệ nên chưa thể sang tuần mới. Bản nguyên mẫu dừng ở báo cáo này.",
   "pending-callbacks":
     "Vẫn còn hậu quả cần xử lý từ các quyết định trước, nên chưa thể kết thúc bản nguyên mẫu.",
+  "overdue-callbacks":
+    "Có một hậu quả từ quyết định trước đã quá hạn mà chưa được xử lý, nên chưa thể sang tuần mới. Bản nguyên mẫu dừng ở báo cáo này.",
 };
 
 type Screen = { kind: "loading" } | SessionState;

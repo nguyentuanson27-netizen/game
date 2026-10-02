@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ContentError, loadContentPack } from "../../../src/game/content/loader.ts";
 import { loadProofPack } from "../../../src/game/content/proof.ts";
 import { startCampaign } from "../../../src/game/domain/campaign.ts";
-import { proofPack, type Raw, rawChain, rawLoop } from "../helpers.ts";
+import { proofPack, type Raw, rawChain, rawLoop, unauthoredPack } from "../helpers.ts";
 
 function rejected(mutate: (chain: Raw, loop: Raw) => void) {
   const chain = rawChain();
@@ -27,6 +27,10 @@ describe("proof content boundary", () => {
       "evt.proof.fallback_shift_roster",
       "evt.proof.public_rider_dispute",
       "evt.proof.rider_claim",
+      "evt.routine.bike_checkup",
+      "evt.routine.customer_feedback",
+      "evt.routine.merchant_packaging",
+      "evt.routine.rainy_week",
       "var.rider_voice_followup.aggrieved",
       "var.rider_voice_followup.engaged",
     ]);
@@ -186,12 +190,13 @@ describe("proof content boundary", () => {
   });
 
   it("still loads and starts the two-slot proof pack, and keeps incomplete later weeks loadable", () => {
-    const pack = proofPack();
+    const pack = unauthoredPack();
     expect(pack.plan[0]).toHaveLength(2);
     expect(startCampaign(pack)).toMatchObject({ week: 1, phase: "event" });
     // Later weeks may stay unfinished (Next Week refuses them); only week 1 must be playable.
     expect(pack.plan[1]).toHaveLength(0);
-    expect(() => loadContentPack(rawChain(), rawLoop())).not.toThrow();
+    // The shipped route authors two decisions in every week.
+    expect(proofPack().plan.map((slots) => slots.length)).toEqual(Array(12).fill(2));
   });
 
   it("rejects content that is not an object at all", () => {

@@ -15,7 +15,7 @@ import { initialCampaignState } from "./worldState.ts";
  */
 export function startCampaign(pack: ContentPack): EventCheckpointDraft {
   const state = initialCampaignState(pack);
-  const next = nextStep(pack, 1, 0, state);
+  const next = nextStep(pack, 1, [], state);
   if (!next.ok) throw new Error(`Cannot start the campaign: ${next.message}`);
   if (next.phase !== "event") throw new Error("The proof loop has no event for week 1");
   return {
@@ -57,6 +57,7 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
   for (const id of Object.keys(checkpoint.recurringCosts)) {
     if (!pack.policyIds.has(id)) issues.push(`unknown recurring cost source ${id}`);
   }
+  const seenCallbacks = new Set<string>();
   for (const pending of checkpoint.pendingCallbacks) {
     const callback = pack.callbacks.get(pending.callbackId);
     if (!callback) {
@@ -66,6 +67,36 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
     } else if (!callback.sourceDecision.options.includes(pending.sourceOptionId)) {
       issues.push(`pending callback ${pending.callbackId} has a non-source option`);
     }
+    if (pending.scheduledWeek > checkpoint.week) {
+      issues.push(`pending callback ${pending.callbackId} was scheduled in a later week`);
+    }
+    if (seenCallbacks.has(pending.callbackId)) {
+      issues.push(`callback ${pending.callbackId} is pending more than once`);
+    }
+    seenCallbacks.add(pending.callbackId);
+  }
+  for (const resolved of checkpoint.resolvedCallbacks) {
+    const callback = pack.callbacks.get(resolved.callbackId);
+    if (!callback) {
+      issues.push(`unknown resolved callback ${resolved.callbackId}`);
+    } else if (!callback.variants.some((v) => v.event === resolved.resolvedBy)) {
+      issues.push(
+        `callback ${resolved.callbackId} was resolved by an event that is not its variant`,
+      );
+    } else if (!checkpoint.resolvedEventIds.includes(resolved.resolvedBy)) {
+      issues.push(
+        `callback ${resolved.callbackId} is resolved by an event that was never resolved`,
+      );
+    }
+    if (resolved.week > checkpoint.week) {
+      issues.push(`callback ${resolved.callbackId} was resolved in a later week`);
+    }
+    if (seenCallbacks.has(resolved.callbackId)) {
+      issues.push(
+        `callback ${resolved.callbackId} is both pending and resolved, or resolved twice`,
+      );
+    }
+    seenCallbacks.add(resolved.callbackId);
   }
   checkpoint.weekDecisions.forEach((decision, index) => {
     const event = pack.events.get(decision.eventId);
@@ -110,6 +141,14 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
 
   if (checkpoint.weekDecisions.length >= slotCount) {
     issues.push("event phase after every decision slot of the week was resolved");
+  }
+  // The active event must be exactly what the selection rules pick from the committed state: a
+  // save that skips a due callback or swaps the event is refused, never repaired.
+  const expected = nextStep(pack, checkpoint.week, checkpoint.weekDecisions, checkpoint);
+  if (!expected.ok || expected.phase !== "event") {
+    issues.push("the committed state selects no event for this slot");
+  } else if (expected.activeEvent.eventId !== checkpoint.activeEvent.eventId) {
+    issues.push("active event differs from the one the committed state selects");
   }
   const result = presentEvent(pack, checkpoint.activeEvent.eventId, checkpoint);
   if (!result.ok) {

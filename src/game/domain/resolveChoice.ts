@@ -41,7 +41,9 @@ function applyEffect(
     case "npcStatusSet":
       return { ...state, npcStatus: { ...state.npcStatus, [effect.npc]: effect.status } };
     case "callbackSchedule":
-      return state.pendingCallbacks.some((p) => p.callbackId === effect.callback)
+      // A callback is scheduled once: not while it is pending, and never again once resolved.
+      return state.pendingCallbacks.some((p) => p.callbackId === effect.callback) ||
+        state.resolvedCallbacks.some((r) => r.callbackId === effect.callback)
         ? state
         : {
             ...state,
@@ -56,6 +58,32 @@ function applyEffect(
             ],
           };
   }
+}
+
+/**
+ * Choosing an option of an event a callback delivered is that callback's resolution: it leaves
+ * the pending list and is recorded as resolved in the same checkpoint, so it can happen once.
+ */
+function resolveDeliveredCallback(
+  pack: ContentPack,
+  state: CampaignState,
+  source: { week: number; eventId: string },
+): CampaignState {
+  const callbackId = pack.events.get(source.eventId)?.deliveredBy;
+  if (
+    callbackId === undefined ||
+    !state.pendingCallbacks.some((p) => p.callbackId === callbackId)
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    pendingCallbacks: state.pendingCallbacks.filter((p) => p.callbackId !== callbackId),
+    resolvedCallbacks: [
+      ...state.resolvedCallbacks,
+      { callbackId, week: source.week, resolvedBy: source.eventId },
+    ],
+  };
 }
 
 /**
@@ -87,14 +115,19 @@ export function resolveChoice(
     demandModifiers: checkpoint.demandModifiers,
     recurringCosts: checkpoint.recurringCosts,
     pendingCallbacks: checkpoint.pendingCallbacks,
+    resolvedCallbacks: checkpoint.resolvedCallbacks,
   };
-  const state = option.effects.reduce((s, e) => applyEffect(s, e, source), start);
+  const state = resolveDeliveredCallback(
+    pack,
+    option.effects.reduce((s, e) => applyEffect(s, e, source), start),
+    source,
+  );
 
   const weekDecisions = [
     ...checkpoint.weekDecisions,
     { slot: checkpoint.weekDecisions.length + 1, eventId, optionId },
   ];
-  const next = nextStep(pack, checkpoint.week, weekDecisions.length, state);
+  const next = nextStep(pack, checkpoint.week, weekDecisions, state);
   if (!next.ok) return { ok: false, reason: "no-next-event", message: next.message };
 
   const base = {

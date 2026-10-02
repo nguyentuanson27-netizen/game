@@ -39,8 +39,9 @@ const common = {
   /** Weekly cost each policy adds (D4 `recurringPolicyCost` is their sum). Read by settlement. */
   recurringCosts: z.record(idSchema, z.number().int()).default({}),
   /**
-   * Required callbacks scheduled by committed choices. Metadata only: delivery, windows and
-   * ordering come from content and are the scheduler's concern (T15).
+   * Required callbacks scheduled by committed choices and not yet resolved. Only identity and
+   * origin are stored: the window, deadline and delivery order always come from authored content,
+   * so a pending callback keeps its original deadline for as long as it stays here.
    */
   pendingCallbacks: z
     .array(
@@ -49,6 +50,19 @@ const common = {
         scheduledWeek: z.number().int().min(1).max(12),
         sourceEventId: idSchema,
         sourceOptionId: idSchema,
+      }),
+    )
+    .default([]),
+  /**
+   * Callbacks whose resolution is committed, so each one is resolved exactly once and is never
+   * scheduled again. `resolvedBy` is the delivered event (or, later, the report closure).
+   */
+  resolvedCallbacks: z
+    .array(
+      z.strictObject({
+        callbackId: idSchema,
+        week: z.number().int().min(1).max(12),
+        resolvedBy: idSchema,
       }),
     )
     .default([]),

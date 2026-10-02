@@ -8,8 +8,10 @@ import {
   corruptSlot,
   firstDraft,
   nextDraft,
+  PROBE_HISTORY_A,
   packFrom,
   playablePack,
+  probeChainPack,
   proofPack,
   replayToSettlement,
   resolvedSettlementAt,
@@ -17,6 +19,7 @@ import {
   spyOn,
   testEvent,
   testOption,
+  unauthoredPack,
   uniqueDbName,
   weekTwelvePack,
 } from "../helpers.ts";
@@ -451,23 +454,9 @@ describe("weekly report and Next Week", () => {
   });
 
   it("prints the authored report lines of the week's decisions", async () => {
-    const pack = packFrom((_, loop) => {
-      loop.weeks[2].slots = [
-        "evt.proof.rider_claim",
-        "var.rider_voice_followup.engaged",
-        "evt.proof.public_rider_dispute",
-      ];
-    });
+    const pack = probeChainPack();
     const { inner, store } = setup();
-    await inner.commit(
-      seedDraft(
-        replayToSettlement(pack, 3, [
-          "opt.rider_claim.fund_policy",
-          "opt.rider_voice.engaged.keep_informal",
-          "opt.crisis.joint_statement",
-        ]),
-      ),
-    );
+    await inner.commit(seedDraft(replayToSettlement(pack, 3, PROBE_HISTORY_A)));
     render(<App store={store} loadPack={() => pack} />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
@@ -494,9 +483,9 @@ describe("weekly report and Next Week", () => {
     expect(await inner.load()).toEqual(saved);
   });
 
-  it("refuses Next Week into a week the shipped proof loop has not authored, keeping the report", async () => {
+  it("refuses Next Week into a week the content has not authored, keeping the report", async () => {
     const { inner, store } = setup();
-    render(<App store={store} loadPack={proofPack} />);
+    render(<App store={store} loadPack={unauthoredPack} />);
     await screen.findByRole("group", { name: "Phương án" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
     await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });

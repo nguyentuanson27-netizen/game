@@ -12,6 +12,7 @@ export interface StoredCheckpoint {
   npcStatus: Record<string, string>;
   memories: string[];
   pendingCallbacks: { callbackId: string }[];
+  resolvedCallbacks?: { callbackId: string; week: number; resolvedBy: string }[];
   weekDecisions: { slot: number; optionId: string }[];
 }
 
@@ -46,8 +47,8 @@ export const readCurrent = (page: Page) => readSlot(page, "current");
 /**
  * Seed the week-12 report from the stored week-1 report (same company state, so its settlement
  * result stays exactly what D4 produces), as a normal checkpoint write that rotates the old
- * current into `previous`. The shipped proof loop authors no decisions after week 1, so a real
- * run cannot reach week 12; this exercises the `report -> Prototype Complete` boundary only.
+ * current into `previous`. It skips the eleven weeks in between, so it exercises the
+ * `report -> Prototype Complete` boundary only; the full route is played in route.spec.ts.
  * Reload the page afterwards so the app resumes from it.
  */
 export function seedWeekTwelveReport(
@@ -78,7 +79,19 @@ export function seedWeekTwelveReport(
                 sequence: current.sequence + 1,
                 parentSequence: current.sequence,
                 week: 12,
-                weekDecisions: [],
+                // Week 12 is authored with two decisions; a report holds all of them.
+                weekDecisions: [
+                  {
+                    slot: 1,
+                    eventId: "evt.routine.rainy_week",
+                    optionId: "opt.routine.rainy_week.rain_gear",
+                  },
+                  {
+                    slot: 2,
+                    eventId: "evt.routine.merchant_packaging",
+                    optionId: "opt.routine.merchant_packaging.hard_boxes",
+                  },
+                ],
                 // Closing the prototype needs every required callback resolved; seed that state
                 // unless a test wants the unresolved one.
                 pendingCallbacks: keep ? current.pendingCallbacks : [],

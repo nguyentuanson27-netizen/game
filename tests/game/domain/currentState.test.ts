@@ -5,12 +5,20 @@ import { initialCampaignState } from "../../../src/game/domain/worldState.ts";
 import type { EventCheckpoint } from "../../../src/game/persistence/checkpoint.ts";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
 import { choose } from "../../../src/game/ui/session.ts";
-import { packFrom, startAt, testEvent, testOption, uniqueDbName } from "../helpers.ts";
+import {
+  addProbeCopy,
+  packFrom,
+  startAt,
+  testEvent,
+  testOption,
+  uniqueDbName,
+} from "../helpers.ts";
 
-const CRISIS = "evt.proof.public_rider_dispute";
+const CRISIS = "evt.proof.public_rider_dispute.probe";
 
 // Week 3 (budget 3): setup -> a test-only beat that can cost the player the rider's support ->
-// the shared crisis. The crisis is placed here only to read state; delivery by callback is T15.
+// a plain copy of the shared crisis. The copy is placed here only to read same-week state; the real
+// crisis is delivered by its callback (see callbacks.test.ts).
 const estrange = testEvent("evt.test.estrange_rider", [
   testOption("opt.test.estrange_rider.cut_ties", [
     { kind: "npcStatusSet", npc: "npc.recurring_rider", status: "resentful" },
@@ -19,6 +27,7 @@ const estrange = testEvent("evt.test.estrange_rider", [
 ]);
 const pack = packFrom((chain, loop) => {
   chain.events.push(estrange);
+  addProbeCopy(chain, "evt.proof.public_rider_dispute");
   loop.weeks[2].slots = ["evt.proof.rider_claim", "evt.test.estrange_rider", CRISIS];
 });
 
@@ -45,14 +54,14 @@ const KEEP = "opt.test.estrange_rider.keep_close";
 describe("the next event reads the state the previous choice just committed", () => {
   it("unlocks options earlier choices made valid", () => {
     expect(play([FUND, KEEP]).activeOptionIds).toEqual([
-      "opt.crisis.hold_and_review",
-      "opt.crisis.cite_policy",
-      "opt.crisis.joint_statement",
+      "opt.crisis.hold_and_review.probe",
+      "opt.crisis.cite_policy.probe",
+      "opt.crisis.joint_statement.probe",
     ]);
     expect(play([DECLINE, KEEP]).activeOptionIds).toEqual([
-      "opt.crisis.hold_and_review",
-      "opt.crisis.announce_new_policy",
-      "opt.crisis.quiet_settlement",
+      "opt.crisis.hold_and_review.probe",
+      "opt.crisis.announce_new_policy.probe",
+      "opt.crisis.quiet_settlement.probe",
     ]);
   });
 
@@ -60,12 +69,15 @@ describe("the next event reads the state the previous choice just committed", ()
     const kept = play([FUND, KEEP]);
     const lost = play([FUND, CUT]);
 
-    expect(kept.activeOptionIds).toContain("opt.crisis.joint_statement");
+    expect(kept.activeOptionIds).toContain("opt.crisis.joint_statement.probe");
     expect(lost.checkpoint.npcStatus["npc.recurring_rider"]).toBe("resentful");
     // The fund still exists, so only the relationship explains the difference.
     expect(lost.checkpoint.policies).toContain("policy.rider_support_fund");
-    expect(lost.activeOptionIds).not.toContain("opt.crisis.joint_statement");
-    expect(lost.activeOptionIds).toEqual(["opt.crisis.hold_and_review", "opt.crisis.cite_policy"]);
+    expect(lost.activeOptionIds).not.toContain("opt.crisis.joint_statement.probe");
+    expect(lost.activeOptionIds).toEqual([
+      "opt.crisis.hold_and_review.probe",
+      "opt.crisis.cite_policy.probe",
+    ]);
   });
 
   it("never shows a stale start-of-week option set", () => {
@@ -75,9 +87,9 @@ describe("the next event reads the state the previous choice just committed", ()
     const { activeOptionIds } = play([FUND, CUT]);
 
     // Against the week-start state the crisis would offer `announce_new_policy`/`quiet_settlement`.
-    expect(staleIds).toContain("opt.crisis.announce_new_policy");
-    expect(activeOptionIds).not.toContain("opt.crisis.announce_new_policy");
-    expect(activeOptionIds).not.toContain("opt.crisis.quiet_settlement");
+    expect(staleIds).toContain("opt.crisis.announce_new_policy.probe");
+    expect(activeOptionIds).not.toContain("opt.crisis.announce_new_policy.probe");
+    expect(activeOptionIds).not.toContain("opt.crisis.quiet_settlement.probe");
   });
 
   it("keeps 2-4 selectable options in every path through the week", () => {
@@ -111,8 +123,8 @@ describe("the next event reads the state the previous choice just committed", ()
         reevaluated.presented.options.map((o) => o.id),
       );
       expect(loaded.checkpoint.activeEvent.optionIds).toEqual([
-        "opt.crisis.hold_and_review",
-        "opt.crisis.cite_policy",
+        "opt.crisis.hold_and_review.probe",
+        "opt.crisis.cite_policy.probe",
       ]);
     } finally {
       await store.close();
