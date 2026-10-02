@@ -52,6 +52,24 @@ describe("Next Week into a week the content has not authored", () => {
   });
 });
 
+describe("Next Week into a week with too few authored decisions", () => {
+  it("is refused for exactly one authored slot: a week needs 2-4 decisions", () => {
+    const pack = playablePack([2], 1);
+    const report = reportAfter(pack);
+
+    const result = advanceWeek(pack, report);
+
+    expect(result).toMatchObject({ ok: false, reason: "no-content" });
+    expect(!result.ok && result.message).toContain("week 2");
+  });
+
+  it("is accepted from two authored slots", () => {
+    const pack = playablePack([2], 2);
+
+    expect(advanceWeek(pack, reportAfter(pack))).toMatchObject({ ok: true });
+  });
+});
+
 describe("Next Week (mechanism, on test-only content with a decision in week 2)", () => {
   it("advances exactly one week and resets only the week-local state", () => {
     const report = reportAfter();
@@ -113,7 +131,7 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
     ]);
     const pack = packFrom((chain, loop) => {
       chain.events.push(gated);
-      loop.weeks[1].slots = ["evt.test.week_two_beat"];
+      loop.weeks[1].slots = ["evt.test.week_two_beat", "evt.test.week_two_beat"];
     });
 
     const withFund = advanced(reportAfter(pack), pack);

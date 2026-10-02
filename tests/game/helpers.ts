@@ -206,10 +206,11 @@ export function weekOneReport(pack: ContentPack = proofPack()): ReportCheckpoint
 }
 
 /**
- * The proof pack plus one test-only, repeatable beat in each of `weeks`, so the Next Week
- * mechanism can be exercised. The shipped proof loop authors no decisions after week 1.
+ * The proof pack plus a test-only, repeatable beat used `slotsPerWeek` times in each of `weeks`
+ * (default 2: the contract is 2-4 decisions a week), so the Next Week mechanism can be exercised.
+ * The shipped proof loop authors no decisions after week 1.
  */
-export function playablePack(weeks: number[] = [2]): ContentPack {
+export function playablePack(weeks: number[] = [2], slotsPerWeek = 2): ContentPack {
   return packFrom((chain, loop) => {
     chain.events.push(
       testEvent(
@@ -218,6 +219,8 @@ export function playablePack(weeks: number[] = [2]): ContentPack {
         { repeatable: true },
       ),
     );
-    for (const week of weeks) loop.weeks[week - 1].slots = ["evt.test.week_beat"];
+    for (const week of weeks) {
+      loop.weeks[week - 1].slots = Array.from({ length: slotsPerWeek }, () => "evt.test.week_beat");
+    }
   });
 }

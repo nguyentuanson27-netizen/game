@@ -61,6 +61,22 @@ describe("Next Week with the shipped proof pack", () => {
   });
 });
 
+describe("Next Week into a week with a single authored decision", () => {
+  it("is refused and writes no checkpoint: a week needs 2-4 decisions", async () => {
+    const pack = playablePack([2], 1);
+    const { store, inner, report } = await atReport(pack);
+    const before = await inner.load();
+    const commits = store.commits.length;
+
+    const refused = await nextWeek(store, pack, report);
+
+    expect(refused).toMatchObject({ ok: false, error: "no-content" });
+    expect(store.commits).toHaveLength(commits);
+    expect(await inner.load()).toEqual(before);
+    expect(before).toEqual({ status: "ready", checkpoint: report });
+  });
+});
+
 describe("Next Week through the checkpoint store", () => {
   it("advances one week in one commit and shows it only after the commit", async () => {
     const { store, inner, pack, report } = await atReport();
@@ -140,7 +156,7 @@ describe("Next Week through the checkpoint store", () => {
     expect(reopenedStore.commits).toHaveLength(0);
   });
 
-  it("walks weeks 1-12 on test-only content with a decision every week: none skipped, none settled twice, and week 12 will not close while callbacks are pending", async () => {
+  it("walks weeks 1-12 on test-only content with two decisions every week: none skipped, none settled twice, and week 12 will not close while callbacks are pending", async () => {
     const pack = playablePack([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     const { store, inner, report } = await atReport(pack);
     const weeks: number[] = [report.week];
@@ -149,10 +165,18 @@ describe("Next Week through the checkpoint store", () => {
     while (current.week < 12) {
       const advanced = await nextWeek(store, pack, current);
       if (!advanced.ok || advanced.state.kind !== "event") throw new Error("advance failed");
-      const decided = await choose(
+      // Two authored decisions a week: the first leads to the second, the second to settlement.
+      const first = await choose(
         store,
         pack,
         advanced.state.checkpoint,
+        "opt.test.week_beat.steady",
+      );
+      if (!first.ok || first.state.kind !== "event") throw new Error("first choice failed");
+      const decided = await choose(
+        store,
+        pack,
+        first.state.checkpoint,
         "opt.test.week_beat.steady",
       );
       if (!decided.ok || decided.state.kind !== "settlement") throw new Error("choice failed");
@@ -177,9 +201,9 @@ describe("Next Week through the checkpoint store", () => {
     expect(store.commits).toHaveLength(commits);
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
-    // 1 start + 2 choices + settle/advance of week 1 + (advance, choice, settle) for weeks 2-12,
-    // minus the refused final advance.
-    expect(stored.checkpoint.sequence).toBe(1 + 2 + 2 + 3 * 11 - 1);
+    // 1 start + 2 choices + settle of week 1, then (advance, 2 choices, settle) for weeks 2-12;
+    // the final advance out of week 12 is refused and writes nothing.
+    expect(stored.checkpoint.sequence).toBe(1 + 2 + 1 + 4 * 11);
     expect(stored.checkpoint).toMatchObject({
       phase: "report",
       week: 12,

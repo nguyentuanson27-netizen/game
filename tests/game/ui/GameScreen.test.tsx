@@ -423,7 +423,7 @@ describe("settling the week", () => {
 });
 
 describe("weekly report and Next Week", () => {
-  // Week 2 needs a decision to advance into; the shipped proof loop authors none yet.
+  // Week 2 needs two decisions to advance into; the shipped proof loop authors none yet.
   const playable = () => playablePack();
 
   async function reachReport(store: ReturnType<typeof setup>["store"]) {
@@ -531,7 +531,7 @@ describe("weekly report and Next Week", () => {
     );
     const pack = packFrom((chain, loop) => {
       chain.events.push(needsFund);
-      loop.weeks[1].slots = ["evt.test.needs_fund"];
+      loop.weeks[1].slots = ["evt.test.needs_fund", "evt.test.needs_fund"];
     });
     const { inner, store } = setup();
     render(<App store={store} loadPack={() => pack} />);
@@ -568,7 +568,7 @@ describe("weekly report and Next Week", () => {
 
     await act(async () => release());
 
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     expect(store.commits).toHaveLength(5);
     const stored = await inner.load();
     if (stored.status !== "ready") throw new Error("expected ready");
@@ -587,14 +587,14 @@ describe("weekly report and Next Week", () => {
       "Không lưu được việc sang tuần mới",
     );
     expect(screen.getByRole("heading", { name: "Báo cáo tuần 1" })).toBeTruthy();
-    expect(screen.queryByText("Tuần 2 · Quyết định 1/1")).toBeNull();
+    expect(screen.queryByText("Tuần 2 · Quyết định 1/2")).toBeNull();
     expect((await inner.load()) as unknown).toMatchObject({
       checkpoint: { week: 1, phase: "report" },
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Tuần tiếp theo" }));
 
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     const stored = await inner.load();
     expect(stored.status === "ready" && stored.checkpoint.week).toBe(2);
   });
@@ -602,12 +602,12 @@ describe("weekly report and Next Week", () => {
   it("reopens in week 2 after a successful advance", async () => {
     const { store } = setup();
     fireEvent.click(await reachReport(store));
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     cleanup();
 
     render(<App store={store} loadPack={playable} />);
 
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     expect(store.commits).toHaveLength(5);
   });
 

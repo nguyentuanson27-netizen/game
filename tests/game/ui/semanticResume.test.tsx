@@ -11,6 +11,7 @@ import {
   proofPack,
   replayToSettlement,
   seedDraft,
+  settlementAt,
   startAt,
   uniqueDbName,
   weekOneReport,
@@ -108,6 +109,31 @@ describe("a save whose pending callback provenance is wrong is not resumed", () 
         }),
       ],
     });
+  });
+});
+
+describe("a Prototype Complete save with required callbacks pending is not resumed", () => {
+  const complete = (pendingCallbacks: Checkpoint["pendingCallbacks"]): Checkpoint => ({
+    ...settlementAt(pack, 12),
+    phase: "complete",
+    pendingCallbacks,
+  });
+
+  it("blocks a structurally valid complete checkpoint that still has a pending callback", async () => {
+    await expectBlockedAndUntouched(
+      complete([
+        {
+          callbackId: "cb.public_rider_dispute",
+          scheduledWeek: 1,
+          sourceEventId: "evt.proof.rider_claim",
+          sourceOptionId: "opt.rider_claim.fund_policy",
+        },
+      ]),
+    );
+  });
+
+  it("still resumes a complete checkpoint with nothing pending", async () => {
+    await expectResumes(complete([]));
   });
 });
 

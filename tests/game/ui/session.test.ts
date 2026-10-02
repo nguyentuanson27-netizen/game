@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
 import { bootstrap, choose, recover, resetCampaign } from "../../../src/game/ui/session.ts";
 import { firstDraft, nextDraft, proofPack, spyOn, uniqueDbName } from "../helpers.ts";
@@ -31,6 +31,8 @@ describe("starting and resuming the first event", () => {
       presented = state.kind === "event";
       return state;
     });
+    // Wait for the commit to be requested (not a fixed sleep: a loaded machine can be slower).
+    await vi.waitFor(() => expect(store.commits).toHaveLength(1));
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     // The commit has been requested but has not completed: nothing may be presented yet.

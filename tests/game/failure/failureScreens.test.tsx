@@ -42,7 +42,7 @@ const noMoreProgress = {
   settle: () => screen.queryByRole("button", { name: "Tổng kết tuần" }),
   report: () => screen.queryByRole("heading", { name: "Báo cáo tuần 1" }),
   nextWeek: () => screen.queryByRole("button", { name: "Tuần tiếp theo" }),
-  week2: () => screen.queryByText("Tuần 2 · Quyết định 1/1"),
+  week2: () => screen.queryByText("Tuần 2 · Quyết định 1/2"),
 };
 
 describe("a failed save never lets the player move on (AC-05)", () => {
@@ -110,7 +110,7 @@ describe("a failed save never lets the player move on (AC-05)", () => {
     expect(await rawSlots(ctx.name)).toEqual(before);
 
     fireEvent.click(screen.getByRole("button", { name: "Tuần tiếp theo" }));
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     const after = await rawSlots(ctx.name);
     expect(after.current).toMatchObject({ week: 2, parentSequence: before.current.sequence });
     expect(after.previous).toEqual(before.current);
@@ -169,7 +169,7 @@ describe("a committed write whose acknowledgement was lost (AC-05)", () => {
     await screen.findByText(/đã thay đổi ở tab/);
     fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
 
-    await screen.findByText("Tuần 2 · Quyết định 1/1");
+    await screen.findByText("Tuần 2 · Quyết định 1/2");
     const advanced = await rawSlots(ctx.name);
     expect(advanced.current).toMatchObject({ week: 2, phase: "event", metrics: { cash: 53 } });
     expect(advanced.current.sequence).toBe(settled.current.sequence + 1);

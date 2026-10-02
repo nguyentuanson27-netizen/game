@@ -79,6 +79,10 @@ export function resumeCheckpoint(pack: ContentPack, checkpoint: Checkpoint): Res
   if (checkpoint.phase !== "event") {
     if (checkpoint.phase === "complete") {
       if (checkpoint.week !== 12) issues.push("Prototype Complete before week 12");
+      // The ending needs every required callback resolved; a save that skips that is not resumed.
+      if (checkpoint.pendingCallbacks.length > 0) {
+        issues.push("Prototype Complete with required callbacks still pending");
+      }
       return issues.length > 0 ? { ok: false, issues } : { ok: true, presented: null };
     }
     if (checkpoint.weekDecisions.length !== slotCount) {

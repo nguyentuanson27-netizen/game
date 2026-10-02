@@ -3,6 +3,7 @@ import type { CheckpointDraft, ReportCheckpoint } from "../persistence/checkpoin
 import { nextStep } from "./nextStep.ts";
 
 export const FINAL_WEEK = 12;
+const MIN_WEEKLY_DECISIONS = 2;
 
 /**
  * Why `Next Week` was refused. These are different states and are never merged:
@@ -48,17 +49,22 @@ export function advanceWeek(pack: ContentPack, checkpoint: ReportCheckpoint): Ad
   }
 
   const week = (checkpoint.week + 1) as ReportCheckpoint["week"];
-  // The new week's first slot is evaluated against the state settlement just committed.
-  const next = nextStep(pack, week, 0, checkpoint);
-  if (!next.ok) return { ok: false, reason: "invalid-content", message: next.message };
-  // A week with no authored decisions is unfinished content, not a valid zero-decision week:
-  // refuse instead of settling it (and eventually "completing" the prototype) with nothing played.
-  if (next.phase !== "event") {
+  // The contract is 2-4 decisions a week (SPEC section 5). Incomplete content may still load, but
+  // a week authored with fewer than two decisions is unfinished: refuse instead of playing it.
+  const authored = pack.plan[week - 1]?.length ?? 0;
+  if (authored < MIN_WEEKLY_DECISIONS) {
     return {
       ok: false,
       reason: "no-content",
-      message: `week ${week} has no authored decisions yet`,
+      message: `week ${week} has ${authored} authored decision(s); at least ${MIN_WEEKLY_DECISIONS} are required`,
     };
+  }
+  // The new week's first slot is evaluated against the state settlement just committed.
+  const next = nextStep(pack, week, 0, checkpoint);
+  if (!next.ok) return { ok: false, reason: "invalid-content", message: next.message };
+  // With at least two authored slots the first one is always an event; this narrows the type.
+  if (next.phase !== "event") {
+    return { ok: false, reason: "no-content", message: `week ${week} has no playable slot` };
   }
   return { ok: true, draft: { ...base, week, phase: "event", activeEvent: next.activeEvent } };
 }
