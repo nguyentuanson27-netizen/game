@@ -39,7 +39,7 @@ const must = <T extends { ok: boolean; message?: string }>(r: T, what: string): 
 
 async function playWeekOne(ctx: Ctx) {
   await bootstrap(ctx.store, ctx.pack);
-  for (const optionId of ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"]) {
+  for (const optionId of ["opt.rider_claim.fund_policy", "opt.routine.rainy_week.rain_gear"]) {
     const cp = await stored(ctx);
     if (cp.phase !== "event") throw new Error("expected an event");
     must(await choose(ctx.store, ctx.pack, cp, optionId), "choice");
@@ -88,7 +88,7 @@ export const BOUNDARIES: Boundary[] = [
     act: async (ctx, from) => {
       const cp = from ?? (await stored(ctx));
       if (cp.phase !== "event") throw new Error("expected an event");
-      return choose(ctx.store, ctx.pack, cp, "opt.fallback.leave_roster_as_is");
+      return choose(ctx.store, ctx.pack, cp, "opt.routine.rainy_week.rain_fee");
     },
   },
   {

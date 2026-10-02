@@ -13,7 +13,11 @@ function resolve(checkpoint: EventCheckpoint, optionId: string) {
 }
 
 const SOURCE = { eventId: "evt.proof.rider_claim" };
-const FALLBACK_OPTIONS = ["opt.fallback.arrange_extra_shift", "opt.fallback.leave_roster_as_is"];
+const WEEK_ONE_BEAT_OPTIONS = [
+  "opt.routine.rainy_week.rain_gear",
+  "opt.routine.rainy_week.rain_fee",
+  "opt.routine.rainy_week.leave_it",
+];
 
 describe("resolving one choice into one complete checkpoint", () => {
   it("fund_policy commits metrics, policy, recurring cost, relationship, precedent and callbacks together", () => {
@@ -51,8 +55,8 @@ describe("resolving one choice into one complete checkpoint", () => {
 
     expect(draft.phase).toBe("event");
     expect(draft.activeEvent).toEqual({
-      eventId: "evt.proof.fallback_shift_roster",
-      optionIds: FALLBACK_OPTIONS,
+      eventId: "evt.routine.rainy_week",
+      optionIds: WEEK_ONE_BEAT_OPTIONS,
     });
   });
 
@@ -86,7 +90,7 @@ describe("resolving one choice into one complete checkpoint", () => {
     const afterFirst = { ...resolve(initial(), "opt.rider_claim.decline"), sequence: 2 };
     if (afterFirst.phase !== "event") throw new Error("expected event phase");
 
-    const draft = resolve(afterFirst, "opt.fallback.leave_roster_as_is");
+    const draft = resolve(afterFirst, "opt.routine.rainy_week.rain_fee");
 
     expect(draft).toMatchObject({
       phase: "settlement",
@@ -95,7 +99,7 @@ describe("resolving one choice into one complete checkpoint", () => {
       metrics: { cash: 52, publicTrust: 48, riderNetwork: 40 },
       weekDecisions: [
         { slot: 1, optionId: "opt.rider_claim.decline" },
-        { slot: 2, eventId: "evt.proof.fallback_shift_roster" },
+        { slot: 2, eventId: "evt.routine.rainy_week" },
       ],
     });
   });
@@ -140,7 +144,7 @@ describe("resolving one choice into one complete checkpoint", () => {
   });
 
   it("rejects an option that was not selectable when the event was saved", () => {
-    expect(resolveChoice(pack, initial(), "opt.fallback.arrange_extra_shift")).toMatchObject({
+    expect(resolveChoice(pack, initial(), "opt.routine.rainy_week.rain_gear")).toMatchObject({
       ok: false,
       reason: "not-selectable",
     });

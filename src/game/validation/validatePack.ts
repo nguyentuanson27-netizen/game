@@ -57,6 +57,17 @@ function staticIssues(pack: ContentPack): ContentIssue[] {
     }
   });
 
+  for (const id of planned.keys()) {
+    // A fallback is a substitution for a gap, never an authored ordinary slot: planned directly it
+    // would be spent (it is non-repeatable) before a real gap needs it.
+    if (pack.events.get(id)?.role === "fallback") {
+      issues.push({
+        code: "planned-fallback",
+        message: `${id} is a fallback and must not be planned directly`,
+      });
+    }
+  }
+
   for (const [id, count] of planned) {
     // A non-repeatable event planned twice would need the fallback (or fail) the second time.
     if (count > 1 && pack.events.get(id)?.repeatable === false) {

@@ -12,7 +12,7 @@ const QUIET = "Dàn xếp riêng với các tài xế liên quan, đề nghị g
 async function toCrisis(page: Page, setup: RegExp, followUp: RegExp) {
   await page.goto("./");
   await page.getByRole("button", { name: setup }).click();
-  await expect(heading(page, "Ca làm cuối tuần chưa đủ người")).toBeVisible();
+  await expect(heading(page, "Tuần mưa kéo dài")).toBeVisible();
   await options(page).first().click();
   await closeWeek(page, 1);
   await playRoutineWeeks(page, 2, 6, true);

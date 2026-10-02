@@ -8,6 +8,7 @@ import {
   packFrom,
   playablePack,
   probeChainPack,
+  type Raw,
   replayToSettlement,
   resolvedSettlementAt,
   settlementAt,
@@ -17,7 +18,7 @@ import {
   weekTwelvePack,
 } from "../helpers.ts";
 
-const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"];
+const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.routine.rainy_week.rain_gear"];
 
 function reportAfter(pack = playablePack(), optionIds = FUND_THEN_SHIFT): ReportCheckpoint {
   const draft = settleWeek(replayToSettlement(pack, 1, optionIds));
@@ -133,7 +134,9 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
       ),
       testOption("opt.test.week_two_beat.shrug"),
     ]);
+    // No authored fallback in this pack, so a week that cannot be presented has nothing to cover it.
     const pack = packFrom((chain, loop) => {
+      chain.events = chain.events.filter((e: Raw) => e.role !== "fallback");
       chain.events.push(gated);
       loop.weeks[1].slots = ["evt.test.week_two_beat", "evt.test.week_two_beat"];
     });
@@ -147,11 +150,11 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
       "opt.test.week_two_beat.shrug",
     ]);
 
-    // Without the fund only one option is valid. The authored fallback was already used in week 1
-    // and is not repeatable, so there is no valid event: advancing is refused, nothing is invented.
+    // Without the fund only one option is valid and there is no fallback: advancing is refused,
+    // nothing is invented.
     const noFund = reportAfter(pack, [
       "opt.rider_claim.decline",
-      "opt.fallback.arrange_extra_shift",
+      "opt.routine.rainy_week.rain_gear",
     ]);
     const refused = advanceWeek(pack, noFund);
     expect(refused).toMatchObject({ ok: false, reason: "invalid-content" });

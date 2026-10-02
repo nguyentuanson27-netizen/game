@@ -15,7 +15,7 @@ const distDir = fileURLToPath(new URL("../../dist", import.meta.url));
 const basePath = "/game/";
 const DAY = 24 * 60 * 60 * 1000;
 const EVENT_TITLE = "Chiếc xe hỏng sau ca mưa";
-const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+const FALLBACK_TITLE = "Tuần mưa kéo dài";
 
 const heading = (page: Page, name: string) => page.getByRole("heading", { level: 2, name });
 const button = (page: Page, name: string | RegExp) => page.getByRole("button", { name });
@@ -113,7 +113,7 @@ test.describe("restarting the browser offline (AC-04, AC-07)", () => {
       });
 
       // 4. Every decision of the week committed, awaiting settlement.
-      await button(page, /Thưởng nhẹ để có thêm người nhận ca tối/).click();
+      await button(page, /Phát áo mưa cho tài xế/).click();
       await expect(button(page, "Tổng kết tuần")).toBeVisible();
       before = await restart();
       await expect(button(page, "Tổng kết tuần")).toBeVisible();

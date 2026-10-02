@@ -247,7 +247,7 @@ describe("committing one choice", () => {
       recurringCosts: { "policy.rider_support_fund": 6 },
       npcStatus: { "npc.recurring_rider": "ally" },
       metrics: { riderNetwork: 60 },
-      activeEvent: { eventId: "evt.proof.fallback_shift_roster" },
+      activeEvent: { eventId: "evt.routine.rainy_week" },
     });
     expect(stored.checkpoint.pendingCallbacks).toHaveLength(2);
     expect(result.state).toMatchObject({ kind: "event", checkpoint: stored.checkpoint });
@@ -302,7 +302,7 @@ describe("committing one choice", () => {
     if (resumed.kind !== "event") throw new Error("expected event");
     expect(resumed.checkpoint.npcStatus).toEqual({ "npc.recurring_rider": "departed" });
     expect(resumed.checkpoint.pendingCallbacks).toHaveLength(2);
-    expect(resumed.presented.event.id).toBe("evt.proof.fallback_shift_roster");
+    expect(resumed.presented.event.id).toBe("evt.routine.rainy_week");
   });
 
   it("reaches settlement after the last slot of the week and resumes there", async () => {
@@ -314,7 +314,7 @@ describe("committing one choice", () => {
       store,
       pack,
       first.state.checkpoint,
-      "opt.fallback.arrange_extra_shift",
+      "opt.routine.rainy_week.rain_gear",
     );
 
     expect(second.ok && second.state.kind).toBe("settlement");

@@ -10,7 +10,7 @@ const readSlots = async (page: Page) => ({
   current: await readSlot(page, "current"),
   previous: await readSlot(page, "previous"),
 });
-const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
+const FALLBACK_TITLE = "Tuần mưa kéo dài";
 
 const value = (page: Page, label: string) =>
   page.getByText(label, { exact: true }).locator("xpath=following-sibling::dd[1]");
@@ -19,7 +19,7 @@ const value = (page: Page, label: string) =>
 async function playWeekOne(page: Page) {
   await page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }).click();
   await expect(page.getByRole("heading", { level: 2, name: FALLBACK_TITLE })).toBeVisible();
-  await page.getByRole("button", { name: /Thưởng nhẹ để có thêm người nhận ca tối/ }).click();
+  await page.getByRole("button", { name: /Phát áo mưa cho tài xế/ }).click();
   await expect(page.getByRole("button", { name: "Tổng kết tuần" })).toBeVisible();
 }
 

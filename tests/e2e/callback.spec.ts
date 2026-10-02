@@ -10,7 +10,7 @@ test.describe("a required callback returns through the real loop (AC-02, AC-04)"
 
     // Week 1: fund the rider policy (schedules both callbacks), then the extra evening shift.
     await page.getByRole("button", { name: /Lập quỹ hỗ trợ sửa xe/ }).click();
-    await expect(heading(page, "Ca làm cuối tuần chưa đủ người")).toBeVisible();
+    await expect(heading(page, "Tuần mưa kéo dài")).toBeVisible();
     await options(page).first().click();
     await closeWeek(page, 1);
 
@@ -82,7 +82,7 @@ test.describe("a callback whose context changed is closed in the report (AC-03)"
     // Week 1: the confirmed irreversible option makes the rider leave the network.
     await page.getByRole("button", { name: /Trả một lần để họ rút phản ánh/ }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Xác nhận" }).click();
-    await expect(heading(page, "Ca làm cuối tuần chưa đủ người")).toBeVisible();
+    await expect(heading(page, "Tuần mưa kéo dài")).toBeVisible();
     await options(page).first().click();
     await closeWeek(page, 1);
 

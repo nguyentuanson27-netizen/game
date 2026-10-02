@@ -16,7 +16,7 @@ async function atSettlement() {
   const store = spyOn(inner);
   const pack = proofPack();
   let state = await bootstrap(store, pack);
-  for (const optionId of ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"]) {
+  for (const optionId of ["opt.rider_claim.fund_policy", "opt.routine.rainy_week.rain_gear"]) {
     if (state.kind !== "event") throw new Error(`expected an event, got ${state.kind}`);
     const result = await choose(store, pack, state.checkpoint, optionId);
     if (!result.ok) throw new Error(result.message);

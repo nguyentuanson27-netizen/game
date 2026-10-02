@@ -13,6 +13,7 @@ import {
   playablePack,
   probeChainPack,
   proofPack,
+  type Raw,
   replayToSettlement,
   resolvedSettlementAt,
   seedDraft,
@@ -134,9 +135,9 @@ describe("choosing an option", () => {
     await act(async () => release());
 
     expect((await screen.findByRole("status")).textContent).toContain("Họ cảm ơn");
-    expect(screen.getByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Tuần mưa kéo dài" })).toBeTruthy();
     expect(screen.getByText("Tuần 1 · Quyết định 2/2")).toBeTruthy();
-    expect(optionButtons()).toHaveLength(2);
+    expect(optionButtons()).toHaveLength(3);
     const stored = await inner.load();
     expect(stored.status === "ready" && stored.checkpoint.sequence).toBe(2);
   });
@@ -195,7 +196,7 @@ describe("choosing an option", () => {
 
     render(<App store={store} loadPack={proofPack} />);
 
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     expect(optionButtons().map((b) => b.textContent)).toEqual(options);
     expect(screen.queryByRole("status")).toBeNull();
     expect(store.commits).toHaveLength(2);
@@ -206,7 +207,7 @@ describe("choosing an option", () => {
     const first = render(<App store={store} loadPack={proofPack} />);
     await screen.findByRole("group", { name: "Phương án" });
     tapFirstOption();
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     tapFirstOption();
 
     await screen.findByRole("heading", { name: "Tuần 1: đã xong các quyết định" });
@@ -327,7 +328,7 @@ describe("confirmation for a major irreversible option", () => {
     first.unmount();
 
     render(<App store={store} loadPack={proofPack} />);
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     expect(store.commits).toHaveLength(2);
     expect(await inner.load()).toEqual(stored);
   });
@@ -362,7 +363,7 @@ describe("settling the week", () => {
     render(<App store={store} loadPack={proofPack} />);
     await screen.findByRole("group", { name: "Phương án" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
     return screen.findByRole("button", { name: "Tổng kết tuần" });
   }
@@ -434,7 +435,7 @@ describe("weekly report and Next Week", () => {
     render(<App store={store} loadPack={playable} />);
     await screen.findByRole("group", { name: "Phương án" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
     fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
     return screen.findByRole("button", { name: "Tuần tiếp theo" });
@@ -488,7 +489,7 @@ describe("weekly report and Next Week", () => {
     render(<App store={store} loadPack={unauthoredPack} />);
     await screen.findByRole("group", { name: "Phương án" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
     fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
     const next = await screen.findByRole("button", { name: "Tuần tiếp theo" });
@@ -519,7 +520,9 @@ describe("weekly report and Next Week", () => {
         ),
       ),
     );
+    // No authored fallback in this pack, so the week has nothing to cover it.
     const pack = packFrom((chain, loop) => {
+      chain.events = chain.events.filter((e: Raw) => e.role !== "fallback");
       chain.events.push(needsFund);
       loop.weeks[1].slots = ["evt.test.needs_fund", "evt.test.needs_fund"];
     });
@@ -527,7 +530,7 @@ describe("weekly report and Next Week", () => {
     render(<App store={store} loadPack={() => pack} />);
     await screen.findByRole("group", { name: "Phương án" });
     fireEvent.click(screen.getByRole("button", { name: /Từ chối/ }));
-    await screen.findByRole("heading", { name: "Ca làm cuối tuần chưa đủ người" });
+    await screen.findByRole("heading", { name: "Tuần mưa kéo dài" });
     fireEvent.click(optionButtons()[0] as HTMLElement);
     fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
     const next = await screen.findByRole("button", { name: "Tuần tiếp theo" });

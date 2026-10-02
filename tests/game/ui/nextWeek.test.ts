@@ -32,7 +32,7 @@ function newStore(pack = weekTwelvePack()) {
 async function atReport(pack = playablePack()) {
   const ctx = newStore(pack);
   let state = await bootstrap(ctx.store, ctx.pack);
-  for (const optionId of ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"]) {
+  for (const optionId of ["opt.rider_claim.fund_policy", "opt.routine.rainy_week.rain_gear"]) {
     if (state.kind !== "event") throw new Error(`expected an event, got ${state.kind}`);
     const result = await choose(ctx.store, ctx.pack, state.checkpoint, optionId);
     if (!result.ok) throw new Error(result.message);

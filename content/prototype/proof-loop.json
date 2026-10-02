@@ -1,10 +1,10 @@
 {
   "id": "proof.loop",
-  "note": "Slot plan for the playable proof route (T08-T15). It lists the ordinary events each week plays and nothing else. Week 1 carries the proof setup event and the fallback so the loop can be played from the first tap. Weeks 2-12 carry two placeholder routine beats each (the minimum decisions a week needs), so the route can be walked to the callbacks: a required callback that is due takes one of its week's slots and displaces the last planned beat (T15). The T18 walk-through places the setup in week 3; here it is week 1, and the callback windows (7-8, 10-11) are unchanged. Real campaign content replaces the beats from T21.",
+  "note": "Slot plan for the playable proof route (T08-T15). It lists the ordinary events each week plays and nothing else. Week 1 carries the proof setup event and one routine beat so the loop can be played from the first tap. The authored fallback event is never planned: it only substitutes for a planned event that cannot be presented. Weeks 2-12 carry two placeholder routine beats each (the minimum decisions a week needs), so the route can be walked to the callbacks: a required callback that is due takes one of its week's slots and displaces the last planned beat (T15). The T18 walk-through places the setup in week 3; here it is week 1, and the callback windows (7-8, 10-11) are unchanged. Real campaign content replaces the beats from T21.",
   "weeks": [
     {
       "week": 1,
-      "slots": ["evt.proof.rider_claim", "evt.proof.fallback_shift_roster"]
+      "slots": ["evt.proof.rider_claim", "evt.routine.rainy_week"]
     },
     {
       "week": 2,
