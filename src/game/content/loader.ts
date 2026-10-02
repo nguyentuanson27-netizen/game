@@ -218,6 +218,8 @@ function checkPlan(
     }
     plan.push([...entry.slots]);
   });
-  if ((plan[0]?.length ?? 0) < 1) issues.push("proof-loop: week 1 needs at least one slot");
+  // The campaign starts in week 1, so week 1 must meet the 2-4 decisions a week contract (SPEC
+  // section 5). Later weeks may stay unfinished and still load; `Next Week` refuses them.
+  if ((plan[0]?.length ?? 0) < 2) issues.push("proof-loop: week 1 needs at least 2 slots");
   return plan;
 }
