@@ -51,7 +51,7 @@ npm run test:e2e     # Playwright smoke tests, Chromium + WebKit (needs `npx pla
 
 ## Deployment
 
-Pushes to `main` run [`deploy-pages.yml`](.github/workflows/deploy-pages.yml): `npm ci`, `npm run verify`, a build with `BASE_PATH=/game/`, then the official GitHub Pages actions publish `dist/` to https://nguyentuanson27-netizen.github.io/game/. A final job runs `npm run test:deployed` against the live URL (commit served, manifest, service worker and assets under `/game/`, online load, offline reload). One-time repository setting: Settings -> Pages -> Source: **GitHub Actions**. The site is static and public; it holds no secrets.
+Pushes to `main` (and manual runs, only on `main`) run [`deploy-pages.yml`](.github/workflows/deploy-pages.yml): `npm ci`, `npm run verify`, the Chromium + WebKit `npm run test:e2e` gate, a build with `BASE_PATH=/game/`, then the official GitHub Pages actions publish `dist/` to https://nguyentuanson27-netizen.github.io/game/. A final job runs `npm run test:deployed` against the live URL (commit served, manifest, service worker and assets under `/game/`, online load, offline reload). One-time repository setting: Settings -> Pages -> Source: **GitHub Actions**. The site is static and public; it holds no secrets.
 
 ## Status
 

@@ -17,13 +17,12 @@ concurrency:
 # Nothing by default; each job below asks for exactly what it needs.
 permissions: {}
 
-env:
-  BASE_PATH: /game/
-
 jobs:
   build:
+    # Production Pages only ever comes from main, also for manual runs on another ref.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -47,8 +46,28 @@ jobs:
       - name: Static checks, unit tests and build
         run: npm run verify
 
-      # `verify` builds for local use (base "/"). Rebuild for the project-site sub-path.
+      # Same browser gate as the Verify workflow, so a failing e2e suite blocks publishing.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Browser tests (Chromium + WebKit)
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      # `verify` builds for local use (base "/"). Build last, for the project-site sub-path,
+      # so dist/ is exactly what gets published.
       - name: Build for GitHub Pages (BASE_PATH=/game/)
+        env:
+          BASE_PATH: /game/
         run: npm run build
 
       # Written after the build, so it is not in the service worker precache. It lets the
@@ -63,12 +82,13 @@ jobs:
             "$DEPLOY_SHA" "$DEPLOY_RUN_ID" "$DEPLOY_RUN_ATTEMPT" > dist/deploy-info.json
           cat dist/deploy-info.json
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -81,7 +101,7 @@ jobs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # Runs against the live URL, so a green workflow means the deployed site really works.
   verify-deployed:
