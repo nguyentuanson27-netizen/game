@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ContentError, loadContentPack } from "../../../src/game/content/loader.ts";
 import { loadProofPack } from "../../../src/game/content/proof.ts";
+import { startCampaign } from "../../../src/game/domain/campaign.ts";
 import { proofPack, type Raw, rawChain, rawLoop } from "../helpers.ts";
 
 function rejected(mutate: (chain: Raw, loop: Raw) => void) {
@@ -147,6 +148,13 @@ describe("proof content boundary", () => {
     ).toContain("unknown event evt.proof.nope");
   });
 
+  it("rejects a callback whose source option belongs to a different event", () => {
+    const issues = rejected((chain) => {
+      chain.callbacks[0].sourceDecision.options = ["opt.crisis.hold_and_review"];
+    });
+    expect(issues).toContain("is not an option of evt.proof.rider_claim");
+  });
+
   it("rejects duplicate ids and a plan that exceeds the weekly budget", () => {
     expect(
       rejected((chain) => {
@@ -164,11 +172,26 @@ describe("proof content boundary", () => {
     ).toContain("budget is 2");
   });
 
-  it("rejects a plan with no week-1 event", () => {
-    const issues = rejected((_, loop) => {
+  it("rejects a week 1 authored with fewer than two decisions", () => {
+    const empty = rejected((_, loop) => {
       loop.weeks[0].slots = [];
     });
-    expect(issues).toContain("week 1 needs at least one slot");
+    expect(empty).toContain("week 1 needs at least 2 slots");
+
+    // One decision a week breaks the 2-4 decisions contract: it could start and settle on one.
+    const single = rejected((_, loop) => {
+      loop.weeks[0].slots = ["evt.proof.rider_claim"];
+    });
+    expect(single).toContain("week 1 needs at least 2 slots");
+  });
+
+  it("still loads and starts the two-slot proof pack, and keeps incomplete later weeks loadable", () => {
+    const pack = proofPack();
+    expect(pack.plan[0]).toHaveLength(2);
+    expect(startCampaign(pack)).toMatchObject({ week: 1, phase: "event" });
+    // Later weeks may stay unfinished (Next Week refuses them); only week 1 must be playable.
+    expect(pack.plan[1]).toHaveLength(0);
+    expect(() => loadContentPack(rawChain(), rawLoop())).not.toThrow();
   });
 
   it("rejects content that is not an object at all", () => {

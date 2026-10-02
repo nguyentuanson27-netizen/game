@@ -1,11 +1,15 @@
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { activateTwice } from "./helpers/actions.ts";
-import { readCurrent } from "./helpers/checkpoint.ts";
+import { readCurrent, readSlot, seedWeekTwelveReport } from "./helpers/checkpoint.ts";
 import { startStaticServer } from "./helpers/static-server.ts";
 
 const distDir = fileURLToPath(new URL("../../dist", import.meta.url));
 const basePath = "/game/";
+const readSlots = async (page: Page) => ({
+  current: await readSlot(page, "current"),
+  previous: await readSlot(page, "previous"),
+});
 const FALLBACK_TITLE = "Ca làm cuối tuần chưa đủ người";
 
 const value = (page: Page, label: string) =>
@@ -85,89 +89,72 @@ test.describe("Next Week and the end of the prototype (AC-04, AC-05)", () => {
     await expectWeekOneReport(page);
   }
 
-  test("advances one week, restores it after a reload and does not settle again", async ({
+  test("refuses Next Week into a week the proof loop has not authored, and keeps the report", async ({
     page,
   }) => {
     await settleWeekOne(page);
-    const report = await readCurrent(page);
+    const saved = await readSlots(page);
 
-    await activateTwice(page.getByRole("button", { name: "Tuần tiếp theo" }));
+    await page.getByRole("button", { name: "Tuần tiếp theo" }).click();
 
-    await expect(page.getByRole("heading", { level: 2, name: "Tuần 2" })).toBeVisible();
-    const advanced = await readCurrent(page);
-    expect(advanced).toMatchObject({
-      sequence: (report?.sequence ?? 0) + 1,
-      week: 2,
-      phase: "settlement",
-      metrics: { cash: 53 },
-      weekDecisions: [],
-    });
-    expect(advanced?.pendingCallbacks.map((p) => p.callbackId)).toEqual([
-      "cb.rider_voice_followup",
-      "cb.public_rider_dispute",
-    ]);
-
+    await expect(page.getByRole("alert")).toContainText("Tuần tiếp theo chưa có nội dung");
+    await expectWeekOneReport(page);
+    await expect(page.getByText(/Tuần 2/)).toHaveCount(0);
+    // Nothing was written and nothing can be skipped into: a reload shows the same report.
+    expect(await readSlots(page)).toEqual(saved);
     await page.reload();
-
-    await expect(page.getByRole("heading", { level: 2, name: "Tuần 2" })).toBeVisible();
-    expect(await readCurrent(page)).toEqual(advanced);
+    await expectWeekOneReport(page);
+    expect(await readSlots(page)).toEqual(saved);
   });
 
-  test("restores the new week offline after the service worker is ready", async ({ page }) => {
-    const server = await startStaticServer(distDir, basePath);
-    try {
-      await page.goto(server.url);
-      await playWeekOne(page);
-      await page.getByRole("button", { name: "Tổng kết tuần" }).click();
-      await page.getByRole("button", { name: "Tuần tiếp theo" }).click();
-      await expect(page.getByRole("heading", { level: 2, name: "Tuần 2" })).toBeVisible();
-      const saved = await readCurrent(page);
-
-      await page.evaluate(async () => {
-        await navigator.serviceWorker.ready;
-      });
-      await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
-      await server.stop();
-      await page.reload();
-
-      await expect(page.getByRole("heading", { level: 2, name: "Tuần 2" })).toBeVisible();
-      expect(await readCurrent(page)).toEqual(saved);
-    } finally {
-      await server.stop();
-    }
-  });
-
-  test("plays all twelve weeks to Prototype Complete without skipping or repeating a week", async ({
+  test("closes the prototype from a seeded week-12 report with nothing pending, once, and restores it after a reload", async ({
     page,
   }) => {
     await settleWeekOne(page);
-    const seenWeeks = [1];
-    for (let week = 2; week <= 12; week++) {
-      await page.getByRole("button", { name: "Tuần tiếp theo" }).click();
-      await expect(page.getByRole("heading", { level: 2, name: `Tuần ${week}` })).toBeVisible();
-      await page.getByRole("button", { name: "Tổng kết tuần" }).click();
-      await expect(
-        page.getByRole("heading", { level: 2, name: `Báo cáo tuần ${week}` }),
-      ).toBeVisible();
-      seenWeeks.push(week);
-    }
-    expect(seenWeeks).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    await seedWeekTwelveReport(page);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Báo cáo tuần 12" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tuần tiếp theo" })).toHaveCount(0);
+    const seeded = await readCurrent(page);
 
-    await page.getByRole("button", { name: "Kết thúc bản nguyên mẫu" }).click();
+    await activateTwice(page.getByRole("button", { name: "Kết thúc bản nguyên mẫu" }));
 
     await expect(page.getByRole("heading", { level: 2, name: "Prototype Complete" })).toBeVisible();
     const done = await readCurrent(page);
-    // 1 start + 2 choices + 12 settlements + 12 advances; week 1 ended on 53 cash, then +6 a week.
     expect(done).toMatchObject({
-      sequence: 27,
-      week: 12,
+      sequence: (seeded?.sequence ?? 0) + 1,
       phase: "complete",
-      metrics: { cash: 53 + 11 * 6 },
+      week: 12,
+      metrics: { cash: 53 },
     });
+    expect(done?.pendingCallbacks).toEqual([]);
 
     await page.reload();
 
     await expect(page.getByRole("heading", { level: 2, name: "Prototype Complete" })).toBeVisible();
     expect(await readCurrent(page)).toEqual(done);
+  });
+
+  test("will not close the prototype from week 12 while required callbacks are pending", async ({
+    page,
+  }) => {
+    await settleWeekOne(page);
+    // Keep the two callbacks that the week-1 choice scheduled: nothing delivers them yet.
+    await seedWeekTwelveReport(page, { keepPendingCallbacks: true });
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Báo cáo tuần 12" })).toBeVisible();
+    const saved = await readSlots(page);
+    expect(saved.current?.pendingCallbacks).toHaveLength(2);
+
+    await page.getByRole("button", { name: "Kết thúc bản nguyên mẫu" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("Vẫn còn hậu quả cần xử lý");
+    await expect(page.getByRole("heading", { level: 2, name: "Prototype Complete" })).toHaveCount(
+      0,
+    );
+    expect(await readSlots(page)).toEqual(saved);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 2, name: "Báo cáo tuần 12" })).toBeVisible();
+    expect(await readSlots(page)).toEqual(saved);
   });
 });

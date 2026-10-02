@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type BrowserContext, chromium, expect, type Page, test, webkit } from "@playwright/test";
-import { readSlot } from "./helpers/checkpoint.ts";
+import { readSlot, seedWeekTwelveReport } from "./helpers/checkpoint.ts";
 import { startStaticServer } from "./helpers/static-server.ts";
 
 // AC-04 and AC-07 across a real restart of the whole browser, offline, with a persistent profile:
@@ -129,36 +129,28 @@ test.describe("restarting the browser offline (AC-04, AC-07)", () => {
       // 50 - 8 (settlement) - 3 (extra shift) + 7 (D4 baseline week) = 46, once.
       expect(before.current).toMatchObject({ phase: "report", metrics: { cash: 46 } });
 
-      // 6. After Next Week: the next week, not a skipped or repeated one.
+      // 6. Next Week is refused (week 2 is not authored): the report stays, nothing is saved,
+      //    and a restart shows the same report rather than a skipped or empty week.
       await button(page, "Tuần tiếp theo").click();
-      await expect(heading(page, "Tuần 2")).toBeVisible();
-      before = await restart();
-      await expect(heading(page, "Tuần 2")).toBeVisible();
+      await expect(page.getByRole("alert")).toContainText("Tuần tiếp theo chưa có nội dung");
       expect(await slots(page)).toEqual(before);
-      expect(before.current).toMatchObject({ week: 2, phase: "settlement", metrics: { cash: 46 } });
+      before = await restart();
+      await expect(heading(page, "Báo cáo tuần 1")).toBeVisible();
+      expect(await slots(page)).toEqual(before);
 
-      // 7. Through to week 12, restarting in the middle of the run and at the endpoint.
-      for (let week = 2; week <= 12; week++) {
-        await button(page, "Tổng kết tuần").click();
-        await expect(heading(page, `Báo cáo tuần ${week}`)).toBeVisible();
-        if (week === 7) {
-          before = await restart();
-          await expect(heading(page, "Báo cáo tuần 7")).toBeVisible();
-          expect(await slots(page)).toEqual(before);
-        }
-        await button(page, week === 12 ? "Kết thúc bản nguyên mẫu" : "Tuần tiếp theo").click();
-        if (week < 12) await expect(heading(page, `Tuần ${week + 1}`)).toBeVisible();
-      }
+      // 7. The shipped content cannot reach week 12, so seed a week-12 report (a normal rotating
+      //    write) and restart on it, then close the prototype and restart on the endpoint.
+      await seedWeekTwelveReport(page);
+      before = await restart();
+      await expect(heading(page, "Báo cáo tuần 12")).toBeVisible();
+      expect(await slots(page)).toEqual(before);
+      expect(before.current).toMatchObject({ week: 12, phase: "report", metrics: { cash: 46 } });
+      await button(page, "Kết thúc bản nguyên mẫu").click();
       await expect(heading(page, "Prototype Complete")).toBeVisible();
       before = await restart();
       await expect(heading(page, "Prototype Complete")).toBeVisible();
       expect(await slots(page)).toEqual(before);
-      // 46 after week 1, then +7 for each of weeks 2..12 (rider network 47, jobs unchanged).
-      expect(before.current).toMatchObject({
-        phase: "complete",
-        week: 12,
-        metrics: { cash: 46 + 11 * 7 },
-      });
+      expect(before.current).toMatchObject({ phase: "complete", week: 12, metrics: { cash: 46 } });
       // Eight month-long absences later, the week is still the week the player left.
       expect(restarts).toBeGreaterThanOrEqual(8);
     } finally {

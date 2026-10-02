@@ -150,8 +150,12 @@ export function loadContentPack(rawChain: unknown, rawLoop: unknown): ContentPac
     if (!events.has(cb.sourceDecision.event)) {
       issues.push(`${cb.id}: unknown source event ${cb.sourceDecision.event}`);
     }
+    const sourceEvent = events.get(cb.sourceDecision.event);
     for (const id of cb.sourceDecision.options) {
       if (!optionIds.has(id)) issues.push(`${cb.id}: unknown source option ${id}`);
+      else if (sourceEvent && !sourceEvent.options.some((o) => o.id === id)) {
+        issues.push(`${cb.id}: source option ${id} is not an option of ${sourceEvent.id}`);
+      }
     }
     for (const c of cb.eligibility) checkCondition(cb.id, c);
     for (const variant of cb.variants) {
@@ -214,6 +218,8 @@ function checkPlan(
     }
     plan.push([...entry.slots]);
   });
-  if ((plan[0]?.length ?? 0) < 1) issues.push("proof-loop: week 1 needs at least one slot");
+  // The campaign starts in week 1, so week 1 must meet the 2-4 decisions a week contract (SPEC
+  // section 5). Later weeks may stay unfinished and still load; `Next Week` refuses them.
+  if ((plan[0]?.length ?? 0) < 2) issues.push("proof-loop: week 1 needs at least 2 slots");
   return plan;
 }

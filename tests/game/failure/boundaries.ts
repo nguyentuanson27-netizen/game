@@ -3,7 +3,7 @@ import type { Checkpoint } from "../../../src/game/persistence/checkpoint.ts";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
 import type { CheckpointStore } from "../../../src/game/persistence/store.ts";
 import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/session.ts";
-import { proofPack, seedDraft, settlementAt, uniqueDbName } from "../helpers.ts";
+import { playablePack, seedDraft, settlementAt, uniqueDbName } from "../helpers.ts";
 
 export interface Ctx {
   name: string;
@@ -23,7 +23,7 @@ export interface Boundary {
 
 export function newCtx(): Ctx {
   const name = uniqueDbName();
-  return { name, store: createIdbCheckpointStore(name), pack: proofPack() };
+  return { name, store: createIdbCheckpointStore(name), pack: playablePack() };
 }
 
 async function stored(ctx: Ctx): Promise<Checkpoint> {
