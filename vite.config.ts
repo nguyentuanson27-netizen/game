@@ -49,7 +49,11 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
-    include: ["tests/unit/**/*.test.{ts,tsx}", "tests/game/**/*.test.{ts,tsx}"],
+    include: [
+      "tests/unit/**/*.test.{ts,tsx}",
+      "tests/game/**/*.test.{ts,tsx}",
+      "tests/content/**/*.test.ts",
+    ],
     setupFiles: ["./tests/setup.ts"],
     alias: {
       "virtual:pwa-register/react": fileURLToPath(
