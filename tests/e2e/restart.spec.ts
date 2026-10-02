@@ -129,17 +129,11 @@ test.describe("restarting the browser offline (AC-04, AC-07)", () => {
       // 50 - 8 (settlement) - 3 (extra shift) + 7 (D4 baseline week) = 46, once.
       expect(before.current).toMatchObject({ phase: "report", metrics: { cash: 46 } });
 
-      // 6. Next Week is refused (week 2 is not authored): the report stays, nothing is saved,
-      //    and a restart shows the same report rather than a skipped or empty week.
-      await button(page, "Tuần tiếp theo").click();
-      await expect(page.getByRole("alert")).toContainText("Tuần tiếp theo chưa có nội dung");
-      expect(await slots(page)).toEqual(before);
-      before = await restart();
-      await expect(heading(page, "Báo cáo tuần 1")).toBeVisible();
-      expect(await slots(page)).toEqual(before);
-
-      // 7. The shipped content cannot reach week 12, so seed a week-12 report (a normal rotating
-      //    write) and restart on it, then close the prototype and restart on the endpoint.
+      // 6. Seeded endpoint, persistence only. The shipped content authors nothing after week 1, so
+      //    there is no played route to week 2 or week 12 here; this proves nothing about those
+      //    weeks. A week-12 report is seeded (a normal rotating write) to show that the closing
+      //    write and the endpoint survive a restart. Next Week into an authored week is covered
+      //    on valid test content in the Vitest matrix, not here.
       await seedWeekTwelveReport(page);
       before = await restart();
       await expect(heading(page, "Báo cáo tuần 12")).toBeVisible();
@@ -151,8 +145,8 @@ test.describe("restarting the browser offline (AC-04, AC-07)", () => {
       await expect(heading(page, "Prototype Complete")).toBeVisible();
       expect(await slots(page)).toEqual(before);
       expect(before.current).toMatchObject({ phase: "complete", week: 12, metrics: { cash: 46 } });
-      // Eight month-long absences later, the week is still the week the player left.
-      expect(restarts).toBeGreaterThanOrEqual(8);
+      // Seven month-long absences later, the week is still the week the player left.
+      expect(restarts).toBeGreaterThanOrEqual(7);
     } finally {
       await context?.close().catch(() => undefined);
       await server.stop();

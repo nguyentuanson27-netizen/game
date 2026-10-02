@@ -4,10 +4,11 @@ import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/sessio
 import {
   playablePack,
   proofPack,
+  resolvedSettlementAt,
   seedDraft,
-  settlementAt,
   spyOn,
   uniqueDbName,
+  weekTwelvePack,
 } from "../helpers.ts";
 
 const open: Array<{ close(): Promise<void> }> = [];
@@ -16,10 +17,11 @@ afterEach(async () => {
 });
 
 /**
- * `pack` defaults to test-only content with one decision in week 2, so Next Week has a playable
- * week to advance into; the shipped proof loop authors no decisions after week 1.
+ * `pack` defaults to test-only content with two decisions in weeks 2 and 12, so Next Week has a
+ * playable week to advance into and a coherent week-12 state to seed; the shipped proof loop
+ * authors no decisions after week 1.
  */
-function newStore(pack = playablePack()) {
+function newStore(pack = weekTwelvePack()) {
   const name = uniqueDbName();
   const inner = createIdbCheckpointStore(name);
   open.push(inner);
@@ -221,7 +223,7 @@ describe("Next Week through the checkpoint store", () => {
       sourceOptionId: "opt.rider_claim.fund_policy",
     };
     const seeded = await ctx.inner.commit(
-      seedDraft(settlementAt(ctx.pack, 12, { pendingCallbacks: [pending] })),
+      seedDraft(resolvedSettlementAt(ctx.pack, 12, { pendingCallbacks: [pending] })),
     );
     if (!seeded.ok || seeded.value.phase !== "settlement") throw new Error("setup failed");
     const settled = await settle(ctx.store, ctx.pack, seeded.value);
@@ -239,7 +241,7 @@ describe("Next Week through the checkpoint store", () => {
 
   it("settles week 12 and then closes the prototype instead of opening week 13", async () => {
     const ctx = newStore();
-    const seeded = await ctx.inner.commit(seedDraft(settlementAt(ctx.pack, 12)));
+    const seeded = await ctx.inner.commit(seedDraft(resolvedSettlementAt(ctx.pack, 12)));
     if (!seeded.ok || seeded.value.phase !== "settlement") throw new Error("setup failed");
 
     const settled = await settle(ctx.store, ctx.pack, seeded.value);

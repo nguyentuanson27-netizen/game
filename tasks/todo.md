@@ -220,14 +220,14 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Gate G1:** Review the small proof and observations now. This is not full-slice approval: T14 and T17 still block content expansion. No general validator is required to draft or observe the validated small pack.
 
 ### T13 - Expand save-failure coverage
-**Status:** [~] Implemented and merged (PR #12); CI `verify` green on Chromium + WebKit at merge. Not checked off until owner review.
+**Status:** [~] Implemented and merged (PR #12); CI `verify` green on Chromium + WebKit at merge. Real-device smoke `Not run`; not checked off until owner review.
 **Description:** Extend the safety already tested in T08-T12 to a systematic matrix; do not defer basic failure blocking to this task.
 **Dependencies:** T12, T03.
 **Files likely touched:** Checkpoint failure handling; error/retry presentation; fault fixtures; recovery tests; task record. **Scope:** M (3-5 files).
 **Acceptance:** Failed saves never show success or permit another decision/week advance; the previous complete checkpoint remains recoverable with no silent reset; retry/resume cannot duplicate effects or scheduled consequences.
 **Verification:** FOCUSED AC-05 across active-event, choice, settlement and advancement saves; add missing cases, D3 corrupt/unsupported-save behavior and retry/resume regressions. Reuse existing tests; errors must contain no secret/PII payloads.
 
-**T13 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T13 section). Summary: a table-driven matrix runs every write boundary (first active-event save, choice, last choice into settlement, settlement, Next Week, week-12 completion) against four injected failures on the real `idb` store (browser refusal or transaction abort on each `put`), asserts both slots are byte-identical afterwards, nothing is reset, reopening resumes the old complete state, and a retry ends exactly equal to a fault-free run; lost-acknowledgement cases prove a committed write cannot be replayed; failed recovery/reset, mid-game corrupt/newer-version saves (now routed to the recovery/unsupported screens instead of a retry loop), and sanitized error contents are covered at store and screen level.
+**T13 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T13 section). Summary: a table-driven matrix, on a small test-only pack with valid week-2 and week-12 content (not the shipped empty weeks), runs every write boundary (first active-event save, choice, last choice into settlement, settlement, Next Week, week-12 completion) against four injected failures on the real `idb` store (browser refusal or transaction abort on each `put`), asserts both slots are byte-identical afterwards, nothing is reset, reopening resumes the old complete state, and a retry ends exactly equal to a fault-free run; lost-acknowledgement cases prove a committed write cannot be replayed; failed recovery/reset, mid-game corrupt/newer-version saves (now routed to the recovery/unsupported screens instead of a retry loop), and sanitized error contents are covered at store and screen level.
 
 ### T14 - Interruption matrix on the target
 **Status:** [~] Implemented and merged (PR #13); CI `verify` green on Chromium + WebKit at merge. DEVICE force-close procedure documented but `Not run`; not checked off until the device run and owner review.
@@ -237,7 +237,7 @@ Every new persistence boundary inherits failure blocking, preservation of the pr
 **Acceptance:** Before/after-write interruption restores a complete old/new checkpoint, including closure before feedback; offline app restart preserves every AC-04 boundary and AC-07 result; time away does not advance weeks.
 **Verification:** Run AC-04/AC-05/AC-07 via FOCUSED integration and DEVICE force-close/restart procedures; record environment, exact injection boundaries and coverage limits. Failed scenarios create focused fix tasks before continuation.
 
-**T14 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T14 section): environment, exact injection boundaries (abort before commit; commit then close before feedback) for 5 boundaries x 2 interruptions, an 8-restart offline browser-restart journey with a month-long clock jump each time, a no-clock/no-randomness guard, the DEVICE procedure (`Not run`) and coverage limits.
+**T14 evidence:** see [t13-t14-failure-interruption.md](evidence/t13-t14-failure-interruption.md) (T14 section): environment, exact injection boundaries (abort before commit; commit then close before feedback) for 5 boundaries x 2 interruptions, a 7-restart offline browser-restart journey with a month-long clock jump each time (weeks 2-12 are not authored, so its week-12/endpoint steps are seeded persistence states and Next Week/full-slice restart coverage is pending valid integrated content), the DEVICE procedure (`Not run`) and coverage limits.
 
 **Checkpoint C05:** Broader recovery/interruption checks pass on the recorded target; preserve regressions and stop dependent work on failure.
 

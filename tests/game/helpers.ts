@@ -224,3 +224,28 @@ export function playablePack(weeks: number[] = [2], slotsPerWeek = 2): ContentPa
     }
   });
 }
+
+/** `playablePack` with week 12 authored too, so a seeded week-12 state matches its content plan. */
+export const weekTwelvePack = () => playablePack([2, 12]);
+
+/**
+ * A coherent settlement checkpoint for a week the pack authors (see `playablePack`): every planned
+ * slot carries a resolved decision, as resume requires. Test-only; it claims nothing about the
+ * shipped campaign, whose weeks 2-12 are not authored.
+ */
+export function resolvedSettlementAt(
+  pack: ContentPack,
+  week: number,
+  over: Partial<SettlementCheckpoint> = {},
+): SettlementCheckpoint {
+  const slots = pack.plan[week - 1] ?? [];
+  if (slots.length < 2) throw new Error(`week ${week} is not authored in this pack`);
+  return settlementAt(pack, week, {
+    weekDecisions: slots.map((eventId, index) => ({
+      slot: index + 1,
+      eventId,
+      optionId: "opt.test.week_beat.steady",
+    })),
+    ...over,
+  });
+}
