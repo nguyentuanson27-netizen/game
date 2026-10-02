@@ -3,7 +3,7 @@ import type { Checkpoint } from "../../../src/game/persistence/checkpoint.ts";
 import { createIdbCheckpointStore } from "../../../src/game/persistence/idbStore.ts";
 import type { CheckpointStore } from "../../../src/game/persistence/store.ts";
 import { bootstrap, choose, nextWeek, settle } from "../../../src/game/ui/session.ts";
-import { playablePack, seedDraft, settlementAt, uniqueDbName } from "../helpers.ts";
+import { resolvedSettlementAt, seedDraft, uniqueDbName, weekTwelvePack } from "../helpers.ts";
 
 export interface Ctx {
   name: string;
@@ -23,7 +23,7 @@ export interface Boundary {
 
 export function newCtx(): Ctx {
   const name = uniqueDbName();
-  return { name, store: createIdbCheckpointStore(name), pack: playablePack() };
+  return { name, store: createIdbCheckpointStore(name), pack: weekTwelvePack() };
 }
 
 async function stored(ctx: Ctx): Promise<Checkpoint> {
@@ -118,7 +118,7 @@ export const BOUNDARIES: Boundary[] = [
     name: "week-12 Prototype Complete save",
     puts: 2,
     prepare: async (ctx) => {
-      const seeded = await ctx.store.commit(seedDraft(settlementAt(ctx.pack, 12)));
+      const seeded = await ctx.store.commit(seedDraft(resolvedSettlementAt(ctx.pack, 12)));
       must(seeded, "seed");
       await settleStored(ctx);
     },

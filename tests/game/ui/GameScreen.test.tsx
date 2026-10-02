@@ -12,12 +12,13 @@ import {
   playablePack,
   proofPack,
   replayToSettlement,
+  resolvedSettlementAt,
   seedDraft,
-  settlementAt,
   spyOn,
   testEvent,
   testOption,
   uniqueDbName,
+  weekTwelvePack,
 } from "../helpers.ts";
 
 afterEach(cleanup);
@@ -612,9 +613,9 @@ describe("weekly report and Next Week", () => {
   });
 
   it("ends in Prototype Complete after the week-12 report, and reopens there", async () => {
-    const pack = proofPack();
+    const pack = weekTwelvePack();
     const { inner, store } = setup();
-    await inner.commit(seedDraft(settlementAt(pack, 12)));
+    await inner.commit(seedDraft(resolvedSettlementAt(pack, 12)));
     render(<App store={store} loadPack={() => pack} />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Tổng kết tuần" }));
@@ -635,11 +636,11 @@ describe("weekly report and Next Week", () => {
   });
 
   it("will not close the prototype from week 12 while required callbacks are pending", async () => {
-    const pack = proofPack();
+    const pack = weekTwelvePack();
     const { inner, store } = setup();
     await inner.commit(
       seedDraft(
-        settlementAt(pack, 12, {
+        resolvedSettlementAt(pack, 12, {
           pendingCallbacks: [
             {
               callbackId: "cb.public_rider_dispute",
@@ -668,9 +669,9 @@ describe("weekly report and Next Week", () => {
   });
 
   it("offers no Next Week after the explicit failed state", async () => {
-    const pack = proofPack();
+    const pack = playablePack([4]);
     const { inner, store } = setup();
-    const broke = settlementAt(pack, 4);
+    const broke = resolvedSettlementAt(pack, 4);
     await inner.commit(seedDraft({ ...broke, metrics: { ...broke.metrics, cash: -60 } }));
     render(<App store={store} loadPack={() => pack} />);
 

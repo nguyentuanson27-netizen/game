@@ -8,9 +8,11 @@ import {
   playablePack,
   proofPack,
   replayToSettlement,
+  resolvedSettlementAt,
   settlementAt,
   testEvent,
   testOption,
+  weekTwelvePack,
 } from "../helpers.ts";
 
 const FUND_THEN_SHIFT = ["opt.rider_claim.fund_policy", "opt.fallback.arrange_extra_shift"];
@@ -156,8 +158,8 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
   });
 
   it("finishes with Prototype Complete after a seeded week-12 report with nothing pending, and never creates week 13", () => {
-    const pack = proofPack();
-    const draft = settleWeek(settlementAt(pack, 12));
+    const pack = weekTwelvePack();
+    const draft = settleWeek(resolvedSettlementAt(pack, 12));
     if (draft.phase !== "report") throw new Error("expected a report");
 
     const done = advanced({ ...draft, sequence: 2, pendingCallbacks: [] }, pack);
@@ -171,8 +173,8 @@ describe("Next Week (mechanism, on test-only content with a decision in week 2)"
   });
 
   it("refuses to complete the prototype while required callbacks are still pending", () => {
-    const pack = proofPack();
-    const draft = settleWeek(settlementAt(pack, 12));
+    const pack = weekTwelvePack();
+    const draft = settleWeek(resolvedSettlementAt(pack, 12));
     if (draft.phase !== "report") throw new Error("expected a report");
     const pending = {
       callbackId: "cb.public_rider_dispute",
